@@ -1,11 +1,15 @@
 package com.mycompany.vehiculos;
+
 public class Vehiculos {
-    private int Number_llantas;
-    private int tipo_motor;
+    protected int numeroLlantas;
+    protected String marca;
     
-    public Vehiculos(int input_one,int input_two){
-        this Numbrer_llantas = input_one;
-        this NUmbrer_motor = input_two;
+    public Vehiculos(int numeroLlantas, String marca){
+        this.numeroLlantas = numeroLlantas;
+        this.marca = marca;
     }
     
+    public void encender(){
+        System.out.println("El vehículo encendió");
+    }
 }
