@@ -1,0 +1,3 @@
+# Config local de Claude Code — no va a GitHub.
+# Todo lo demas (fuentes, .class, build/, dist/, nbproject/) SI se sube.
+.claude/
