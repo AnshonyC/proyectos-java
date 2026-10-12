@@ -1,0 +1,566 @@
+<section class="capitulo" id="cap69">
+<h1><span class="num">Capítulo 69</span>Siguientes pasos</h1>
+<p class="entrada">Terminaste el Totito y sabes llevar sus ideas a otros programas. Este capítulo es el mapa de lo que viene: organizar el código en paquetes, probarlo automáticamente con JUnit, conocer JavaFX, guardar datos en una base de datos, hacer aplicaciones web y móviles, y una forma de seguir aprendiendo por tu cuenta.</p>
+<p>Cada sección es una puerta, no una habitación entera: verás qué es cada cosa, por qué existe y un ejemplo mínimo que funciona. Lo que hay de práctica (paquetes y JUnit) se hizo sobre una <b>copia</b> del Totito; haz tú lo mismo, en una rama, para no tocar la versión publicada.</p>
+
+<h2>1. Paquetes: carpetas con nombre para tus clases</h2>
+<h3>Qué son</h3>
+<p>Un <b>paquete</b> es un grupo de clases con un nombre, que en el disco corresponde a una carpeta. Ya los usaste sin crearlos: <code>javax.swing</code> es el paquete donde vive <code>JButton</code>, <code>java.awt</code> el de <code>Color</code>, y <code>java.util</code> el de <code>Arrays</code>. Por eso los <code>import</code> del capítulo 11 llevan esos prefijos: <code>import javax.swing.JButton;</code> quiere decir «la clase <code>JButton</code> del paquete <code>javax.swing</code>».</p>
+<p>Los paquetes sirven para tres cosas:</p>
+<ul>
+<li><b>Ordenar.</b> Con 29 clases en una sola carpeta el Totito todavía se entiende; con 300 no. Los paquetes son las carpetas de un archivero.</li>
+<li><b>Evitar choques de nombres.</b> Tu <code>Tablero</code> y el <code>Tablero</code> de una librería ajena pueden convivir si están en paquetes distintos.</li>
+<li><b>Controlar la visibilidad.</b> Un miembro sin modificador (ni <code>public</code>, ni <code>private</code>, ni <code>protected</code>) es visible solo dentro de su paquete. Es el nivel «de paquete» que se mencionó en el inventario del capítulo 68.</li>
+</ul>
+<p>Por convención, el nombre se escribe en minúsculas y empieza por un dominio al revés, para que sea único en el mundo: <code>com.github.tuusuario.totito</code>. Si no tienes dominio, tu usuario de GitHub cumple la misma función.</p>
+
+<h3>Por qué el Totito no los usa</h3>
+<p>Todas las clases del Totito están en el <b>paquete por defecto</b>: el que no tiene nombre, el <i>&lt;default package&gt;</i> que ves en NetBeans. Se eligió así a propósito, por tres razones: el proyecto original venía así, cada archivo empieza directamente con sus <code>import</code> (una línea menos que explicar al principiante) y todos los comandos son cortos (<code>java -cp out TotitoApp</code>).</p>
+<p>Pero tiene un límite serio: <b>las clases del paquete por defecto no se pueden importar desde una clase que sí tenga paquete.</b> No existe una forma de escribir <code>import Tablero;</code>. Mientras todo esté en el paquete por defecto no se nota; el día que quieras usar <code>Tablero</code> desde otro proyecto organizado en paquetes —por ejemplo, la aplicación web de la sección 5—, no podrás. Por eso, en cuanto un proyecto crece o se comparte, se organiza en paquetes.</p>
+
+<h3>Cómo migrar el Totito a paquetes</h3>
+<p>Una división natural sigue la separación que ya tiene el código: la lógica por un lado y la interfaz por otro.</p>
+<pre class="texto">src\
+  totito\
+    logica\      Tablero, Jugador, IA_Minimax, Partida
+    interfaz\    las otras 25 clases (Tema, BotonNeon, PantallaMenu, TotitoApp...)</pre>
+<p>Los pasos, en una rama nueva:</p>
+<pre class="ps">git switch -c paquetes</pre>
+<ol>
+<li><b>Crea los paquetes.</b> En NetBeans: clic derecho en <i>Source Packages</i> → <i>New → Java Package…</i> → escribe <code>totito.logica</code> → <i>Finish</i>. Repite con <code>totito.interfaz</code>. NetBeans crea las carpetas <code>src\totito\logica</code> y <code>src\totito\interfaz</code>.</li>
+<li><b>Mueve las clases.</b> Arrastra <code>Tablero.java</code>, <code>Jugador.java</code>, <code>IA_Minimax.java</code> y <code>Partida.java</code> sobre <code>totito.logica</code>, y el resto sobre <code>totito.interfaz</code>. NetBeans abre el diálogo <i>Move Class</i>; acepta con <i>Refactor</i>. Esa herramienta hace los dos cambios siguientes por ti.</li>
+<li><b>La línea <code>package</code>.</b> Cada archivo debe empezar declarando su paquete, antes de cualquier <code>import</code>:
+<pre class="java">package totito.logica;
+
+/**</pre></li>
+<li><b>Los <code>import</code> entre paquetes.</b> Las clases de <code>interfaz</code> que usan a las de <code>logica</code> necesitan importarlas. Así empieza <code>PantallaJuego.java</code> después de migrar:
+<pre class="java">package totito.interfaz;
+
+import totito.logica.Jugador;
+import totito.logica.Partida;
+
+import java.awt.Color;
+import javax.swing.Timer;</pre>
+Con <code>import totito.logica.Partida;</code>, también <code>Partida.Modo</code> y <code>Partida.Estado</code> quedan disponibles.</li>
+<li><b>El nombre completo de la clase principal</b> cambia de <code>TotitoApp</code> a <code>totito.interfaz.TotitoApp</code>. Hay que corregirlo en el <code>pom.xml</code> (en <code>exec.mainClass</code> y en <code>mainClass</code>), en el comando para ejecutar sin NetBeans y en el <code>--main-class</code> de <code>jpackage</code>:
+<pre class="ps">javac -encoding UTF-8 -d out (Get-ChildItem -Path src -Recurse -Filter *.java).FullName
+java -cp out totito.interfaz.TotitoApp</pre>
+El comodín <code>src\*.java</code> ya no alcanza, porque los archivos están en subcarpetas. <code>Get-ChildItem -Path src -Recurse -Filter *.java</code> busca los <code>.java</code> en <code>src</code> y en todas sus subcarpetas, y <code>.FullName</code> entrega la ruta completa de cada uno; los paréntesis hacen que PowerShell resuelva esa lista antes de pasársela a <code>javac</code>.</li>
+<li><b>Las herramientas.</b> <code>VistaPrevia</code>, <code>PruebaConsola</code> y <code>GeneradorIcono</code> siguen en el paquete por defecto; como ahora tienen que importar las clases del juego, agrégales al principio <code>import totito.logica.*;</code> e <code>import totito.interfaz.*;</code> según lo que usen.</li>
+</ol>
+<p>Se hizo esta migración en una copia: con solo agregar las líneas <code>package</code> e <code>import</code> compiló sin ningún otro cambio, porque todas las clases y los métodos que se usan entre paquetes ya eran <code>public</code>. El <code>.jar</code> quedó con <code>Main-Class: totito.interfaz.TotitoApp</code> en su manifiesto y <code>jdeps</code> siguió respondiendo <code>java.base,java.desktop</code>.</p>
+<div class="caja concepto"><b>Una prueba de buen diseño</b> En la copia migrada, ninguna clase de <code>totito.logica</code> importa nada de <code>totito.interfaz</code>. La flecha va en un solo sentido: la interfaz conoce la lógica y la lógica no conoce la interfaz. Si algún día escribes un <code>import totito.interfaz...</code> dentro de <code>logica</code>, el paquete te avisa de que estás mezclando responsabilidades (capítulo 27).</div>
+<div class="caja git"><b>Git</b> Haz el commit en la rama y, si te gusta el resultado, ábrelo como Pull Request, igual que la interfaz neón en el capítulo 61:
+<pre class="ps">git add -A
+git commit -m "Organizar el codigo en los paquetes totito.logica y totito.interfaz"
+git push -u origin paquetes
+gh pr create --base main --head paquetes --title "Paquetes" --body "Mueve las clases a totito.logica y totito.interfaz"</pre>
+<code>git add -A</code> registra también los archivos que «desaparecieron» de <code>src\</code> al moverse; Git detecta que son los mismos y los muestra como renombrados.</div>
+
+<h2>2. Pruebas automáticas con JUnit 5</h2>
+<h3>Por qué</h3>
+<p>En el capítulo 62 hiciste una lista de pruebas manuales: abrir el juego, hacer tres en línea, comprobar el empate… Funciona, pero hay que repetirla <b>cada vez</b> que cambias algo, y nadie lo hace. Una <b>prueba automática</b> es un método que prepara una situación, ejecuta el código y comprueba el resultado, sin que tú mires nada. Cientos de ellas corren en un par de segundos. Si un cambio rompe una regla que antes funcionaba (una <b>regresión</b>), te enteras en el momento, no cuando un usuario se queja.</p>
+<p><b>JUnit</b> es la librería de pruebas más usada en Java. Su versión 5 se llama también <i>JUnit Jupiter</i>. (Existe ya JUnit 6, que se usa de la misma forma; aquí se usa la 5 porque es la que vas a encontrar en casi todos los proyectos y tutoriales.)</p>
+<p>Gracias a que <code>Partida</code> no sabe nada de Swing, se puede probar sin abrir una sola ventana. Esa decisión del capítulo 38 se paga aquí.</p>
+
+<h3>Paso 1: el pom.xml</h3>
+<p>Hay que agregar tres cosas al <code>pom.xml</code> del Totito: la dependencia de JUnit, la carpeta de las pruebas y el plugin que las ejecuta. Este es el <code>pom.xml</code> completo con los cambios:</p>
+<pre class="texto">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;Totito&lt;/artifactId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;packaging&gt;jar&lt;/packaging&gt;
+    &lt;properties&gt;
+        &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+        &lt;!-- Funciona con JDK 17 o mas nuevo. --&gt;
+        &lt;maven.compiler.release&gt;17&lt;/maven.compiler.release&gt;
+        &lt;!-- Clase que arranca el juego (boton Run de NetBeans). --&gt;
+        &lt;exec.mainClass&gt;TotitoApp&lt;/exec.mainClass&gt;
+    &lt;/properties&gt;
+    &lt;dependencies&gt;
+        &lt;!-- JUnit 5: solo para las pruebas, no viaja dentro del .jar. --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.junit.jupiter&lt;/groupId&gt;
+            &lt;artifactId&gt;junit-jupiter&lt;/artifactId&gt;
+            &lt;version&gt;5.14.4&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+    &lt;build&gt;
+        &lt;!-- El codigo vive en src/ (sin paquetes), no en src/main/java. --&gt;
+        &lt;sourceDirectory&gt;src&lt;/sourceDirectory&gt;
+        &lt;!-- Las pruebas viven en test/, fuera de src/. --&gt;
+        &lt;testSourceDirectory&gt;test&lt;/testSourceDirectory&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.13.0&lt;/version&gt;
+            &lt;/plugin&gt;
+            &lt;plugin&gt;
+                &lt;!-- Ejecuta las pruebas en mvn test y mvn package. --&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.5.6&lt;/version&gt;
+            &lt;/plugin&gt;
+            &lt;plugin&gt;
+                &lt;!-- Deja el .jar ejecutable con doble clic o con java -jar. --&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.4.2&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;archive&gt;
+                        &lt;manifest&gt;
+                            &lt;mainClass&gt;TotitoApp&lt;/mainClass&gt;
+                        &lt;/manifest&gt;
+                    &lt;/archive&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/project&gt;</pre>
+<ul>
+<li><code>&lt;dependencies&gt;</code> es la lista de librerías ajenas que usa el proyecto. Maven las descarga solo la primera vez (necesitas internet) y las guarda en <code>C:\Users\&lt;tu-usuario&gt;\.m2</code>.</li>
+<li>Una dependencia se identifica con tres datos: <code>groupId</code> (quién la publica), <code>artifactId</code> (qué es) y <code>version</code>. Son las «coordenadas» que buscarías en <code>search.maven.org</code>.</li>
+<li><code>&lt;scope&gt;test&lt;/scope&gt;</code>: JUnit solo existe para las pruebas. No se puede usar desde <code>src\</code> y no viaja dentro del <code>.jar</code> (se comprobó: el <code>.jar</code> no contiene nada de JUnit).</li>
+<li><code>&lt;testSourceDirectory&gt;test&lt;/testSourceDirectory&gt;</code>: las pruebas van en una carpeta <code>test\</code> al lado de <code>src\</code>. Hay que decirlo porque el Totito usa una estructura propia (capítulo 5).</li>
+<li><code>maven-surefire-plugin</code> es el plugin que encuentra y ejecuta las pruebas. Se fija su versión, como se hizo con los otros dos, para que el resultado no dependa de la versión de Maven.</li>
+</ul>
+<div class="caja cuidado"><b>No pongas las pruebas dentro de src</b> En los proyectos Maven «normales» las pruebas van en <code>src\test\java</code>. En el Totito no, porque <code>src\</code> entero es código del programa: todo lo que haya dentro se compila como parte del juego, donde JUnit no está disponible. Se probó, y Maven se detiene con <code>package org.junit.jupiter.api does not exist</code>. Por eso la carpeta es <code>test\</code>, fuera de <code>src\</code>.</div>
+
+<h3>Paso 2: la clase de pruebas</h3>
+<p>Crea la carpeta y el archivo desde la carpeta del proyecto:</p>
+<pre class="ps">New-Item -ItemType Directory -Force test | Out-Null
+New-Item test\PartidaTest.java</pre>
+<p>Al recargar el proyecto, NetBeans muestra un nodo nuevo, <i>Test Packages</i>, con <code>PartidaTest.java</code> dentro. Escribe esto:</p>
+<pre class="java">import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Pruebas automaticas de las reglas del Totito (clase Partida).
+ * Ninguna abre ventanas: solo usan la logica.
+ */
+class PartidaTest {
+
+    private Jugador ana;
+    private Jugador beto;
+    private Partida partida;
+
+    /** Se ejecuta antes de CADA prueba: todas empiezan de cero. */
+    @BeforeEach
+    void prepararPartida() {
+        ana = new Jugador("Ana", 'X');
+        beto = new Jugador("Beto", 'O');
+        partida = new Partida(ana, beto, Partida.Modo.DOS_JUGADORES);
+    }
+
+    /** Ayudante (no es prueba): Ana completa la fila 0. */
+    private void anaGanaEnLaPrimeraFila() {
+        partida.jugar(0, 0);   // Ana  X
+        partida.jugar(1, 0);   // Beto O
+        partida.jugar(0, 1);   // Ana  X
+        partida.jugar(1, 1);   // Beto O
+        partida.jugar(0, 2);   // Ana  X: tres en la fila 0
+    }
+
+    @Test
+    void tresEnLaPrimeraFilaEsVictoria() {
+        anaGanaEnLaPrimeraFila();
+
+        assertEquals(Partida.Estado.VICTORIA, partida.getEstado());
+        assertSame(ana, partida.getGanador());
+        assertEquals(1, partida.getVictorias(0));
+        assertEquals(0, partida.getVictorias(1));
+        assertArrayEquals(new int[]{0, 0, 0, 2}, Partida.buscarLineaGanadora(partida.getTablero()));
+    }
+
+    @Test
+    void tableroLlenoSinLineaEsEmpate() {
+        //  X | O | X
+        //  X | O | O
+        //  O | X | X
+        int[][] jugadas = {{0, 0}, {0, 1}, {0, 2}, {1, 1}, {1, 0}, {1, 2}, {2, 1}, {2, 0}, {2, 2}};
+        for (int[] j : jugadas) {
+            assertTrue(partida.jugar(j[0], j[1]));
+        }
+
+        assertEquals(Partida.Estado.EMPATE, partida.getEstado());
+        assertNull(partida.getGanador());
+        assertEquals(1, partida.getEmpates());
+    }
+
+    @Test
+    void casillaOcupadaNoSeAceptaYNoCambiaElTurno() {
+        assertTrue(partida.jugar(1, 1));          // Ana pone X en el centro
+        assertFalse(partida.jugar(1, 1));         // Beto intenta la misma casilla
+
+        assertSame(beto, partida.getJugadorEnTurno());
+        assertEquals('X', partida.getTablero().obtenerCasilla(1, 1));
+    }
+
+    @Test
+    void despuesDeGanarNoSePuedeSeguirJugando() {
+        anaGanaEnLaPrimeraFila();
+        assertFalse(partida.jugar(2, 2));
+    }
+
+    @Test
+    void reiniciarLimpiaElTableroPeroConservaElMarcador() {
+        anaGanaEnLaPrimeraFila();
+        partida.reiniciar();
+
+        assertEquals(Partida.Estado.EN_CURSO, partida.getEstado());
+        assertEquals(Tablero.VACIA, partida.getTablero().obtenerCasilla(0, 0));
+        assertEquals(1, partida.getVictorias(0));
+    }
+
+    @Test
+    void dosJugadoresConLaMismaFichaEsUnError() {
+        Jugador otraX = new Jugador("Carla", 'X');
+        assertThrows(IllegalArgumentException.class,
+                () -&gt; new Partida(ana, otraX, Partida.Modo.DOS_JUGADORES));
+    }
+
+    @Test
+    void laComputadoraTapaLaFilaQueIbaAGanarAna() {
+        Partida contraIA = new Partida(ana, new Jugador("Computadora", 'O'), Partida.Modo.CONTRA_IA);
+        contraIA.jugar(0, 0);          // Ana  X en una esquina
+        contraIA.jugarTurnoIA();       // la computadora responde
+        contraIA.jugar(0, 1);          // Ana amenaza: X X _ en la fila 0
+        contraIA.jugarTurnoIA();
+
+        assertEquals('O', contraIA.getTablero().obtenerCasilla(0, 2));
+    }
+}</pre>
+<p>Lo nuevo, de arriba abajo:</p>
+<ul>
+<li><code>import static …Assertions.assertEquals;</code> El <code>import static</code> trae un <b>método</b> estático en lugar de una clase. Gracias a él se escribe <code>assertEquals(…)</code> en vez de <code>Assertions.assertEquals(…)</code>.</li>
+<li><code>class PartidaTest</code> no lleva <code>public</code>: JUnit 5 no lo necesita. El nombre termina en <code>Test</code> porque así lo busca Surefire.</li>
+<li><code>@BeforeEach</code> es una <b>anotación</b> (como <code>@Override</code>, capítulo 23): le dice a JUnit «ejecuta este método antes de cada prueba». Así cada prueba recibe una <code>Partida</code> recién creada y ninguna depende de lo que hizo otra. Es una regla de oro: las pruebas deben poder ejecutarse en cualquier orden.</li>
+<li><code>@Test</code> marca un método como prueba. JUnit los encuentra y los ejecuta todos. Los nombres son frases largas a propósito: cuando una falla, el nombre ya te dice qué regla se rompió.</li>
+<li><code>anaGanaEnLaPrimeraFila()</code> no lleva <code>@Test</code>: es un ayudante que reúne jugadas que se repiten en varias pruebas.</li>
+<li>Cada prueba sigue tres pasos, conocidos como <b>Preparar, Actuar, Comprobar</b>: crear la situación (lo hace <code>@BeforeEach</code>), hacer las jugadas y verificar el resultado.</li>
+<li>Las <b>aserciones</b> son las comprobaciones. Si una no se cumple, la prueba falla:
+<table class="tabla">
+<tr><th>Aserción</th><th>Comprueba que…</th></tr>
+<tr><td><code>assertEquals(esperado, real)</code></td><td>los dos valores son iguales. Primero va lo que <i>esperas</i> y después lo que <i>dio el programa</i>; al revés, los mensajes de error confunden.</td></tr>
+<tr><td><code>assertTrue(x)</code> / <code>assertFalse(x)</code></td><td>la condición es verdadera / falsa.</td></tr>
+<tr><td><code>assertSame(a, b)</code></td><td>son <b>el mismo objeto</b> (la misma referencia, capítulo 18), no solo parecidos.</td></tr>
+<tr><td><code>assertNull(x)</code></td><td>el valor es <code>null</code>.</td></tr>
+<tr><td><code>assertArrayEquals(a, b)</code></td><td>dos arreglos tienen los mismos elementos en el mismo orden. (<code>assertEquals</code> con arreglos compararía referencias.)</td></tr>
+<tr><td><code>assertThrows(Tipo.class, () -&gt; …)</code></td><td>el código de la lambda lanza esa excepción. Si <b>no</b> la lanza, la prueba falla.</td></tr>
+</table></li>
+<li>La prueba de la casilla ocupada comprueba dos cosas que el usuario nunca vería a simple vista: que <code>jugar</code> devuelve <code>false</code> <b>y</b> que el turno no pasó a Beto «por error».</li>
+<li>La prueba de la IA usa el modo <code>CONTRA_IA</code>: Ana amenaza con dos X en la fila 0 y se comprueba que la computadora tapa la casilla (0, 2). No hace falta conocer la primera respuesta de la IA para escribir la prueba.</li>
+</ul>
+
+<h3>Paso 3: ejecutarlas</h3>
+<p>En NetBeans: <i>Run → Test Project</i> (Alt+F6), o clic derecho sobre <code>PartidaTest.java</code> → <i>Test File</i> (Ctrl+F6). Se abre la ventana <i>Test Results</i> con una barra verde y la lista de pruebas. Si tienes Maven instalado aparte, también puedes ejecutar <code>mvn test</code> desde la carpeta del proyecto. Esta es la salida real de Maven con las siete pruebas:</p>
+<pre class="salida">[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running PartidaTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.195 s -- in PartidaTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.997 s</pre>
+<p>Para ver cómo se ve un fallo, se cambió a propósito una línea de la prueba de empate para que esperara 2 empates en lugar de 1:</p>
+<pre class="salida">[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running PartidaTest
+[ERROR] Tests run: 7, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.309 s &lt;&lt;&lt; FAILURE! -- in PartidaTest
+[ERROR] PartidaTest.tableroLlenoSinLineaEsEmpate -- Time elapsed: 0.019 s &lt;&lt;&lt; FAILURE!
+org.opentest4j.AssertionFailedError: expected: &lt;2&gt; but was: &lt;1&gt;
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:150)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:145)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:531)
+	at PartidaTest.tableroLlenoSinLineaEsEmpate(PartidaTest.java:62)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   PartidaTest.tableroLlenoSinLineaEsEmpate:62 expected: &lt;2&gt; but was: &lt;1&gt;
+[INFO] 
+[ERROR] Tests run: 7, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE</pre>
+<p>Cómo leerlo: <code>PartidaTest.tableroLlenoSinLineaEsEmpate</code> es la prueba que falló; <code>expected: &lt;2&gt; but was: &lt;1&gt;</code> significa «esperaba 2 y obtuve 1»; <code>PartidaTest.java:62</code> es la línea exacta. Las líneas <code>at org.junit…</code> son la pila de llamadas (capítulo 16) dentro de JUnit: la que importa es la que nombra tu clase.</p>
+<div class="caja consejo"><b>Las pruebas también corren al construir</b> Con el plugin Surefire, <i>Clean and Build</i> (Shift+F11) y <code>mvn package</code> ejecutan las pruebas antes de crear el <code>.jar</code>. Si alguna falla, no hay <code>.jar</code>. Es una red de seguridad: no puedes empaquetar un Totito roto sin enterarte. Existe la opción <code>-DskipTests</code> para saltarlas; úsala solo si sabes exactamente por qué.</div>
+<p>¿Qué más se puede probar? Todo lo que no dibuja: <code>Tablero.verificarGanador</code> con las ocho líneas, <code>Partida.buscarLineaGanadora</code> con las dos diagonales, que <code>reiniciar</code> devuelve el turno a quien tiene la X, y, con un poco de paciencia, que la IA nunca pierde (el README cuenta que se revisaron las 642 partidas posibles: eso es una prueba automática). Las clases de los proyectos del capítulo 68 se prueban igual: <code>TableroConecta.hayCuatro</code>, <code>Calculadora</code> con <code>"0.1+0.2="</code>, <code>Inventario.vender</code> con <code>assertThrows(SinExistenciasException.class, …)</code>.</p>
+<div class="caja git"><b>Git</b> En una rama <code>pruebas</code>:
+<pre class="ps">git add pom.xml test\PartidaTest.java
+git commit -m "Pruebas automaticas de Partida con JUnit 5"</pre></div>
+
+<h2>3. JavaFX frente a Swing</h2>
+<p>Swing (1998) es la biblioteca gráfica que viene dentro del JDK, y la que usaste en todo el libro. <b>JavaFX</b> es su sucesora moderna. Desde Java 11 ya no viene incluida: es un proyecto aparte, OpenJFX, que se agrega como dependencia de Maven.</p>
+<table class="tabla">
+<tr><th></th><th>Swing</th><th>JavaFX</th></tr>
+<tr><td>Instalación</td><td>Viene en el JDK</td><td>Dependencia aparte (<code>org.openjfx:javafx-controls</code>)</td></tr>
+<tr><td>Estilo</td><td>A mano, con <code>paintComponent</code> (como el neón del Totito)</td><td>Con <b>CSS</b>, el mismo lenguaje de estilos de las páginas web</td></tr>
+<tr><td>Diseño de pantallas</td><td>En código (layouts)</td><td>En código o en archivos <b>FXML</b>, que se dibujan con Scene Builder</td></tr>
+<tr><td>Efectos y animaciones</td><td>Se programan (<code>Timer</code>, capas de transparencia)</td><td>Incluidos: sombras, desenfoque, transiciones</td></tr>
+<tr><td>Estado</td><td>Estable y mantenido, sin novedades grandes</td><td>Se sigue desarrollando, con versiones nuevas cada seis meses</td></tr>
+<tr><td>Cuándo elegirlo</td><td>Programas sencillos, mantener código existente, cero dependencias</td><td>Programas de escritorio nuevos con mucho trabajo visual</td></tr>
+</table>
+<p>Para que te hagas una idea, este es un botón «neón» en JavaFX. El halo, que en el Totito son seis trazos en <code>Dibujo.trazoNeon</code>, aquí es una línea de CSS: <code>dropshadow</code>. El ejemplo se compiló con <code>javafx-controls</code> 21.0.12 (la versión que acompaña al JDK 21):</p>
+<pre class="java">import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
+
+/** Un boton neon en JavaFX: el estilo va en CSS, no en paintComponent. */
+public class HolaFX extends Application {
+
+    @Override
+    public void start(Stage ventana) {
+        Button jugar = new Button("Jugar");
+        jugar.setStyle("-fx-background-color: #1C1740; -fx-text-fill: white;"
+                + " -fx-font-size: 22px; -fx-background-radius: 30;"
+                + " -fx-border-color: #FF3BD4; -fx-border-radius: 30; -fx-border-width: 2;"
+                + " -fx-effect: dropshadow(gaussian, #FF3BD4, 18, 0.3, 0, 0);");
+        jugar.setOnAction(e -&gt; System.out.println("¡A jugar!"));
+
+        StackPane raiz = new StackPane(jugar);
+        raiz.setStyle("-fx-background-color: linear-gradient(to bottom, #1C1740, #0E0B24);");
+
+        ventana.setTitle("Hola, JavaFX");
+        ventana.setScene(new Scene(raiz, 400, 300));
+        ventana.show();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+}</pre>
+<p>Las ideas son las mismas, con otros nombres: la ventana es un <code>Stage</code> (escenario), su contenido una <code>Scene</code> (escena), los paneles con layout son <code>StackPane</code>, <code>VBox</code>, <code>GridPane</code>, y <code>setOnAction</code> reemplaza a <code>addActionListener</code>. Lo que aprendiste de color, tipografía, jerarquía y separación entre lógica e interfaz se traslada entero: <code>Partida</code> funcionaría sin cambiar una línea detrás de una interfaz JavaFX.</p>
+<div class="caja cuidado"><b>Ejecutar JavaFX</b> Un programa JavaFX no se ejecuta con un simple <code>java -cp</code>: necesita que los módulos de JavaFX estén en el <i>module path</i>. Lo más sencillo es crear el proyecto en NetBeans con <i>File → New Project → Java with Maven → JavaFX Application</i>, que configura el plugin <code>javafx-maven-plugin</code> por ti. Para empaquetarlo, <code>jpackage</code> funciona igual que en el capítulo 65.</div>
+
+<h2>4. Bases de datos con JDBC</h2>
+<h3>La idea</h3>
+<p>El gestor de tareas del capítulo 68 guarda en un archivo de texto. Funciona mientras los datos sean pocos y los use una sola persona. Cuando son miles de productos, se buscan de muchas formas o los usan varias cajas a la vez, se usa una <b>base de datos</b>: un programa especializado en guardar datos en <b>tablas</b> (filas y columnas, como una hoja de cálculo), buscarlos rápido y no perderlos aunque se vaya la luz. Se le habla en <b>SQL</b>, un lenguaje propio: <code>SELECT nombre FROM producto WHERE existencias &lt;= 10</code>.</p>
+<p><b>JDBC</b> (<i>Java Database Connectivity</i>) es la parte de Java que habla con las bases de datos. Viene en el JDK (paquete <code>java.sql</code>) y funciona igual con todas; lo único que cambia es el <b>driver</b>, una librería que traduce para cada base concreta (MySQL, PostgreSQL, SQLite…). Las piezas son cuatro:</p>
+<table class="tabla">
+<tr><th>Pieza</th><th>Qué es</th></tr>
+<tr><td><code>Connection</code></td><td>La conexión abierta con la base. Se obtiene con <code>DriverManager.getConnection(url)</code>.</td></tr>
+<tr><td><code>PreparedStatement</code></td><td>Una orden SQL con huecos <code>?</code> que se rellenan con <code>setString</code>, <code>setInt</code>…</td></tr>
+<tr><td><code>ResultSet</code></td><td>Las filas que devuelve un <code>SELECT</code>. Se recorren con <code>while (filas.next())</code>.</td></tr>
+<tr><td><code>SQLException</code></td><td>La excepción de cualquier problema con la base.</td></tr>
+</table>
+
+<h3>Un ejemplo mínimo con SQLite</h3>
+<p><b>SQLite</b> es una base de datos que vive en un solo archivo y no necesita instalar ningún servidor: perfecta para empezar y para programas de escritorio. Solo hay que agregar su driver al <code>pom.xml</code>, dentro de <code>&lt;dependencies&gt;</code>:</p>
+<pre class="texto">&lt;dependency&gt;
+    &lt;groupId&gt;org.xerial&lt;/groupId&gt;
+    &lt;artifactId&gt;sqlite-jdbc&lt;/artifactId&gt;
+    &lt;version&gt;3.53.4.0&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+<p>Este programa crea la tabla de productos del inventario, inserta tres y consulta los que están por agotarse:</p>
+<pre class="java">import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+/** Guarda productos en una base de datos SQLite (un solo archivo: tienda.db) y los lee. */
+public class PruebaBD {
+
+    public static void main(String[] args) throws SQLException {
+        // La "direccion" de la base: con SQLite es el nombre del archivo.
+        String url = "jdbc:sqlite:tienda.db";
+
+        try (Connection conexion = DriverManager.getConnection(url)) {
+            try (Statement sql = conexion.createStatement()) {
+                sql.execute("CREATE TABLE IF NOT EXISTS producto ("
+                        + " codigo TEXT PRIMARY KEY,"
+                        + " nombre TEXT NOT NULL,"
+                        + " precio TEXT NOT NULL,"
+                        + " existencias INTEGER NOT NULL)");
+                sql.execute("DELETE FROM producto");   // para que el ejemplo empiece limpio
+            }
+
+            String insertar = "INSERT INTO producto (codigo, nombre, precio, existencias) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement ps = conexion.prepareStatement(insertar)) {
+                agregar(ps, "A01", "Arroz 1 lb", "5.50", 37);
+                agregar(ps, "F02", "Frijol negro 1 lb", "8.75", 10);
+                agregar(ps, "C03", "Café molido 400 g", "32.00", 3);
+            }
+
+            String consulta = "SELECT codigo, nombre, precio, existencias FROM producto"
+                    + " WHERE existencias &lt;= ? ORDER BY nombre";
+            try (PreparedStatement ps = conexion.prepareStatement(consulta)) {
+                ps.setInt(1, 10);
+                try (ResultSet filas = ps.executeQuery()) {
+                    System.out.println("Productos con 10 o menos:");
+                    while (filas.next()) {
+                        BigDecimal precio = new BigDecimal(filas.getString("precio"));
+                        System.out.println("  " + filas.getString("codigo") + "  "
+                                + filas.getString("nombre") + "  Q" + precio
+                                + "  quedan " + filas.getInt("existencias"));
+                    }
+                }
+            }
+        }
+    }
+
+    private static void agregar(PreparedStatement ps, String codigo, String nombre, String precio,
+                                int existencias) throws SQLException {
+        ps.setString(1, codigo);
+        ps.setString(2, nombre);
+        ps.setString(3, precio);
+        ps.setInt(4, existencias);
+        ps.executeUpdate();
+    }
+}</pre>
+<p>Ejecutándolo (con <i>Run File</i>, Shift+F6, en NetBeans) se obtiene:</p>
+<pre class="salida">Productos con 10 o menos:
+  C03  Café molido 400 g  Q32.00  quedan 3
+  F02  Frijol negro 1 lb  Q8.75  quedan 10</pre>
+<ul>
+<li><code>"jdbc:sqlite:tienda.db"</code> es la <b>URL</b> de la base: el protocolo (<code>jdbc</code>), el driver (<code>sqlite</code>) y el archivo. Si no existe, se crea en la carpeta desde donde se ejecuta el programa. Para MySQL sería algo como <code>jdbc:mysql://servidor:3306/tienda</code>, con usuario y contraseña.</li>
+<li>Todo va dentro de <b><code>try</code>-con-recursos</b> (capítulo 26): la conexión, las órdenes y los resultados se cierran solos al salir del bloque, aunque haya un error. Dejar conexiones abiertas es uno de los errores más comunes con bases de datos.</li>
+<li><code>CREATE TABLE IF NOT EXISTS</code> crea la tabla solo la primera vez. <code>PRIMARY KEY</code> hace que no pueda haber dos productos con el mismo código: la base de datos cuida esa regla por ti.</li>
+<li>El precio se guarda como texto (<code>"5.50"</code>) y se lee de vuelta con <code>new BigDecimal(...)</code>: así no se pierde ni un centavo en el camino.</li>
+<li>El mismo <code>PreparedStatement</code> se reutiliza para insertar tres veces: se rellenan los <code>?</code> y se ejecuta con <code>executeUpdate()</code>.</li>
+</ul>
+<div class="caja cuidado"><b>Nunca armes SQL pegando textos</b> Sería tentador escribir <code>"SELECT * FROM producto WHERE nombre = '" + busqueda + "'"</code>. Si alguien escribe en el buscador <code>' OR '1'='1</code>, la orden cambia de significado y devuelve toda la tabla; con otras frases, podría borrarla. Se llama <b>inyección SQL</b> y es uno de los ataques más antiguos y frecuentes. Con <code>PreparedStatement</code> y <code>?</code>, el texto del usuario siempre se trata como un dato, nunca como parte de la orden.</div>
+<p>En el inventario del capítulo 68, todo esto iría en la clase <code>AlmacenInventario</code>: el resto del programa no se entera de si los datos están en un archivo o en una base. Es la misma separación de siempre.</p>
+
+<h2>5. Aplicaciones web con Spring Boot</h2>
+<p>Hasta ahora, tus programas se instalan en cada computadora. Una <b>aplicación web</b> corre en un <b>servidor</b> y la usan muchas personas desde el navegador o desde otras aplicaciones, sin instalar nada. En Java, la herramienta más usada para hacerlas es <b>Spring Boot</b>: un conjunto de librerías que, a partir de unas pocas anotaciones, monta un servidor web completo dentro de tu programa.</p>
+<p>Lo más interesante para ti es que <b>tu lógica no cambia</b>. Para comprobarlo se hizo un experimento: un servicio web que recibe un tablero del Totito y responde la jugada de <code>IA_Minimax</code>. Se copiaron <code>Tablero</code> e <code>IA_Minimax</code> sin tocar su código —solo con la línea <code>package</code> al principio, porque Spring Boot exige paquetes: aquí se ve en la práctica lo de la sección 1— y se agregó una clase:</p>
+<pre class="java">package com.tunombre.totitoweb;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * Atiende la direccion /jugada. Recibe el tablero como 9 letras (X, O o -,
+ * fila por fila) y responde la jugada de IA_Minimax en formato JSON.
+ */
+@RestController
+public class JugadaControlador {
+
+    /** Lo que se responde. Un record es una clase de datos escrita en una linea. */
+    public record Jugada(int fila, int columna) {
+    }
+
+    @GetMapping("/jugada")
+    public Jugada jugada(@RequestParam String tablero) {
+        Tablero t = new Tablero();
+        for (int i = 0; i &lt; 9; i++) {
+            char c = tablero.charAt(i);
+            if (c == 'X' || c == 'O') {
+                t.marcarCasilla(i / 3, i % 3, c);
+            }
+        }
+        int[] mejor = new IA_Minimax('O', 'X').calcularMejorJugada(t);
+        return new Jugada(mejor[0], mejor[1]);
+    }
+}</pre>
+<ul>
+<li><code>@RestController</code> le dice a Spring que esta clase atiende peticiones web y que lo que devuelva se convierte en JSON, el formato de texto con el que se comunican las aplicaciones.</li>
+<li><code>@GetMapping("/jugada")</code> conecta la dirección <code>/jugada</code> con el método, y <code>@RequestParam String tablero</code> toma el valor que viene en la dirección después de <code>?tablero=</code>.</li>
+<li>Un <code>record</code> es una forma corta de escribir una clase de datos inmutable: <code>record Jugada(int fila, int columna)</code> equivale a una clase como <code>Jugador</code>, con sus campos <code>final</code>, su constructor y sus métodos de lectura.</li>
+</ul>
+<p>Con el programa en marcha, al abrir en el navegador <code>http://localhost:8080/jugada?tablero=XX--O----</code> (X en las dos primeras casillas de la fila 0, O en el centro) se obtiene:</p>
+<pre class="salida">{"fila":0,"columna":2}</pre>
+<p>La IA, ahora en la web, tapa la fila. Ese mismo servicio lo podría usar una página web, una app de teléfono o el propio Totito de escritorio. (La prueba se hizo con Spring Boot 4.1.1 y la dependencia <code>spring-boot-starter-webmvc</code>; el proyecto completo tiene además una clase con <code>@SpringBootApplication</code> y un <code>main</code> de dos líneas.)</p>
+<div class="caja consejo"><b>Cómo empezar con Spring Boot</b> Entra en <code>start.spring.io</code>, elige <i>Maven</i>, <i>Java</i>, la versión estable más nueva de Spring Boot, escribe tu paquete (<code>com.tuusuario.lo-que-sea</code>) y agrega la dependencia <i>Spring Web</i>. Descarga el zip, descomprímelo en <code>$HOME\Proyectos</code> y ábrelo en NetBeans como cualquier proyecto Maven. Trae un archivo <code>mvnw.cmd</code> para usar Maven sin instalarlo: <code>.\mvnw.cmd spring-boot:run</code> arranca el servidor en <code>http://localhost:8080</code>. Lo siguiente que aprenderás ahí: Spring Data JPA para bases de datos (sin escribir JDBC a mano) y Thymeleaf para páginas HTML.</div>
+
+<h2>6. Android y Kotlin</h2>
+<p>Las apps de Android se escriben en <b>Kotlin</b> o en Java, con <b>Android Studio</b> (gratuito, de Google). Desde 2019, Google recomienda Kotlin: un lenguaje que corre sobre la misma máquina virtual que Java, que puede usar cualquier clase Java y que se escribe más corto. Por ejemplo, toda la clase <code>Jugador</code> del capítulo 30 en Kotlin es:</p>
+<pre class="texto">data class Jugador(val nombre: String, val ficha: Char)</pre>
+<p>Una línea: <code>val</code> es como un campo <code>final</code> con su <i>getter</i>, y <code>data class</code> genera además la comparación y el texto para imprimirla. Las ideas que ya tienes —clases, objetos, herencia, interfaces, lambdas, excepciones, separar lógica e interfaz— son las mismas. La interfaz de Android no usa Swing: hoy se escribe con <b>Jetpack Compose</b>, donde cada pantalla es una función que describe lo que se ve. Un buen primer proyecto es, cómo no, un Totito para el teléfono: <code>Tablero</code> y <code>Partida</code> se pueden usar tal cual desde Kotlin.</p>
+
+<h2>7. Cómo seguir aprendiendo</h2>
+<h3>Documentación oficial</h3>
+<p>Aprender a leer la documentación es la habilidad que más rinde. Al principio cuesta, porque está pensada para consultar, no para leer de corrido; con el tiempo es lo primero que abrirás.</p>
+<table class="tabla">
+<tr><th>Recurso</th><th>Para qué</th></tr>
+<tr><td><code>dev.java/learn</code></td><td>Los tutoriales oficiales de Java, ordenados de lo básico a lo avanzado.</td></tr>
+<tr><td><code>docs.oracle.com/en/java/javase/21/docs/api</code></td><td>La referencia de <b>todas</b> las clases del JDK: qué métodos tiene <code>String</code>, <code>JButton</code>, <code>Files</code>… En NetBeans aparece la misma información con Ctrl+Shift+Espacio sobre cualquier nombre.</td></tr>
+<tr><td><code>docs.oracle.com/javase/tutorial/uiswing</code></td><td>El tutorial clásico de Swing, con un ejemplo por componente (tablas, listas, árboles…).</td></tr>
+<tr><td><code>junit.org</code> (User Guide)</td><td>Todo JUnit, con ejemplos.</td></tr>
+<tr><td><code>maven.apache.org</code></td><td>Cómo funciona el <code>pom.xml</code> y sus plugins.</td></tr>
+<tr><td><code>git-scm.com/book/es</code></td><td>El libro <i>Pro Git</i>, gratuito y en español.</td></tr>
+<tr><td><code>docs.github.com/es</code></td><td>La documentación de GitHub en español.</td></tr>
+</table>
+
+<h3>Practicar</h3>
+<p>Programar se aprende programando, igual que nadar. Tres formas de hacerlo con constancia:</p>
+<ul>
+<li><b>Proyectos propios.</b> Los cinco del capítulo 68 y, sobre todo, uno que resuelva algo <i>tuyo</i>: el control de gastos de tu casa, el inventario del negocio de un familiar. La motivación de usar lo que haces no la da ningún curso.</li>
+<li><b>Ejercicios cortos.</b> Sitios como Exercism (con su sección de Java y comentarios de mentores voluntarios) o los retos de diciembre de Advent of Code entrenan la lógica en sesiones de 20 minutos.</li>
+<li><b>Mejorar el Totito.</b> La lista «Ideas pendientes» del README es un plan de trabajo ya escrito: niveles de dificultad, alternar quién empieza, animaciones con <code>Timer</code>, jugar con las teclas 1–9.</li>
+</ul>
+<p>Un ritmo realista: una hora al día, cinco días por semana. En tres meses habrás hecho los cinco proyectos y escrito más código que en todo este libro.</p>
+
+<h3>Leer código ajeno</h3>
+<p>Los escritores leen mucho; los programadores también deberían. Empieza por el propio Java: en NetBeans, haz Ctrl+clic sobre <code>JButton</code> o <code>ArrayList</code> en cualquier archivo y verás el código fuente real del JDK, con sus comentarios. Después busca en GitHub proyectos pequeños de lo que te interese (<code>tetris java swing</code>, <code>inventory java</code>) y léelos con estas preguntas: ¿qué clases tiene?, ¿quién llama a quién?, ¿dónde está la lógica y dónde la interfaz?, ¿qué haría yo distinto? No necesitas entenderlo todo para aprender mucho.</p>
+
+<h3>Contribuir en GitHub</h3>
+<p>Contribuir a un proyecto de código abierto es la mejor práctica de trabajo en equipo que existe, y lo que aprendiste en el capítulo 10 es exactamente el proceso:</p>
+<ol>
+<li>Busca proyectos con la etiqueta <code>good first issue</code> (en GitHub, <i>Issues</i> → filtrar por esa etiqueta). Son tareas que los mantenedores marcaron como buenas para recién llegados.</li>
+<li>Lee el <code>README.md</code> y el <code>CONTRIBUTING.md</code> del proyecto: cuentan cómo prefieren trabajar.</li>
+<li>Comenta en el issue que te gustaría trabajar en él, antes de empezar.</li>
+<li>Haz un <i>fork</i>, clónalo, crea una rama, haz commits pequeños con buenos mensajes y abre el Pull Request: <code>gh repo fork dueño/proyecto --clone</code>, <code>git switch -c arreglo-tal</code>, …, <code>gh pr create</code>.</li>
+<li>Responde a la revisión con amabilidad y paciencia. Que te pidan cambios es normal, no un rechazo.</li>
+</ol>
+<p>Las primeras contribuciones no tienen que ser código: corregir una falta en la documentación o traducir un texto al español también cuenta, y te enseña el proceso completo sin presión.</p>
+<div class="caja concepto"><b>Lo que te llevas</b> Al empezar el libro no sabías qué era un <code>;</code>. Ahora sabes escribir clases, separar responsabilidades, dibujar una interfaz, usar Git como un profesional y entregar un programa con instalador. Lo que falta no es otro tipo de conocimiento: es más práctica con las mismas ideas.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Los <b>paquetes</b> ordenan las clases en carpetas con nombre. El Totito usa el paquete por defecto por sencillez, pero sus clases no se pueden importar desde otros paquetes; migrarlo es agregar <code>package</code> e <code>import</code> y usar el nombre completo de la clase principal.</li>
+<li><b>JUnit 5</b> automatiza las pruebas: <code>@Test</code>, <code>@BeforeEach</code> y aserciones como <code>assertEquals</code> o <code>assertThrows</code>. En el Totito las pruebas van en <code>test\</code> y se ejecutan con Alt+F6 o al construir.</li>
+<li><b>JavaFX</b> es la alternativa moderna a Swing, con estilos CSS; las ideas de diseño y de arquitectura son las mismas.</li>
+<li><b>JDBC</b> conecta Java con bases de datos: <code>Connection</code>, <code>PreparedStatement</code> (siempre con <code>?</code>) y <code>ResultSet</code>, dentro de <code>try</code>-con-recursos. SQLite es la forma más sencilla de empezar.</li>
+<li><b>Spring Boot</b> convierte tu lógica en un servicio web; <code>Tablero</code> e <code>IA_Minimax</code> funcionaron en la web sin cambiar su código.</li>
+<li><b>Android</b> se programa hoy con Kotlin, que usa las mismas ideas de POO con una sintaxis más corta.</li>
+<li>Para seguir: documentación oficial, práctica constante, leer código ajeno y contribuir en GitHub.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> Cada tema de este capítulo es la pieza que suele faltar en los programas reales:
+<ul>
+<li>Las <b>pruebas automáticas</b> son obligatorias en casi cualquier empresa: muchos equipos no aceptan un Pull Request sin pruebas que cubran el cambio.</li>
+<li>Los <b>paquetes</b> son el primer paso para convertir el kit neón en una librería que todos tus proyectos usen desde su <code>pom.xml</code>, en lugar de copiar archivos.</li>
+<li><b>JDBC con SQLite</b> convierte el inventario del capítulo 68 en un programa que una tienda puede usar de verdad.</li>
+<li>Un <b>servicio con Spring Boot</b> permite que el mismo inventario se consulte desde la caja, desde la bodega y desde el teléfono del dueño.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b><ol>
+<li>Agrega JUnit al Totito (en una rama <code>pruebas</code>) y haz pasar las siete pruebas de <code>PartidaTest</code>. Después cambia a propósito una regla en <code>Partida.jugar</code> (por ejemplo, que no sume las victorias) y observa qué pruebas fallan. Deshaz el cambio con <code>git restore src\Partida.java</code>.</li>
+<li>Escribe <code>TableroTest</code> con una prueba por cada una de las 8 líneas ganadoras de <code>Tablero.verificarGanador</code>. Pista: un ayudante <code>marcar(String... casillas)</code> que reciba <code>"0,0"</code>, <code>"1,1"</code>… te ahorra mucho texto.</li>
+<li>Migra el Totito a los paquetes <code>totito.logica</code> y <code>totito.interfaz</code> en una rama <code>paquetes</code>. Comprueba que corre con F6 y con <code>java -cp out totito.interfaz.TotitoApp</code>.</li>
+<li>Cambia el ejemplo de JDBC para que reciba el nombre a buscar y use <code>WHERE nombre LIKE ?</code> con <code>ps.setString(1, "%" + texto + "%")</code>. Prueba a buscar <code>' OR '1'='1</code> y comprueba que no devuelve nada.</li>
+<li>(Reto) Escribe un <code>CalculadoraTest</code> para la calculadora del capítulo 68 que compruebe <code>0.1+0.2=</code>, <code>7/0=</code> y <code>12x3-6=</code>. Pista: copia el método <code>teclear</code> de <code>PruebaCalculadora</code> como ayudante.</li>
+</ol></div>
+</section>

@@ -1,0 +1,455 @@
+<section class="capitulo" id="cap62">
+<h1><span class="num">Capítulo 62</span>Probar y depurar</h1>
+<p class="entrada">El Totito ya funciona, pero antes de empaquetarlo y regalarlo al mundo tienes que estar seguro de que funciona <i>bien</i>. En este capítulo aprendes a leer los mensajes de error como un mapa, a detener el programa a la mitad para mirar sus variables con el depurador de NetBeans y a probar el juego con una lista ordenada, para que ningún error llegue a manos de quien descargue tu instalador.</p>
+
+<h2>Por qué este capítulo va antes de empaquetar</h2>
+<p>En los capítulos 63 a 67 vas a convertir el Totito en un <code>.jar</code>, luego en una carpeta con <code>Totito.exe</code>, luego en un instalador y por último lo vas a publicar en GitHub. Cada uno de esos pasos <b>copia</b> tu programa tal como está. Si hay un error dentro, el error viaja en el <code>.jar</code>, en el <code>.exe</code> y en el instalador, y le llega a tu primo, a tu profesora y a cualquier persona del mundo que lo descargue. Arreglarlo después significa repetir todo el empaquetado y volver a publicar. Por eso se prueba <b>antes</b>.</p>
+<p>Además, ningún programador escribe código sin errores. La diferencia entre quien empieza y quien tiene experiencia no es que el segundo no se equivoque: es que sabe <b>encontrar</b> el error rápido. Esa habilidad tiene nombre: <b>depurar</b> (en inglés <i>debugging</i>, «quitar bichos»). La palabra viene de la época de las computadoras gigantes, cuando un insecto real metido en un relé hacía fallar la máquina; hoy un «bug» es cualquier error en un programa.</p>
+
+<div class="caja concepto"><b>Probar y depurar no son lo mismo.</b> <b>Probar</b> es usar el programa a propósito para descubrir si algo falla («¿qué pasa si hago clic en una casilla ocupada?»). <b>Depurar</b> es, una vez que sabes que algo falla, averiguar <i>por qué</i> y corregirlo. Primero se prueba; si una prueba falla, se depura.</div>
+
+<h2>Las tres familias de errores</h2>
+<p>Todos los errores que te vas a encontrar en Java caen en una de tres familias. Saber en cuál estás te dice qué herramienta usar.</p>
+<table class="tabla">
+<tr><th>Familia</th><th>Cuándo aparece</th><th>Quién te avisa</th><th>Ejemplo en el Totito</th></tr>
+<tr><td><b>De compilación</b></td><td>Al compilar (Clean and Build, o <code>javac</code>), antes de que el programa arranque</td><td>El compilador, con un mensaje que dice archivo y línea. En NetBeans, un subrayado rojo</td><td>Olvidar un <code>;</code> en <code>Jugador.java</code></td></tr>
+<tr><td><b>De ejecución</b></td><td>Mientras el programa corre: compila bien, pero en algún momento «revienta»</td><td>La máquina virtual de Java (JVM), con una <b>excepción</b> y un <b>stack trace</b></td><td>Pedir la casilla <code>(3, 0)</code>, que no existe</td></tr>
+<tr><td><b>De lógica</b></td><td>El programa corre sin quejarse, pero hace algo distinto de lo que querías</td><td>Nadie. Lo descubres tú al probar</td><td>Que el turno no cambie y la X juegue dos veces seguidas</td></tr>
+</table>
+<p>Los de compilación son los más fáciles: el compilador te dice dónde están. Los de ejecución son intermedios: Java te dice dónde reventó, pero a veces la causa está antes. Los de lógica son los más difíciles, porque nadie te avisa; para ellos existen la lista de pruebas y el depurador.</p>
+
+<h2>Errores de compilación frecuentes</h2>
+<p>Cuando compilas, <code>javac</code> lee tu código como un corrector muy estricto lee un examen. Si algo no cumple las reglas del lenguaje, no genera ningún <code>.class</code> y te da una lista de errores. En NetBeans los ves de tres formas: un subrayado rojo bajo el código, un círculo rojo con una <code>!</code> al lado del número de línea (si pasas el ratón encima, aparece el mensaje) y, al hacer <i>Clean and Build</i>, el texto completo en la ventana <i>Output</i> con un enlace azul que te lleva a la línea.</p>
+<p>Los mensajes de <code>javac</code> salen en inglés aunque tu Windows esté en español (el JDK no trae traducción al español). Todos los ejemplos que siguen son reales: los provoqué a propósito con el JDK 21 y copié la salida tal cual. Todos tienen la misma forma:</p>
+<pre class="salida">Archivo.java:NÚMERO: error: QUÉ PASA
+        la línea con el problema
+        ^   ← el sombrerito señala la columna exacta</pre>
+<p>Regla práctica: <b>arregla siempre el primer error de la lista y vuelve a compilar</b>. Un solo error, como una llave que falta, puede confundir al compilador y producir diez mensajes más que desaparecen solos en cuanto corriges el primero.</p>
+
+<h3>1. Falta un punto y coma</h3>
+<pre class="java">public Jugador(String nombre, char ficha) {
+    this.nombre = nombre
+    this.ficha = ficha;
+}</pre>
+<pre class="salida">Jugador.java:6: error: ';' expected
+        this.nombre = nombre
+                            ^
+1 error</pre>
+<p><i>';' expected</i> significa «esperaba un punto y coma». El <code>;</code> es el punto final de cada instrucción en Java (lo viste en el capítulo 11); sin él, el compilador no sabe dónde termina una orden y empieza la siguiente. Fíjate en que el sombrerito apunta al <b>final</b> de la línea 6: ahí es donde falta. Solución: escribir el <code>;</code>.</p>
+
+<h3>2. Llaves que no cierran</h3>
+<pre class="java">public String getNombre() {
+    return nombre;
+
+}</pre>
+<pre class="salida">Jugador.java:11: error: reached end of file while parsing
+}
+ ^
+1 error</pre>
+<p><i>reached end of file while parsing</i> = «llegué al final del archivo mientras lo leía». Traducción libre: «abriste más llaves <code>{</code> de las que cerraste y se me acabó el archivo esperando las que faltan». Aquí al método <code>getNombre</code> le falta su <code>}</code>, así que la última llave del archivo cierra el método y la clase se queda abierta. El número de línea no te dice dónde falta la llave, solo dónde se dio cuenta el compilador (al final). Para encontrarla, en NetBeans haz clic justo a la derecha de una llave: su pareja se resalta. Y usa <i>Source → Format</i> (Alt+Shift+F): si la sangría queda rara a partir de cierto punto, la llave que falta está ahí.</p>
+
+<h3>3. Tipos que no encajan</h3>
+<pre class="java">int victorias = "3";
+char ficha = "X";</pre>
+<pre class="salida">Prueba.java:3: error: incompatible types: String cannot be converted to int
+        int victorias = "3";
+                        ^
+Prueba.java:4: error: incompatible types: String cannot be converted to char
+        char ficha = "X";
+                     ^
+2 errors</pre>
+<p><i>incompatible types</i> = «tipos incompatibles». Una caja de tipo <code>int</code> solo acepta números enteros; <code>"3"</code> entre comillas dobles es un <code>String</code> (un texto que casualmente tiene un 3). El segundo caso es el más traicionero del Totito: una ficha es un <code>char</code> y se escribe con <b>comillas simples</b>, <code>'X'</code>; con comillas dobles, <code>"X"</code>, es un texto de una letra. Solución: <code>int victorias = 3;</code> y <code>char ficha = 'X';</code> (repasa el capítulo 12).</p>
+
+<h3>4. Símbolo no encontrado</h3>
+<pre class="java">Tablero tablero = new Tablero();
+tablero.marcarcasilla(0, 0, 'X');
+System.out.println(tablro);</pre>
+<pre class="salida">Prueba.java:4: error: cannot find symbol
+        tablero.marcarcasilla(0, 0, 'X');
+               ^
+  symbol:   method marcarcasilla(int,int,char)
+  location: variable tablero of type Tablero
+Prueba.java:5: error: cannot find symbol
+        System.out.println(tablro);
+                           ^
+  symbol:   variable tablro
+  location: class Prueba
+2 errors</pre>
+<p><i>cannot find symbol</i> = «no encuentro ese nombre». Es el error más común de todos. Un <b>símbolo</b> es cualquier nombre que tú inventaste: una variable, un método, una clase. Las dos líneas de abajo son oro: <code>symbol</code> dice qué nombre buscó y <code>location</code> dónde lo buscó. En el primer caso buscó un método <code>marcarcasilla</code> con tres parámetros <code>(int,int,char)</code> dentro de la clase <code>Tablero</code> y no lo hay: el método real es <code>marcarCasilla</code>, con <b>C mayúscula</b>. En el segundo buscó una variable <code>tablro</code>: falta una <code>e</code>. Las causas típicas son cuatro: una letra mal escrita, una mayúscula distinta, un <code>import</code> que falta (por ejemplo usar <code>JButton</code> sin <code>import javax.swing.JButton;</code>) o usar una variable fuera de las llaves donde se declaró (el alcance, capítulo 16).</p>
+
+<h3>5. Las mayúsculas importan</h3>
+<pre class="java">string nombre = "Ana";
+system.out.println(nombre);</pre>
+<pre class="salida">Prueba.java:3: error: cannot find symbol
+        string nombre = "Ana";
+        ^
+  symbol:   class string
+  location: class Prueba
+Prueba.java:4: error: package system does not exist
+        system.out.println(nombre);
+              ^
+2 errors</pre>
+<p>Java distingue mayúsculas de minúsculas: <code>String</code> y <code>string</code> son dos nombres distintos, y solo el primero existe. Lo mismo con <code>System</code>. El segundo mensaje es curioso: como <code>system</code> con minúscula no es ninguna clase conocida, Java supone que quizá es un <b>paquete</b> (una carpeta de clases) y dice «el paquete system no existe». Moraleja: cuando un mensaje te parezca absurdo, revisa primero las mayúsculas. La convención (capítulo 27) ayuda: las clases empiezan con mayúscula (<code>Tablero</code>), las variables y métodos con minúscula (<code>tablero</code>, <code>marcarCasilla</code>).</p>
+
+<h3>6. El nombre del archivo no coincide con la clase</h3>
+<pre class="salida">Jugadores.java:1: error: class Jugador is public, should be declared in a file named Jugador.java
+public class Jugador {
+       ^
+1 error</pre>
+<p>Una clase <code>public</code> debe vivir en un archivo con su mismo nombre exacto, mayúsculas incluidas. Pasa cuando renombras un archivo en el Explorador de Windows sin renombrar la clase, o al revés. En NetBeans, para cambiar el nombre de una clase usa siempre <i>clic derecho → Refactor → Rename…</i> (Ctrl+R): cambia la clase, el archivo y todos los lugares que la usan a la vez.</p>
+
+<h3>7. Falta un return</h3>
+<pre class="java">static boolean esX(char ficha) {
+    if (ficha == 'X') {
+        return true;
+    }
+}</pre>
+<pre class="salida">Prueba.java:6: error: missing return statement
+    }
+    ^
+1 error</pre>
+<p>El método promete devolver un <code>boolean</code>, pero si la ficha <b>no</b> es <code>'X'</code> el código llega al final sin devolver nada. Java revisa todos los caminos posibles y se niega a compilar si alguno se queda sin respuesta. Solución: añadir <code>return false;</code> antes de la última llave.</p>
+
+<div class="caja consejo"><b>Busca el mensaje, no lo memorices.</b> No necesitas aprenderte estos textos. Cuando veas uno nuevo, copia la parte genérica (por ejemplo <code>missing return statement</code>, sin tus nombres de variables) y búscala en internet: casi seguro alguien tuvo el mismo problema. El apéndice D reúne los más comunes con su solución.</div>
+
+<h2>Leer un stack trace</h2>
+<p>Cuando un programa revienta mientras corre, Java lanza una <b>excepción</b> (un objeto que describe el problema, capítulo 26). Si nadie la atrapa con <code>try/catch</code>, la JVM detiene ese hilo e imprime un <b>stack trace</b> («rastro de la pila»): la lista de métodos que estaban en marcha en ese instante, del más reciente al más antiguo. Recuerda la pila de llamadas del capítulo 16: cada vez que un método llama a otro, el nuevo se apila encima. El stack trace es una foto de esa pila en el momento del accidente.</p>
+
+<h3>Provoca uno a propósito</h3>
+<p>La mejor manera de perderle el miedo es fabricar uno. Vas a crear un programita de usar y tirar en la carpeta <code>herramientas</code>, igual que <code>PruebaConsola</code> en el capítulo 32. Primero compila el proyecto en NetBeans (<i>Run → Clean and Build Project</i>, Shift+F11) para que exista <code>target\classes</code>. Luego, en PowerShell, desde la carpeta del proyecto:</p>
+<pre class="ps">cd $HOME\Proyectos\Totito
+New-Item herramientas\ProvocarError.java
+notepad herramientas\ProvocarError.java</pre>
+<p>Escribe esto en el Bloc de notas y guarda (Ctrl+S):</p>
+<pre class="java">public class ProvocarError {
+    public static void main(String[] args) {
+        Tablero tablero = new Tablero();
+        tablero.marcarCasilla(1, 1, 'X');
+        System.out.println("Centro: " + tablero.obtenerCasilla(1, 1));
+        System.out.println("Fuera: " + tablero.obtenerCasilla(3, 0));
+    }
+}</pre>
+<p>La línea 6 pide la casilla de la fila 3, que no existe: las filas válidas son 0, 1 y 2. Ejecútalo:</p>
+<pre class="ps">java -cp target\classes herramientas\ProvocarError.java</pre>
+<p>Esta es la salida real:</p>
+<pre class="salida">Centro: X
+Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3
+	at Tablero.obtenerCasilla(Tablero.java:44)
+	at ProvocarError.main(ProvocarError.java:6)</pre>
+
+<h3>Cómo se lee, renglón por renglón</h3>
+<ol>
+<li><code>Centro: X</code> — la línea 5 funcionó. Eso ya te dice algo: el error es <b>después</b>.</li>
+<li><code>Exception in thread "main"</code> — «excepción en el hilo main». Un <b>hilo</b> es una línea de ejecución; <code>main</code> es el que arranca con tu método <code>main</code>. En un programa Swing verás a menudo <code>"AWT-EventQueue-0"</code>, que es el hilo de eventos de la interfaz (el EDT del capítulo 37).</li>
+<li><code>java.lang.ArrayIndexOutOfBoundsException</code> — el <b>tipo</b> de excepción. Su nombre ya explica casi todo: «índice de arreglo fuera de los límites».</li>
+<li><code>Index 3 out of bounds for length 3</code> — el <b>mensaje</b>: pediste el índice 3 de un arreglo de largo 3 (índices válidos: 0, 1, 2).</li>
+<li><code>at Tablero.obtenerCasilla(Tablero.java:44)</code> — la primera línea <code>at</code> es <b>donde reventó</b>: en el método <code>obtenerCasilla</code> de la clase <code>Tablero</code>, archivo <code>Tablero.java</code>, línea 44 (<code>return casillas[fila][columna];</code>).</li>
+<li><code>at ProvocarError.main(ProvocarError.java:6)</code> — quién llamó a ese método: <code>main</code>, en la línea 6. Si hubiera más niveles, seguirían hacia abajo hasta llegar al primer método que se ejecutó.</li>
+</ol>
+<div class="caja concepto"><b>Dónde revienta no siempre es dónde está la culpa.</b> El stack trace dice que el fallo ocurrió en <code>Tablero.java:44</code>, pero esa línea está bien: hace exactamente lo que debe. La culpa es de quien le pasó un 3. Por eso se lee el stack trace de arriba hacia abajo buscando la <b>primera línea que sea código tuyo y sospechoso</b>. Las líneas que empiezan con <code>java.</code>, <code>javax.</code> o <code>java.desktop/</code> son de la biblioteca de Java: casi nunca son el problema, se saltan.</div>
+<p>En NetBeans no hace falta buscar la línea a mano: en la ventana <i>Output</i>, cada <code>(Archivo.java:NN)</code> sale como enlace azul; un clic y el editor salta a esa línea.</p>
+
+<h3>NullPointerException: el clásico</h3>
+<p>Cambia el contenido de <code>ProvocarError.java</code> por este (la clase se llama igual para no crear otro archivo):</p>
+<pre class="java">public class ProvocarError {
+    public static void main(String[] args) {
+        Jugador ana = new Jugador("Ana", 'X');
+        Jugador nadie = null;
+        Partida partida = new Partida(ana, nadie, Partida.Modo.DOS_JUGADORES);
+        System.out.println(partida.getEstado());
+    }
+}</pre>
+<pre class="salida">Exception in thread "main" java.lang.NullPointerException: Cannot invoke "Jugador.getFicha()" because "jugador2" is null
+	at Partida.&lt;init&gt;(Partida.java:44)
+	at ProvocarError.main(ProvocarError.java:5)</pre>
+<p><code>null</code> significa «esta variable no apunta a ningún objeto» (capítulo 18). Si intentas llamar a un método sobre <code>null</code>, Java no tiene a quién pedírselo y lanza <code>NullPointerException</code> (NPE). Desde Java 14 el mensaje es muy claro: «no puedo invocar <code>Jugador.getFicha()</code> porque <code>jugador2</code> es null». El <code>&lt;init&gt;</code> es el nombre interno que Java da a un <b>constructor</b>: reventó en el constructor de <code>Partida</code>, línea 44, la que compara las fichas de los dos jugadores. La causa real está en <code>ProvocarError</code>, línea 5, que le pasó un jugador vacío.</p>
+<p>Las NPE más frecuentes en un programa Swing: usar un componente antes de crearlo con <code>new</code>, olvidar asignar un campo en el constructor, o un método que devuelve <code>null</code> y nadie lo revisa (como <code>Partida.getGanador()</code>, que devuelve <code>null</code> si hubo empate: por eso <code>PantallaResultado</code> pregunta el estado antes de pedir el nombre del ganador).</p>
+
+<h3>Una excepción que lanzaste tú</h3>
+<p>Ahora prueba a crear dos jugadores con la misma ficha:</p>
+<pre class="java">Partida partida = new Partida(new Jugador("Ana", 'X'), new Jugador("Luis", 'X'),
+        Partida.Modo.DOS_JUGADORES);</pre>
+<pre class="salida">Exception in thread "main" java.lang.IllegalArgumentException: Los dos jugadores no pueden usar la misma ficha
+	at Partida.&lt;init&gt;(Partida.java:45)
+	at ProvocarError.main(ProvocarError.java:3)</pre>
+<p>Este error lo escribiste tú en el capítulo 38: la línea 45 de <code>Partida</code> dice <code>throw new IllegalArgumentException(...)</code>. Es un error <b>bueno</b>: en vez de dejar que el juego siga en un estado absurdo (dos X), el programa se niega a continuar y dice exactamente por qué, en español. Esa es la idea de proteger los <b>invariantes</b> (capítulo 19): fallar pronto y con un mensaje claro.</p>
+
+<h3>Un stack trace largo: HeadlessException</h3>
+<p>No todos los stack traces son de dos líneas. Este lo obtuve ejecutando el Totito en un servidor sin pantalla (un equipo al que se entra solo por terminal):</p>
+<pre class="salida">Exception in thread "AWT-EventQueue-0" java.awt.HeadlessException:
+No X11 DISPLAY variable was set,
+or no headful library support was found,
+but this program performed an operation which requires it.
+	at java.desktop/java.awt.GraphicsEnvironment.checkHeadless(GraphicsEnvironment.java:164)
+	at java.desktop/java.awt.Window.&lt;init&gt;(Window.java:553)
+	at java.desktop/java.awt.Frame.&lt;init&gt;(Frame.java:428)
+	at java.desktop/javax.swing.JFrame.&lt;init&gt;(JFrame.java:224)
+	at TotitoApp.&lt;init&gt;(TotitoApp.java:18)
+	at TotitoApp.lambda$main$0(TotitoApp.java:46)
+	at java.desktop/java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:318)
+	at java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:773)
+	... (siguen 12 líneas más de java.desktop y java.base)</pre>
+<p>Aplica el método: salta las líneas de <code>java.desktop/</code> y busca la primera tuya. Es <code>TotitoApp.&lt;init&gt;(TotitoApp.java:18)</code>: el constructor de <code>TotitoApp</code>, en la línea <code>super("Juego del Totito");</code>, que crea la ventana. La siguiente, <code>TotitoApp.lambda$main$0</code>, es la lambda <code>() -&gt; new TotitoApp().setVisible(true)</code> de la línea 46 (Java le pone ese nombre interno a las lambdas: «la lambda número 0 dentro de main»). Y el hilo es <code>AWT-EventQueue-0</code> porque <code>SwingUtilities.invokeLater</code> mandó crear la ventana en el hilo de eventos. Moraleja: <code>HeadlessException</code> significa «quisiste abrir una ventana en un equipo sin pantalla». En tu Windows no la verás, salvo que ejecutes el juego con la opción <code>-Djava.awt.headless=true</code>, en una sesión remota rara o en un servidor.</p>
+<div class="caja concepto"><b>«Caused by»</b>. A veces verás un stack trace con una o más secciones que empiezan con <code>Caused by:</code> («causado por»). Ocurre cuando una excepción se envuelve dentro de otra. La causa original es la <b>última</b> sección <code>Caused by</code>; empieza a leer por ahí. Lo verás, por ejemplo, con <code>java -cp out totitoapp</code>: «<code>Error: Could not find or load main class totitoapp</code>» y debajo «<code>Caused by: java.lang.ClassNotFoundException: totitoapp</code>» (la clase se llama <code>TotitoApp</code>, con mayúsculas).</div>
+<p>Cuando termines de experimentar, borra el archivo para que no quede en el proyecto:</p>
+<pre class="ps">Remove-Item herramientas\ProvocarError.java</pre>
+
+<h2>Errores de ejecución frecuentes</h2>
+<table class="tabla">
+<tr><th>Excepción</th><th>Qué significa</th><th>Causa típica</th><th>Cómo se arregla</th></tr>
+<tr><td><code>NullPointerException</code></td><td>Usaste una variable que vale <code>null</code></td><td>Campo sin inicializar; método que devuelve <code>null</code></td><td>Crear el objeto antes de usarlo, o preguntar <code>if (x != null)</code></td></tr>
+<tr><td><code>ArrayIndexOutOfBoundsException</code></td><td>Índice fuera del arreglo</td><td>Usar 3 en un arreglo de 3; un <code>for</code> con <code>&lt;=</code> en vez de <code>&lt;</code></td><td>Recordar que los índices van de 0 a largo−1</td></tr>
+<tr><td><code>StringIndexOutOfBoundsException</code></td><td>Lo mismo, pero en un <code>String</code></td><td><code>texto.charAt(5)</code> en un texto de 3 letras</td><td>Revisar <code>length()</code> antes</td></tr>
+<tr><td><code>NumberFormatException</code></td><td>El texto no es un número</td><td><code>Integer.parseInt("dos")</code></td><td>Validar lo que escribe el usuario o usar <code>try/catch</code></td></tr>
+<tr><td><code>IllegalArgumentException</code></td><td>Un método recibió un valor que no acepta</td><td>Dos jugadores con la misma ficha</td><td>Leer el mensaje: lo escribió quien programó el método</td></tr>
+<tr><td><code>ClassCastException</code></td><td>Conversión de tipo imposible</td><td>Convertir un <code>JLabel</code> en <code>JButton</code> con <code>(JButton)</code></td><td>Comprobar con <code>instanceof</code> antes</td></tr>
+<tr><td><code>StackOverflowError</code></td><td>La pila de llamadas se llenó</td><td>Recursión sin caso base (cuidado con Minimax, capítulo 31)</td><td>Asegurar que la recursión siempre termina</td></tr>
+<tr><td><code>HeadlessException</code></td><td>Se quiso abrir una ventana sin pantalla</td><td>Servidor, modo <code>headless</code></td><td>Ejecutar en un equipo con escritorio</td></tr>
+<tr><td><code>UnsupportedClassVersionError</code></td><td>El Java instalado es más viejo que el que compiló</td><td>Ejecutar el <code>.jar</code> con Java 8 (capítulo 63)</td><td>Instalar Java 17 o más nuevo, o usar jpackage (capítulo 65)</td></tr>
+</table>
+<div class="caja cuidado"><b>El silencio de Swing.</b> Si una excepción ocurre en el hilo de eventos (por ejemplo dentro del <code>actionPerformed</code> de un botón), la ventana del Totito <b>no se cierra</b>: simplemente ese clic «no hace nada». El stack trace sí se imprime, pero en la ventana <i>Output</i> de NetBeans o en la consola. Si un botón no responde, lo primero es mirar la salida. Y cuando el juego se ejecute como <code>Totito.exe</code> (capítulo 65) no habrá consola: por eso conviene descubrir estos errores <b>ahora</b>, en NetBeans.</div>
+
+<h2>Depurar con System.out.println</h2>
+<p>La técnica más antigua y sencilla: escribir en la consola qué está pasando. Por ejemplo, para ver cada jugada, añade temporalmente una línea al principio de <code>Partida.jugar</code>:</p>
+<pre class="java">public boolean jugar(int fila, int columna) {
+    System.out.println("jugar(" + fila + ", " + columna + ") turno=" + turno + " estado=" + estado);
+    if (estado != Estado.EN_CURSO) {
+        ...</pre>
+<p>Ejecuta con F6, juega una partida y mira la ventana <i>Output</i>:</p>
+<pre class="salida">jugar(1, 1) turno=0 estado=EN_CURSO
+jugar(0, 0) turno=1 estado=EN_CURSO
+jugar(0, 1) turno=0 estado=EN_CURSO
+...</pre>
+<p>Cada clic deja un rastro. Si un día ves dos líneas seguidas con <code>turno=0</code>, ya sabes que el turno no cambió.</p>
+<table class="tabla">
+<tr><th>Ventajas del println</th><th>Desventajas</th></tr>
+<tr><td>No hay que aprender nada nuevo</td><td>Hay que recompilar cada vez que quieres mirar otra variable</td></tr>
+<tr><td>Muestra la historia completa (todas las jugadas)</td><td>Es fácil olvidar uno y que llegue al programa publicado</td></tr>
+<tr><td>Funciona en cualquier sitio, incluso sin NetBeans</td><td>Con mucho texto, la salida se vuelve ilegible</td></tr>
+</table>
+<div class="caja consejo"><b>Marca tus println temporales.</b> Empiézalos siempre igual, por ejemplo <code>System.out.println("DEPURAR " + ...)</code>. Antes de hacer commit, busca «DEPURAR» en todo el proyecto (en NetBeans, <i>Edit → Find in Projects…</i>, Ctrl+Shift+F) y bórralos. Y antes de un commit, <code>git diff</code> (capítulo 9) te muestra cualquier línea que se te haya quedado. Si quieres que el mensaje salga en rojo en NetBeans, usa <code>System.err.println</code>: es la salida de errores.</div>
+
+<h2>El depurador de NetBeans</h2>
+<p>El <b>depurador</b> (<i>debugger</i>) es una herramienta que ejecuta tu programa bajo vigilancia: puedes <b>congelarlo</b> en una línea, mirar el valor de todas las variables en ese instante, avanzar <b>una línea a la vez</b> y ver cómo cambian. Es como ver una jugada de fútbol en cámara lenta, cuadro por cuadro, con los nombres de los jugadores sobre la cabeza. Con println adivinas qué mirar antes de ejecutar; con el depurador decides qué mirar <i>mientras</i> el programa está detenido.</p>
+
+<h3>Vocabulario mínimo</h3>
+<table class="tabla">
+<tr><th>Término</th><th>Qué es</th></tr>
+<tr><td><b>Punto de interrupción</b> (<i>breakpoint</i>)</td><td>Una marca en una línea que dice: «cuando llegues aquí, detente <b>antes</b> de ejecutarla»</td></tr>
+<tr><td><b>Pausa</b></td><td>El estado del programa detenido: existe, tiene sus variables, pero no avanza</td></tr>
+<tr><td><b>Paso</b> (<i>step</i>)</td><td>Ejecutar una sola línea y volver a detenerse</td></tr>
+<tr><td><b>Vigilancia</b> (<i>watch</i>)</td><td>Una expresión que quieres ver siempre, como <code>jugadores[turno].getNombre()</code></td></tr>
+<tr><td><b>Pila de llamadas</b> (<i>call stack</i>)</td><td>Lo mismo que el stack trace, pero en vivo: qué métodos te trajeron hasta aquí</td></tr>
+</table>
+
+<h3>Paso 1: poner un punto de interrupción en Partida.jugar</h3>
+<ol>
+<li>En NetBeans, abre <code>Partida.java</code> (<i>Source Packages → &lt;default package&gt;</i>, doble clic).</li>
+<li>Busca el método <code>jugar</code>. Su primera línea de código es la 67: <code>if (estado != Estado.EN_CURSO) {</code>.</li>
+<li>Haz <b>un clic sobre el número 67</b> en el margen izquierdo. Aparece un cuadrado rojo-rosado en lugar del número y toda la línea se tiñe de ese color. Eso es el punto de interrupción. (También puedes poner el cursor en la línea y pulsar <b>Ctrl+F8</b>, <i>Toggle Line Breakpoint</i>.)</li>
+<li>Para quitarlo, otro clic en el mismo sitio.</li>
+</ol>
+<div class="caja consejo"><b>Pon el punto en una línea con código.</b> Si lo pones en una línea en blanco, en un comentario o en la línea de la firma del método, NetBeans puede moverlo a la siguiente línea ejecutable o mostrarlo como inválido (con un aspecto distinto, roto). La primera línea dentro del método es siempre una apuesta segura.</div>
+
+<h3>Paso 2: ejecutar en modo depuración</h3>
+<p>Ejecutar con F6 (Run) <b>ignora</b> los puntos de interrupción. Para que cuenten, hay que arrancar con el depurador: menú <i>Debug → Debug Project</i>, o <b>Ctrl+F5</b>, o el botón <i>Debug Project</i> de la barra de herramientas, justo a la derecha del triángulo verde de Run. NetBeans compila, arranca el juego conectado al depurador (verás en <i>Output</i> líneas sobre Maven y un mensaje de que el depurador se conectó) y la ventana del Totito aparece normal.</p>
+<p>Juega: <i>Jugar</i> → escribe dos nombres → modo <i>2 jugadores</i> → empieza la partida. Haz clic en la casilla del centro.</p>
+
+<h3>Paso 3: el programa se detiene</h3>
+<p>En cuanto haces el clic, NetBeans salta al frente y la línea 67 aparece resaltada en <b>verde</b> con una flecha en el margen. Eso significa: «estoy detenido <b>justo antes</b> de ejecutar esta línea». La ventana del Totito se queda congelada; si la tocas, puede que Windows la marque como «No responde». No te asustes, es lo esperado: el depurador detuvo el hilo de eventos, que es el mismo hilo que se encarga de redibujar la ventana (capítulo 37). Mientras esté en pausa, nadie la pinta.</p>
+
+<h3>Paso 4: mirar las variables</h3>
+<p>Abajo aparece la ventana <b>Variables</b> (si no la ves: <i>Window → Debugging → Variables</i>, Alt+Shift+1). Verás algo así:</p>
+<table class="tabla">
+<tr><th>Name</th><th>Type</th><th>Value</th></tr>
+<tr><td><code>this</code></td><td><code>Partida</code></td><td><code>#1234</code> (un número de identificación del objeto)</td></tr>
+<tr><td><code>fila</code></td><td><code>int</code></td><td><code>1</code></td></tr>
+<tr><td><code>columna</code></td><td><code>int</code></td><td><code>1</code></td></tr>
+</table>
+<p><code>fila</code> y <code>columna</code> son los <b>parámetros</b> que recibió <code>jugar</code>: el clic fue en el centro, (1, 1). Haz clic en el triangulito junto a <code>this</code> para abrir el objeto <code>Partida</code> por dentro: verás sus campos <code>tablero</code>, <code>jugadores</code>, <code>modo</code>, <code>ia</code> (que vale <code>null</code> porque estás en modo 2 jugadores, ¡justo como dice la línea 49!), <code>victorias</code>, <code>empates</code>, <code>turno</code> (0), <code>estado</code> (<code>EN_CURSO</code>) y <code>ganador</code> (<code>null</code>). Puedes seguir abriendo: <code>tablero → casillas</code> muestra la matriz de 3×3 con sus <code>' '</code>. Es tu programa visto por dentro, como una radiografía.</p>
+<p>Truco rápido: pasa el ratón por encima de cualquier variable en el editor (por ejemplo sobre <code>turno</code> en la línea 70) y un globo te muestra su valor.</p>
+
+<h3>Paso 5: avanzar línea por línea</h3>
+<table class="tabla">
+<tr><th>Acción</th><th>Tecla</th><th>Qué hace</th></tr>
+<tr><td><b>Step Over</b> (pasar por encima)</td><td>F8</td><td>Ejecuta la línea verde completa y se detiene en la siguiente. Si la línea llama a un método, lo ejecuta entero sin entrar</td></tr>
+<tr><td><b>Step Into</b> (entrar)</td><td>F7</td><td>Si la línea llama a un método tuyo, entra en él y se detiene en su primera línea</td></tr>
+<tr><td><b>Step Out</b> (salir)</td><td>Ctrl+F7</td><td>Termina el método actual y se detiene en quien lo llamó</td></tr>
+<tr><td><b>Run to Cursor</b></td><td>F4</td><td>Avanza hasta la línea donde está el cursor</td></tr>
+<tr><td><b>Continue</b> (continuar)</td><td>F5</td><td>Sigue normal hasta el próximo punto de interrupción</td></tr>
+<tr><td><b>Finish Debugger Session</b></td><td>Shift+F5</td><td>Detiene el programa y el depurador</td></tr>
+</table>
+<p>Pruébalo así, mirando la ventana Variables en cada paso:</p>
+<ol>
+<li>Pulsa <b>F8</b>. Como <code>estado</code> es <code>EN_CURSO</code>, la condición de la línea 67 es falsa y la flecha salta a la línea 70, sin pasar por el <code>return false</code>.</li>
+<li>En la línea 70 pulsa <b>F7</b> (Step Into). Entras en <code>Tablero.marcarCasilla</code>: el editor abre <code>Tablero.java</code>. Fíjate en que ahora las variables son otras: <code>fila</code>, <code>columna</code> y <code>ficha</code> (<code>'X'</code>), las de <b>este</b> método.</li>
+<li>Pulsa <b>F8</b> varias veces y observa: pasa la validación de rango, la de casilla ocupada, y en la línea <code>casillas[fila][columna] = ficha;</code>, tras un F8 más, la casilla del centro cambia de <code>' '</code> a <code>'X'</code> (NetBeans resalta los valores que acaban de cambiar).</li>
+<li>Pulsa <b>Ctrl+F7</b> (Step Out) para volver a <code>Partida.jugar</code>.</li>
+<li>Sigue con F8: verás que no hay ganador (línea 73), que el tablero no está lleno (77) y que entra al <code>else</code> de la línea 81. Después de ejecutar <code>turno = 1 - turno;</code>, <code>turno</code> pasa de 0 a 1. Acabas de <b>ver</b> cambiar el turno.</li>
+<li>Pulsa <b>F5</b> (Continue): la ventana del Totito despierta, se redibuja con la X en el centro y espera el siguiente clic. Al hacer clic otra vez, se detendrá de nuevo en la línea 67.</li>
+</ol>
+
+<h3>Paso 6: vigilancias (Watches)</h3>
+<p>La ventana Variables solo muestra variables. Una <b>vigilancia</b> muestra el resultado de cualquier expresión. Con el programa detenido, menú <i>Debug → New Watch…</i> (Ctrl+Shift+F7) y escribe:</p>
+<pre class="java">jugadores[turno].getNombre()</pre>
+<p>Acepta. En la ventana <i>Watches</i> (<i>Window → Debugging → Watches</i>) verás el nombre del jugador al que le toca. Añade otra con <code>tablero.verificarGanador()</code> y otra con <code>victorias[0] + " a " + victorias[1]</code>. Cada vez que el programa se detiene, las vigilancias se recalculan solas. Para una consulta de una sola vez, sin dejarla fija, usa <i>Debug → Evaluate Expression…</i> (Ctrl+F9).</p>
+<div class="caja cuidado"><b>Las vigilancias también ejecutan código.</b> Si escribes una vigilancia que cambia algo (por ejemplo <code>tablero.marcarCasilla(0, 0, 'O')</code>), el depurador la ejecuta de verdad y modifica la partida. Usa solo expresiones que <b>pregunten</b>, nunca que <b>cambien</b>.</div>
+
+<h3>Paso 7: la pila de llamadas en vivo</h3>
+<p>Abre <i>Window → Debugging → Call Stack</i>. Estando detenido en <code>Partida.jugar</code> verás, de arriba abajo: <code>Partida.jugar:67</code>, luego <code>PantallaJuego.alPulsarCasilla:67</code> (la pantalla que recibió el clic), luego <code>PanelTablero$1.mousePressed:64</code> (el <code>MouseAdapter</code> anónimo del capítulo 48, por eso lleva <code>$1</code>), y debajo muchas líneas de <code>java.awt</code> y <code>javax.swing</code>: el recorrido del clic desde el ratón hasta tu método. Puede que veas además alguna línea con un nombre raro que contiene <code>Lambda</code>: es el puente invisible que Java crea para la referencia a método <code>this::alPulsarCasilla</code> (capítulo 25). Doble clic en cualquier línea de la pila y el editor te lleva ahí, con las variables de ese nivel.</p>
+<p>Si juegas contra la IA verás que el punto de interrupción también se activa sin que hagas clic: la llamada viene de <code>Partida.jugarTurnoIA</code>, que llamó un <code>Timer</code> de <code>PantallaJuego</code>. La pila te cuenta esa historia sin que tengas que leer todo el código.</p>
+
+<h3>Paso 8: puntos de interrupción condicionales</h3>
+<p>Detenerse en <b>cada</b> jugada puede cansar. Haz clic derecho sobre el cuadrado rojo de la línea 67 → <i>Breakpoint → Properties</i>. Marca <i>Condition</i> y escribe:</p>
+<pre class="java">fila == 2 &amp;&amp; columna == 2</pre>
+<p>Ahora el programa solo se detendrá cuando alguien juegue en la esquina inferior derecha. Otros ejemplos útiles: <code>turno == 1</code> (solo en el turno del segundo jugador) o <code>empates &gt; 0</code>. La ventana <i>Window → Debugging → Breakpoints</i> (Alt+Shift+5) lista todos tus puntos para activarlos, desactivarlos o borrarlos. Cuando termines, bórralos: no hacen daño fuera del modo depuración, pero estorban.</p>
+
+<h3>Ejercicio guiado: caza un error de lógica</h3>
+<p>Vas a sembrar un error a propósito y a encontrarlo con el depurador, como si no supieras dónde está.</p>
+<ol>
+<li>En <code>Partida.java</code>, línea 81, cambia <code>turno = 1 - turno;</code> por <code>turno = 1;</code> y guarda.</li>
+<li>Ejecuta con F6 en modo 2 jugadores. Primera jugada: X. Segunda: O. Tercera: ¡otra vez O! Y para siempre O. Es un error de lógica: nada revienta.</li>
+<li>Pon el punto de interrupción en la línea 67, ejecuta con Ctrl+F5 y añade la vigilancia <code>turno</code>. Juega tres veces avanzando con F8 y fíjate en qué línea <code>turno</code> deja de alternar. La encontrarás en la línea 81.</li>
+<li>Deshaz el error con Git, que para eso está (capítulo 9):</li>
+</ol>
+<pre class="ps">git restore src\Partida.java</pre>
+<div class="caja consejo"><b>La técnica en una frase.</b> Para depurar un error de lógica: (1) descríbelo con precisión («a la tercera jugada sale O en vez de X»); (2) elige el método donde se decide esa cosa; (3) detente ahí; (4) avanza con F8 comparando lo que <b>esperabas</b> con lo que <b>ves</b>. La primera línea donde no coinciden es el error.</div>
+
+<h2>La lista de pruebas manuales del Totito</h2>
+<p>Una <b>prueba manual</b> es una acción concreta con un resultado esperado, que ejecuta una persona. Se escriben en una lista para no depender de la memoria: así cada versión se prueba igual. Imprime esta tabla (o cópiala a un archivo) y repásala completa antes de cada versión que publiques. Marca cada fila con ✔ o ✘.</p>
+<table class="tabla">
+<tr><th>#</th><th>Acción</th><th>Resultado esperado</th></tr>
+<tr><td>1</td><td>Abrir el juego</td><td>Ventana de 640×690 centrada, título «Juego del Totito», icono en la barra de tareas, menú con fondo degradado</td></tr>
+<tr><td>2</td><td>Intentar agrandar la ventana desde el borde</td><td>No cambia de tamaño (<code>setResizable(false)</code>)</td></tr>
+<tr><td>3</td><td>Menú → Instrucciones → volver</td><td>Se ven los pasos y se regresa al menú</td></tr>
+<tr><td>4</td><td>Jugar con los nombres vacíos</td><td>Aparecen «Jugador 1» y «Jugador 2»</td></tr>
+<tr><td>5</td><td>Escribir un nombre de más de 14 letras</td><td>La caja no acepta más de 14</td></tr>
+<tr><td>6</td><td>Nombres con tildes y eñe: «Iñaki Pérez»</td><td>Se ven bien en configuración, partida y resultado</td></tr>
+<tr><td>7</td><td>2 jugadores, Jugador 1 con X</td><td>Empieza el Jugador 1 (siempre empieza la X)</td></tr>
+<tr><td>8</td><td>2 jugadores, Jugador 1 con O</td><td>Empieza el Jugador 2, que tiene la X</td></tr>
+<tr><td>9</td><td>Clic en una casilla ocupada</td><td>No pasa nada; el turno no cambia</td></tr>
+<tr><td>10</td><td>Ganar con una fila, una columna y cada diagonal (4 partidas)</td><td>Raya sobre las tres fichas y, tras una pausa, pantalla de victoria con el nombre correcto</td></tr>
+<tr><td>11</td><td>Llenar el tablero sin ganador</td><td>Pantalla de empate</td></tr>
+<tr><td>12</td><td>Jugar de nuevo tres veces</td><td>Mismos jugadores; el marcador suma bien victorias y empates</td></tr>
+<tr><td>13</td><td>Menú principal desde el resultado y volver a jugar</td><td>Marcador en cero</td></tr>
+<tr><td>14</td><td>Contra la IA con X</td><td>Empiezas tú; la IA responde tras una pausa breve</td></tr>
+<tr><td>15</td><td>Contra la IA con O</td><td>La IA abre la partida</td></tr>
+<tr><td>16</td><td>Hacer muchos clics rápidos mientras la IA «piensa»</td><td>Se ignoran; nunca juegas dos veces seguidas</td></tr>
+<tr><td>17</td><td>Jugar 5 partidas contra la IA intentando ganar</td><td>La IA nunca pierde (gana o empata)</td></tr>
+<tr><td>18</td><td>Botón de cerrar del encabezado</td><td>El programa termina (no queda en el Administrador de tareas)</td></tr>
+<tr><td>19</td><td>Pasar el ratón por botones y casillas</td><td>Efecto de resaltado; manita solo en casillas vacías</td></tr>
+<tr><td>20</td><td>Repetir 1–19 con el <code>.jar</code>, luego con <code>Totito.exe</code> y luego con el programa instalado</td><td>Todo igual que en NetBeans (capítulos 63, 65 y 66)</td></tr>
+</table>
+<p>La prueba 20 es importante: un programa puede funcionar en NetBeans y fallar empaquetado (por ejemplo, si falta un módulo de Java o las tildes se ven mal por una codificación distinta). Probar cada paquete es parte del trabajo.</p>
+<div class="caja consejo"><b>Prueba los bordes.</b> Los errores se esconden en los extremos: el primer turno y el último, la casilla 0 y la 2, el nombre vacío y el de 14 letras, la primera partida y la décima. Una buena lista de pruebas siempre tiene casos «raros» a propósito: es lo que hará alguien que no conoce el programa.</div>
+
+<h2>Una probadita de pruebas automáticas</h2>
+<p>La lista de 20 pruebas lleva unos 15 minutos. Si cada vez que cambias algo tuvieras que repetirla entera, dejarías de hacerlo. Por eso existen las <b>pruebas automáticas</b>: pequeños programas que usan tu código y comprueban, solos y en segundos, que el resultado sea el esperado. Las reglas del Totito están en <code>Partida</code>, que no sabe nada de ventanas (capítulo 38): se pueden probar sin abrir ninguna. Esa separación era justo para esto.</p>
+<p>Este es un probador casero, sin librerías. Si quieres usarlo, créalo como <code>herramientas\PruebasPartida.java</code>:</p>
+<pre class="java">/**
+ * Pruebas automaticas sencillas de Partida, sin librerias.
+ * Ejecutar desde la carpeta Totito, despues de compilar:
+ *   java -cp target/classes herramientas/PruebasPartida.java
+ */
+public class PruebasPartida {
+
+    private static int fallos = 0;
+
+    public static void main(String[] args) {
+        // 1) La X gana con la fila de arriba.
+        Partida p = nueva();
+        p.jugar(0, 0); p.jugar(1, 0);   // X, O
+        p.jugar(0, 1); p.jugar(1, 1);   // X, O
+        p.jugar(0, 2);                  // X completa la fila 0
+        comprobar("gana la X con la fila 0", p.getEstado() == Partida.Estado.VICTORIA);
+        comprobar("el ganador es Ana", p.getGanador().getNombre().equals("Ana"));
+        comprobar("Ana suma 1 victoria", p.getVictorias(0) == 1);
+
+        // 2) Una casilla ocupada no se puede volver a jugar.
+        p = nueva();
+        p.jugar(1, 1);
+        comprobar("casilla ocupada devuelve false", !p.jugar(1, 1));
+
+        // 3) Empate: tablero lleno sin tres en linea.
+        p = nueva();
+        int[][] jugadas = {{0,0},{0,1},{0,2},{1,1},{1,0},{1,2},{2,1},{2,0},{2,2}};
+        for (int[] j : jugadas) {
+            p.jugar(j[0], j[1]);
+        }
+        comprobar("empate con el tablero lleno", p.getEstado() == Partida.Estado.EMPATE);
+
+        // 4) Reiniciar limpia el tablero pero conserva el marcador.
+        p.reiniciar();
+        comprobar("tras reiniciar sigue el empate en el marcador", p.getEmpates() == 1);
+        comprobar("tras reiniciar el centro esta vacio",
+                p.getTablero().obtenerCasilla(1, 1) == Tablero.VACIA);
+
+        System.out.println(fallos == 0 ? "TODO BIEN" : fallos + " PRUEBA(S) FALLARON");
+        System.exit(fallos == 0 ? 0 : 1);
+    }
+
+    private static Partida nueva() {
+        return new Partida(new Jugador("Ana", 'X'), new Jugador("Luis", 'O'),
+                Partida.Modo.DOS_JUGADORES);
+    }
+
+    private static void comprobar(String descripcion, boolean seCumple) {
+        System.out.println((seCumple ? "  OK    " : "  FALLA ") + descripcion);
+        if (!seCumple) {
+            fallos++;
+        }
+    }
+}</pre>
+<p>La idea es simple: cada prueba prepara una situación (crea una partida y juega unas casillas), y luego <code>comprobar</code> recibe una descripción y una condición que <b>debería</b> ser verdadera. Si lo es, imprime <code>OK</code>; si no, <code>FALLA</code> y suma un fallo. Al final, <code>System.exit(1)</code> si algo falló: ese número (el <b>código de salida</b>) le dice a otros programas si todo salió bien (0) o no (cualquier otro). Ejecútalo después de compilar:</p>
+<pre class="ps">java -cp target\classes herramientas\PruebasPartida.java</pre>
+<pre class="salida">  OK    gana la X con la fila 0
+  OK    el ganador es Ana
+  OK    Ana suma 1 victoria
+  OK    casilla ocupada devuelve false
+  OK    empate con el tablero lleno
+  OK    tras reiniciar sigue el empate en el marcador
+  OK    tras reiniciar el centro esta vacio
+TODO BIEN</pre>
+<p>Ahora siembra otra vez el error de <code>turno = 1;</code>, recompila con Shift+F11 y vuelve a ejecutar: la primera prueba falla al instante, sin abrir ninguna ventana. Esa es la magia: el probador descubre en un segundo lo que a ti te costó una partida entera. Después restaura con <code>git restore src\Partida.java</code>.</p>
+<p>En proyectos profesionales no se escribe el <code>comprobar</code> a mano: se usa <b>JUnit</b>, la librería estándar de pruebas de Java, que NetBeans y Maven ejecutan automáticamente con cada <i>Clean and Build</i>. Lo verás en el capítulo 69. Lo que aprendiste aquí (preparar, actuar, comprobar) es exactamente lo mismo, con otra ropa.</p>
+
+<div class="caja git"><b>Git</b> Este capítulo no tiene commit en el plan del libro: todo lo que tocaste era temporal. Antes de seguir, asegúrate de que no quedó nada sembrado:
+<pre class="ps">git status
+git diff</pre>
+Si <code>git status</code> dice <i>nothing to commit, working tree clean</i>, todo está como en la v1.0.0. Si ves cambios en <code>src\Partida.java</code> (un println o el error sembrado), descártalos con <code>git restore src\Partida.java</code>. Si decidiste conservar <code>herramientas\PruebasPartida.java</code>, es una buena adición; súbela en su propio commit:
+<pre class="ps">git add herramientas\PruebasPartida.java
+git commit -m "Pruebas automaticas sencillas de Partida"
+git push</pre>
+</div>
+
+<div class="caja hito"><b>Hito</b> Ya sabes leer un mensaje del compilador, interpretar un stack trace, detener el Totito a mitad de una jugada y mirarlo por dentro. Con la lista de pruebas en verde, el juego está listo para empaquetarse.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Hay tres familias de errores: de compilación (te avisa <code>javac</code>), de ejecución (te avisa la JVM con una excepción) y de lógica (no te avisa nadie: hay que probar).</li>
+<li>En los errores de compilación, arregla el primero y recompila; <code>cannot find symbol</code> suele ser una letra o una mayúscula.</li>
+<li>Un stack trace se lee de arriba abajo: tipo, mensaje, dónde reventó y quién llamó. Busca la primera línea de código tuyo; la culpa a veces está una línea más abajo.</li>
+<li><code>System.out.println</code> sirve para ver la historia de un programa; márcalo para no olvidarlo antes del commit.</li>
+<li>El depurador de NetBeans: punto de interrupción (clic en el número de línea), Debug Project (Ctrl+F5), Step Over (F8), Step Into (F7), Step Out (Ctrl+F7), Continue (F5), Variables, Watches y Call Stack.</li>
+<li>Mientras el depurador está en pausa, la ventana Swing se congela porque el hilo de eventos está detenido.</li>
+<li>Una lista de pruebas manuales escrita garantiza que cada versión se pruebe igual, incluidos los casos raros.</li>
+<li>Las pruebas automáticas comprueban la lógica en segundos; en el capítulo 69 darás el salto a JUnit.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Una app de ventas o inventario:</b> pon un punto de interrupción condicional en el método que calcula el total, con la condición <code>total &lt; 0</code>, para atrapar justo la venta que da un número imposible entre cientos de ventas normales.</li>
+<li><b>Un programa que lee archivos o datos de un formulario:</b> los <code>NumberFormatException</code> y <code>NullPointerException</code> aparecerán cuando el usuario escriba algo inesperado. Escribe en tu lista de pruebas casos como «campo vacío», «letras donde va un número» y «número negativo».</li>
+<li><b>Un error que te reporta otra persona:</b> pídele siempre el stack trace completo (una captura o el texto). Con la primera línea de código tuyo ya sabes por dónde empezar, sin adivinar.</li>
+<li><b>Cualquier proyecto con reglas</b> (una calculadora, un sistema de notas, el Conecta 4 del capítulo 68): separa la lógica de la interfaz como en <code>Partida</code> y escríbele un probador como <code>PruebasPartida</code>. Cada vez que cambies algo, lo ejecutas y en segundos sabes si rompiste lo que antes funcionaba.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Provoca a propósito tres errores de compilación distintos en una copia de <code>Jugador.java</code> (falta un <code>;</code>, <code>string</code> en minúscula y un <code>return</code> faltante en <code>getNombre</code>). Anota el mensaje exacto de cada uno y luego deshaz todo con <code>git restore src\Jugador.java</code>.</li>
+<li>Pon un punto de interrupción en <code>Partida.reiniciar()</code>, ejecuta con Ctrl+F5, termina una partida y pulsa <i>Jugar de nuevo</i>. Usa la ventana Call Stack para averiguar qué pantalla llamó a <code>reiniciar</code>. Pista: busca la primera línea con un nombre que empiece por <code>Pantalla</code>.</li>
+<li>En modo contra la IA, pon un punto de interrupción condicional en la línea 67 de <code>Partida</code> con la condición <code>turno == 1</code>. Cuando se detenga, usa Step Into hasta llegar a <code>IA_Minimax.calcularMejorJugada</code> y anota qué casilla eligió. Pista: es más fácil si pones otro punto en la línea <code>jugar(jugada[0], jugada[1]);</code> de <code>jugarTurnoIA</code> y miras la variable <code>jugada</code>.</li>
+<li>Añade a <code>PruebasPartida</code> una prueba nueva: «en modo contra la IA, si el Jugador 1 tiene la O, <code>esTurnoDeIA()</code> es <code>true</code> nada más crear la partida». Pista: crea la partida con <code>Partida.Modo.CONTRA_IA</code> y el primer jugador con <code>'O'</code>.</li>
+<li>Reto: escribe tu propia lista de pruebas manuales (al menos 12 filas) para otro programa que uses a diario, por ejemplo la calculadora de Windows. Incluye al menos cuatro casos «raros» (dividir entre cero, números enormes, borrar con la pantalla vacía…).</li>
+</ol></div>
+</section>

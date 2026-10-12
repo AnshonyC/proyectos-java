@@ -1,0 +1,132 @@
+<section class="capitulo" id="apA">
+<h1><span class="num">Apéndice A</span>Chuleta de PowerShell</h1>
+<p class="entrada">Los comandos de PowerShell que usa el libro, y algunos más que te harán la vida fácil, agrupados por tarea. Todos funcionan en el PowerShell que viene con Windows 10 y 11 (Windows PowerShell 5.1).</p>
+<p>Convenciones: lo que está entre <code>&lt;</code> y <code>&gt;</code> se reemplaza por tu valor (sin los signos). Los comandos del proyecto se ejecutan desde <code>$HOME\Proyectos\Totito</code>. Entre paréntesis va el <b>alias</b> corto cuando existe: es otro nombre para el mismo comando (capítulo 3).</p>
+
+<h2>Moverse por las carpetas</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>Get-Location</code> (<code>pwd</code>)</td><td>Muestra en qué carpeta estás.</td></tr>
+<tr><td><code>Set-Location &lt;ruta&gt;</code> (<code>cd</code>)</td><td>Entra en una carpeta. <code>cd ..</code> sube un nivel; <code>cd ~</code> o <code>cd $HOME</code> va a tu carpeta de usuario; <code>cd \</code> va a la raíz del disco.</td></tr>
+<tr><td><code>cd $HOME\Proyectos\Totito</code></td><td>Ir a la carpeta del proyecto del libro.</td></tr>
+<tr><td><code>Get-ChildItem</code> (<code>ls</code>, <code>dir</code>)</td><td>Lista el contenido de la carpeta.</td></tr>
+<tr><td><code>Get-ChildItem -Force</code></td><td>Incluye los ocultos, como <code>.git</code>.</td></tr>
+<tr><td><code>Get-ChildItem -Path src -Recurse -Filter *.java</code></td><td>Todos los <code>.java</code> de <code>src</code> y sus subcarpetas.</td></tr>
+<tr><td><code>Invoke-Item .</code> (<code>ii .</code>)</td><td>Abre la carpeta actual en el Explorador de archivos.</td></tr>
+<tr><td><code>Test-Path &lt;ruta&gt;</code></td><td>Responde <code>True</code> o <code>False</code>: ¿existe esa ruta?</td></tr>
+</table>
+
+<h2>Crear, copiar, mover y borrar</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>New-Item -ItemType Directory &lt;carpeta&gt;</code> (<code>mkdir</code>)</td><td>Crea una carpeta. Con <code>-Force</code> crea también las intermedias y no se queja si ya existe.</td></tr>
+<tr><td><code>New-Item &lt;archivo&gt;</code></td><td>Crea un archivo vacío, por ejemplo <code>New-Item src\Tablero.java</code>.</td></tr>
+<tr><td><code>Copy-Item &lt;origen&gt; &lt;destino&gt;</code> (<code>cp</code>)</td><td>Copia. Para copiar una carpeta con todo su contenido, agrega <code>-Recurse</code>.</td></tr>
+<tr><td><code>Move-Item &lt;origen&gt; &lt;destino&gt;</code> (<code>mv</code>)</td><td>Mueve o renombra.</td></tr>
+<tr><td><code>Rename-Item &lt;archivo&gt; &lt;nombre-nuevo&gt;</code></td><td>Renombra (solo el nombre, sin ruta).</td></tr>
+<tr><td><code>Remove-Item &lt;archivo&gt;</code> (<code>rm</code>, <code>del</code>)</td><td>Borra. <b>No pasa por la Papelera.</b></td></tr>
+<tr><td><code>Remove-Item -Recurse -Force &lt;carpeta&gt;</code></td><td>Borra una carpeta con todo lo que tiene. Revisa dos veces la ruta antes de pulsar Enter.</td></tr>
+<tr><td><code>Remove-Item -Recurse -Force target, out</code></td><td>Limpia lo compilado del Totito (se regenera al compilar).</td></tr>
+</table>
+<div class="caja cuidado"><b>Prueba antes de borrar</b> Agrega <code>-WhatIf</code> al final de cualquier <code>Remove-Item</code>, <code>Move-Item</code> o <code>Copy-Item</code>: PowerShell describe lo que <i>haría</i>, sin hacerlo. Si la lista es la que esperabas, repite el comando sin <code>-WhatIf</code>.</div>
+
+<h2>Ver y buscar dentro de archivos</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>Get-Content &lt;archivo&gt;</code> (<code>cat</code>, <code>type</code>)</td><td>Muestra el contenido.</td></tr>
+<tr><td><code>Get-Content &lt;archivo&gt; -Tail 20</code></td><td>Solo las últimas 20 líneas.</td></tr>
+<tr><td><code>Get-Content -Encoding UTF8 &lt;archivo&gt;</code></td><td>Lee el archivo como UTF-8 (para que las tildes se vean bien).</td></tr>
+<tr><td><code>Select-String -Path src\*.java -Pattern "Tema.ROSA"</code></td><td>Busca un texto en varios archivos y muestra archivo, número de línea y línea. Es el «buscar» de la terminal.</td></tr>
+<tr><td><code>(Get-Content src\Partida.java).Count</code></td><td>Cuántas líneas tiene un archivo.</td></tr>
+<tr><td><code>notepad &lt;archivo&gt;</code></td><td>Abre el archivo en el Bloc de notas.</td></tr>
+<tr><td><code>code .</code></td><td>Abre la carpeta en Visual Studio Code (si lo instalaste).</td></tr>
+</table>
+
+<h2>Comprimir y comprobar</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>Compress-Archive -Path dist\app\Totito -DestinationPath dist\Totito-1.0.0-portable.zip</code></td><td>Crea un zip (capítulo 65). Con <code>-Force</code> reemplaza uno anterior.</td></tr>
+<tr><td><code>Expand-Archive &lt;archivo.zip&gt; -DestinationPath &lt;carpeta&gt;</code></td><td>Descomprime.</td></tr>
+<tr><td><code>Get-FileHash &lt;archivo&gt;</code></td><td>Calcula la huella SHA-256 de un archivo, para comprobar que una descarga no se alteró.</td></tr>
+<tr><td><code>(Get-Item &lt;archivo&gt;).Length / 1MB</code></td><td>Tamaño del archivo en megabytes.</td></tr>
+</table>
+
+<h2>Variables, entorno y PATH</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>$HOME</code></td><td>Tu carpeta de usuario, <code>C:\Users\&lt;tu-usuario&gt;</code>.</td></tr>
+<tr><td><code>$origen = "$HOME\Proyectos\Totito"</code></td><td>Guarda un valor en una variable. Con comillas dobles, las variables de dentro se reemplazan; con simples, no.</td></tr>
+<tr><td><code>$env:JAVA_HOME</code></td><td>Muestra la variable de entorno <code>JAVA_HOME</code> (capítulo 4).</td></tr>
+<tr><td><code>$env:Path -split ";"</code></td><td>Muestra el PATH, una carpeta por línea.</td></tr>
+<tr><td><code>Get-Command java</code></td><td>Dice qué <code>java.exe</code> se ejecuta al escribir <code>java</code> (la primera carpeta del PATH que lo tiene).</td></tr>
+<tr><td><code>where.exe java</code></td><td>Lista <b>todos</b> los <code>java.exe</code> que hay en el PATH, en orden. Útil si hay dos JDK.</td></tr>
+<tr><td><code>[Environment]::SetEnvironmentVariable("JAVA_HOME", "&lt;ruta-del-jdk&gt;", "User")</code></td><td>Fija <code>JAVA_HOME</code> de forma permanente para tu usuario. Cierra y vuelve a abrir PowerShell para verla.</td></tr>
+<tr><td><code>[guid]::NewGuid()</code></td><td>Genera un identificador único nuevo, como el de <code>--win-upgrade-uuid</code> (capítulo 66).</td></tr>
+</table>
+
+<h2>Instalar programas con winget</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>winget search &lt;texto&gt;</code></td><td>Busca programas por nombre.</td></tr>
+<tr><td><code>winget show --id &lt;id&gt; -e</code></td><td>Muestra la información de un paquete (versión, editor, dependencias).</td></tr>
+<tr><td><code>winget install --id &lt;id&gt; -e</code></td><td>Instala. <code>-e</code> exige el identificador exacto.</td></tr>
+<tr><td><code>winget list</code></td><td>Lista lo instalado. <code>winget list Temurin</code> filtra por nombre.</td></tr>
+<tr><td><code>winget upgrade</code></td><td>Lista lo que tiene versión nueva; <code>winget upgrade --id &lt;id&gt; -e</code> actualiza uno.</td></tr>
+<tr><td><code>winget uninstall --id &lt;id&gt; -e</code></td><td>Desinstala.</td></tr>
+</table>
+<p>Los programas del libro, en el orden en que se instalan (capítulo 4). <b>El JDK va primero</b>, y NetBeans lleva <code>--skip-dependencies</code>: su paquete declara como dependencia otro JDK (BellSoft Liberica 23) y, sin esa opción, winget lo instalaría también y tendrías dos Java distintos.</p>
+<pre class="ps">winget install --id EclipseAdoptium.Temurin.21.JDK -e
+winget install --id Git.Git -e
+winget install --id GitHub.cli -e
+winget install --id Apache.NetBeans -e --skip-dependencies
+winget install --id WiXToolset.WiXToolset -e
+# Opcionales
+winget install --id Microsoft.VisualStudioCode -e
+winget install --id Microsoft.WindowsTerminal -e
+winget install --id JRSoftware.InnoSetup -e</pre>
+<div class="caja consejo"><b>Después de instalar, cierra PowerShell</b> El PATH se lee al abrir la ventana. Si <code>java</code>, <code>git</code> o <code>gh</code> «no se reconocen» justo después de instalarlos, cierra todas las ventanas de PowerShell y abre una nueva.</div>
+
+<h2>Java y el Totito</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>java -version</code> · <code>javac -version</code></td><td>Comprueban el JDK. Deben decir 21.</td></tr>
+<tr><td><code>javac -encoding UTF-8 -d out src\*.java</code></td><td>Compila todo el Totito en la carpeta <code>out</code>.</td></tr>
+<tr><td><code>java -cp out TotitoApp</code></td><td>Ejecuta el juego compilado con <code>javac</code> (desde el capítulo 61).</td></tr>
+<tr><td><code>java -cp target\classes &lt;Clase&gt;</code></td><td>Ejecuta cualquier clase con <code>main</code> que NetBeans ya compiló (<i>Clean and Build</i>). Es la forma de probar las clases antes del capítulo 61, cuando aún no existe <code>TotitoApp</code>; en NetBeans, lo mismo es clic derecho → <i>Run File</i> (Shift+F6).</td></tr>
+<tr><td><code>java -cp target\classes herramientas\PruebaConsola.java</code></td><td>Ejecuta una herramienta (también <code>VistaPrevia.java</code> y <code>GeneradorIcono.java</code>).</td></tr>
+<tr><td><code>java -cp out JuegoMain</code></td><td>Abre la ventana sencilla de la versión 0.1.</td></tr>
+<tr><td><code>java -jar target\Totito-1.0-SNAPSHOT.jar</code></td><td>Ejecuta el <code>.jar</code> (capítulo 63).</td></tr>
+<tr><td><code>jar tf target\Totito-1.0-SNAPSHOT.jar</code></td><td>Lista lo que hay dentro del <code>.jar</code>.</td></tr>
+<tr><td><code>jdeps --print-module-deps target\Totito-1.0-SNAPSHOT.jar</code></td><td>Qué módulos de Java necesita: <code>java.base,java.desktop</code>.</td></tr>
+<tr><td><code>jshell</code></td><td>Consola para probar trozos de Java (capítulo 11). Se sale con <code>/exit</code>.</td></tr>
+<tr><td><code>jpackage --type app-image …</code></td><td>Carpeta portable con <code>Totito.exe</code> (capítulo 65; el comando completo está allí).</td></tr>
+<tr><td><code>jpackage --type exe …</code></td><td>Instalador (capítulo 66).</td></tr>
+</table>
+<p>La preparación del empaquetado, tal como en los capítulos 63 a 65:</p>
+<pre class="ps">New-Item -ItemType Directory -Force dist\entrada | Out-Null
+Copy-Item target\Totito-1.0-SNAPSHOT.jar dist\entrada\
+.\dist\app\Totito\Totito.exe</pre>
+<p>La última línea abre el programa portable ya generado. El <code>.\</code> del principio es obligatorio: PowerShell no ejecuta programas de la carpeta actual si no se lo indicas así.</p>
+
+<h2>Trucos del teclado en la terminal</h2>
+<table class="tabla">
+<tr><th>Tecla</th><th>Qué hace</th></tr>
+<tr><td>Tab</td><td>Completa nombres de comandos, carpetas y archivos. Pulsa varias veces para ver las opciones.</td></tr>
+<tr><td>↑ / ↓</td><td>Recorre los comandos que ya escribiste.</td></tr>
+<tr><td>Ctrl+R</td><td>Busca hacia atrás en el historial mientras escribes.</td></tr>
+<tr><td>Ctrl+C</td><td>Detiene el comando que se está ejecutando (o borra la línea que escribías).</td></tr>
+<tr><td>Clic derecho</td><td>Pega lo copiado (en la ventana clásica de PowerShell). En Windows Terminal también sirve Ctrl+V.</td></tr>
+<tr><td><code>cls</code></td><td>Limpia la pantalla.</td></tr>
+<tr><td><code>Get-History</code></td><td>Lista los comandos de la sesión.</td></tr>
+</table>
+
+<h2>Pedir ayuda a la propia terminal</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>Get-Help &lt;comando&gt; -Examples</code></td><td>Ejemplos de uso de un comando, por ejemplo <code>Get-Help Copy-Item -Examples</code>. La primera vez puede pedirte <code>Update-Help</code>.</td></tr>
+<tr><td><code>Get-Command *archive*</code></td><td>Busca comandos cuyo nombre contenga un texto.</td></tr>
+<tr><td><code>&lt;programa&gt; --help</code></td><td>Casi todos los programas externos explican sus opciones así: <code>git --help</code>, <code>gh --help</code>, <code>jpackage --help</code>.</td></tr>
+</table>
+<div class="caja aplica"></div>
+<div class="caja ejercicio"></div>
+</section>

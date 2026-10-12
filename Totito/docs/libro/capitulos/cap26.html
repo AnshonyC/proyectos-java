@@ -1,0 +1,683 @@
+<section class="capitulo" id="cap26">
+<h1><span class="num">Capítulo 26</span>Enums y excepciones</h1>
+<p class="entrada">Dos herramientas para decir las cosas con precisión: los <b>enums</b>, para los valores que solo pueden ser unos pocos y bien conocidos (el modo de juego, el estado de la partida), y las <b>excepciones</b>, para avisar con fuerza cuando algo sale mal y el programa no puede seguir como si nada. El Totito usa las dos, y aquí verás exactamente dónde y por qué.</p>
+
+<h2>Primera parte: los enums</h2>
+
+<h3>El problema: valores que solo pueden ser unos pocos</h3>
+<p>Una partida de totito, en cada momento, está en una de tres situaciones: <b>en curso</b>, terminada con <b>victoria</b> o terminada en <b>empate</b>. No hay una cuarta. ¿Cómo guardas eso en una variable?</p>
+<p>Con lo que viste en la Parte III tendrías dos caminos, y los dos tienen trampa:</p>
+<pre class="java">// Camino 1: un número que "significa" algo
+int estado = 0;      // 0 = en curso, 1 = victoria, 2 = empate
+estado = 7;          // Java lo acepta... ¿qué es el estado 7?
+
+// Camino 2: un texto
+String estado2 = "victoria";
+if (estado2.equals("Victoria")) { ... }   // nunca entra: la V mayúscula lo cambia todo
+</pre>
+<p>En el primer camino el número <code>7</code> compila sin protestar, y quien lea <code>if (estado == 2)</code> tiene que adivinar qué es el 2. En el segundo, un error de dedo («Victoria» contra «victoria», «empate» contra «empata») no lo detecta nadie hasta que el juego se porta raro. El compilador no te puede ayudar porque, para él, <code>int</code> y <code>String</code> admiten millones de valores.</p>
+<p>Piensa en el ascensor de un edificio de cinco pisos: tiene exactamente cinco botones. No puedes pedirle el piso 7 ni el piso «tres y medio», porque <b>el botón no existe</b>. Eso es un enum: un tipo cuyo conjunto de valores posibles está escrito, completo, en el código.</p>
+
+<div class="caja concepto"><b>Enum (enumeración)</b> Un tipo de dato con una lista cerrada de valores con nombre. Una variable de ese tipo solo puede valer una de esas constantes (o <code>null</code>). Si escribes un valor que no está en la lista, el programa <b>no compila</b>.</div>
+
+<h3>Cómo se escribe, símbolo por símbolo</h3>
+<p>Así declara el Totito los estados de la partida, dentro de <code>Partida.java</code> (lo construirás en el capítulo 38):</p>
+<pre class="java">/** Como va la partida actual. */
+public enum Estado { EN_CURSO, VICTORIA, EMPATE }
+</pre>
+<ul>
+<li><code>public</code>: cualquier otra clase puede usar este tipo (lo viste en el capítulo 19). Las pantallas necesitan preguntar el estado, por eso es público.</li>
+<li><code>enum</code>: la palabra reservada que dice «lo que sigue es una enumeración», igual que <code>class</code> dice «lo que sigue es una clase».</li>
+<li><code>Estado</code>: el nombre del nuevo tipo. Como toda clase, empieza con mayúscula.</li>
+<li><code>{ … }</code>: las llaves encierran el cuerpo del enum.</li>
+<li><code>EN_CURSO, VICTORIA, EMPATE</code>: las constantes, separadas por comas. Se escriben en MAYÚSCULAS con guion bajo entre palabras, la misma convención que las constantes <code>static final</code> del capítulo 20, porque eso es lo que son.</li>
+<li>No lleva <code>;</code> al final de la lista porque el enum no tiene nada más. Si después de las constantes vinieran campos o métodos, sí haría falta un punto y coma tras la última (lo verás más abajo).</li>
+</ul>
+<p>Los modos de juego están escritos igual, pero en varias líneas para poder comentar cada constante:</p>
+<pre class="java">/** Los dos modos que se eligen en la pantalla de configuracion. */
+public enum Modo {
+    /** Dos personas se turnan en el mismo equipo. */
+    DOS_JUGADORES,
+    /** El Jugador 2 es la computadora (IA_Minimax). */
+    CONTRA_IA
+}
+</pre>
+
+<h3>Un enum es una clase (con objetos fijos)</h3>
+<p>Por dentro, Java convierte <code>enum Estado</code> en una clase especial y crea <b>un único objeto</b> por cada constante, una sola vez, cuando la clase se carga. <code>Estado.VICTORIA</code> es una referencia a ese objeto, como lo sería un campo <code>public static final</code>. Nadie puede hacer <code>new Estado()</code>: el compilador lo prohíbe. Por eso la lista es cerrada de verdad.</p>
+<p>Esto tiene una consecuencia práctica muy cómoda: como solo existe un objeto <code>VICTORIA</code> en todo el programa, dos enums se comparan con <code>==</code> sin miedo. Con los <code>String</code> tenías que usar <code>equals</code> (capítulo 17) porque dos textos iguales pueden ser objetos distintos; con los enums no pasa. Mira cómo lo hace <code>Partida.jugar</code>:</p>
+<pre class="java">public boolean jugar(int fila, int columna) {
+    if (estado != Estado.EN_CURSO) {
+        return false;
+    }
+</pre>
+<p>Y el constructor de <code>Partida</code> decide si crea la IA comparando el modo:</p>
+<pre class="java">this.ia = modo == Modo.CONTRA_IA ? new IA_Minimax(jugador2.getFicha(), jugador1.getFicha()) : null;
+</pre>
+
+<h3>Enums dentro de otra clase</h3>
+<p><code>Modo</code> y <code>Estado</code> están declarados <b>dentro</b> de la clase <code>Partida</code>. Son enums anidados: viven en el «apellido» de Partida. Desde dentro de <code>Partida</code> se escriben solos (<code>Estado.EN_CURSO</code>); desde fuera llevan el nombre completo, <code>Partida.Estado.EN_CURSO</code> o <code>Partida.Modo.CONTRA_IA</code>. Por ejemplo, la interfaz <code>Navegacion</code> (capítulo 39) declara:</p>
+<pre class="java">void iniciarPartida(Jugador jugador1, Jugador jugador2, Partida.Modo modo);
+</pre>
+<p>¿Por qué dentro? Porque un modo de juego o un estado de partida no tienen sentido sin una partida. Leer <code>Partida.Estado</code> te dice de inmediato «el estado <i>de la partida</i>», no el estado de la ventana ni el de la conexión. Es la misma idea de las clases anidadas del capítulo 25: agrupar lo que va junto.</p>
+<p>El Totito tiene otros dos enums, ambos de la interfaz:</p>
+<table class="tabla">
+<tr><th>Enum</th><th>Dónde</th><th>Constantes</th><th>Para qué</th></tr>
+<tr><td><code>Partida.Modo</code></td><td>Partida (cap. 38)</td><td>DOS_JUGADORES, CONTRA_IA</td><td>Elegido en la configuración; decide si se crea la IA.</td></tr>
+<tr><td><code>Partida.Estado</code></td><td>Partida (cap. 38)</td><td>EN_CURSO, VICTORIA, EMPATE</td><td>Cómo va la partida; las pantallas lo consultan.</td></tr>
+<tr><td><code>BotonNeon.Estilo</code></td><td>BotonNeon (cap. 44)</td><td>MENU, PILDORA, CONTORNO, ICONO</td><td>Qué forma tiene el botón y cómo se pinta.</td></tr>
+<tr><td><code>Rotulo.Tipo</code></td><td>Rotulo (cap. 46)</td><td>TITULO, SECCION</td><td>Qué variante de texto decorativo es. Es <code>private</code>.</td></tr>
+</table>
+<p>Fíjate en el último: <code>private enum Tipo { TITULO, SECCION }</code>. Es privado porque nadie de fuera necesita saberlo: quien quiere un rótulo llama a <code>Rotulo.titulo(...)</code> o <code>Rotulo.seccion(...)</code> (los métodos de fábrica del capítulo 20) y el tipo se elige ahí dentro. Encapsulamiento puro (capítulo 19): si mañana agregas un tercer tipo, ninguna pantalla se entera.</p>
+
+<h3>Lo que todo enum trae de regalo</h3>
+<p>Cada enum hereda unos métodos útiles. Este programa los muestra todos:</p>
+<pre class="java">public class EnumsBasicos {
+
+    enum Estado { EN_CURSO, VICTORIA, EMPATE }
+
+    public static void main(String[] args) {
+        Estado estado = Estado.EN_CURSO;
+        System.out.println("Estado actual: " + estado);
+
+        // Todas las constantes, en el orden en que se declararon
+        for (Estado e : Estado.values()) {
+            System.out.println(e.ordinal() + " -&gt; " + e.name());
+        }
+
+        // De texto a constante
+        Estado leido = Estado.valueOf("EMPATE");
+        System.out.println("¿Leído es EMPATE? " + (leido == Estado.EMPATE));
+
+        // Un switch que cubre los tres casos
+        estado = Estado.VICTORIA;
+        String mensaje = switch (estado) {
+            case EN_CURSO -&gt; "Sigue jugando";
+            case VICTORIA -&gt; "¡Tres en línea!";
+            case EMPATE -&gt; "¡Empate!";
+        };
+        System.out.println(mensaje);
+    }
+}
+</pre>
+<pre class="ps">cd $HOME\Proyectos\Practicas
+java EnumsBasicos.java</pre>
+<pre class="salida">Estado actual: EN_CURSO
+0 -&gt; EN_CURSO
+1 -&gt; VICTORIA
+2 -&gt; EMPATE
+¿Leído es EMPATE? true
+¡Tres en línea!</pre>
+<table class="tabla">
+<tr><th>Método</th><th>Qué devuelve</th><th>Ejemplo</th></tr>
+<tr><td><code>values()</code></td><td>Un arreglo con todas las constantes, en orden de declaración. Es <code>static</code>: se llama sobre el tipo.</td><td><code>Estado.values()</code> → [EN_CURSO, VICTORIA, EMPATE]</td></tr>
+<tr><td><code>name()</code></td><td>El nombre exacto de la constante, como <code>String</code>.</td><td><code>"VICTORIA"</code></td></tr>
+<tr><td><code>toString()</code></td><td>Lo mismo que <code>name()</code>, salvo que lo sobrescribas (capítulo 23). Por eso <code>"Estado actual: " + estado</code> imprime EN_CURSO.</td><td><code>"EN_CURSO"</code></td></tr>
+<tr><td><code>ordinal()</code></td><td>La posición en la lista, desde 0.</td><td><code>VICTORIA.ordinal()</code> → 1</td></tr>
+<tr><td><code>valueOf(texto)</code></td><td>La constante cuyo nombre es exactamente ese texto. Es <code>static</code>.</td><td><code>Estado.valueOf("EMPATE")</code></td></tr>
+</table>
+<div class="caja cuidado"><b>No guardes el ordinal</b> Si escribes en un archivo «estado 1» en vez de «VICTORIA», el día que alguien agregue una constante al principio de la lista todos los números se corren y los datos guardados mienten. Para guardar o enviar un enum, usa <code>name()</code> y recupéralo con <code>valueOf</code>.</div>
+<p>Y <code>valueOf</code> es estricto: distingue mayúsculas y minúsculas y no inventa nada. Si el texto no corresponde a ninguna constante, lanza una excepción (la segunda mitad de este capítulo explica qué es eso y cómo se atrapa):</p>
+<pre class="java">public class ValueOfMalo {
+
+    enum Modo { DOS_JUGADORES, CONTRA_IA }
+
+    public static void main(String[] args) {
+        String[] textos = {"CONTRA_IA", "contra_ia", "FACIL"};
+        for (String texto : textos) {
+            try {
+                Modo modo = Modo.valueOf(texto);
+                System.out.println(texto + " -&gt; " + modo);
+            } catch (IllegalArgumentException e) {
+                System.out.println(texto + " -&gt; " + e.getMessage());
+            }
+        }
+    }
+}
+</pre>
+<pre class="salida">CONTRA_IA -&gt; CONTRA_IA
+contra_ia -&gt; No enum constant ValueOfMalo.Modo.contra_ia
+FACIL -&gt; No enum constant ValueOfMalo.Modo.FACIL</pre>
+
+<h3>Switch con enums</h3>
+<p>El <code>switch</code> (capítulo 13) y los enums se llevan de maravilla. Dentro de cada <code>case</code> la constante se escribe <b>sin</b> el nombre del tipo: <code>case EN_CURSO</code>, no <code>case Estado.EN_CURSO</code>. Java ya sabe de qué tipo es lo que está entre paréntesis.</p>
+<p>En el Totito, <code>PantallaJuego.actualizar()</code> (capítulo 59) usa un switch de instrucciones con flechas para escribir el letrero de arriba del tablero según el estado:</p>
+<pre class="java">switch (partida.getEstado()) {
+    case EN_CURSO -&gt; {
+        Color color = Tema.colorDeFicha(enTurno.getFicha());
+        String texto = partida.esTurnoDeIA()
+                ? "La computadora está pensando…"
+                : "Turno de " + enTurno.getNombre();
+        turno.setTexto(texto, Tema.aclarar(color, 0.35f), color);
+    }
+    case VICTORIA -&gt; {
+        Color color = Tema.colorDeFicha(partida.getGanador().getFicha());
+        turno.setTexto("¡Tres en línea!", Tema.aclarar(color, 0.35f), color);
+    }
+    case EMPATE -&gt; turno.setTexto("¡Empate!", Tema.LAVANDA, Tema.MORADO);
+}
+</pre>
+<p>Cuando un caso necesita varias instrucciones, van entre llaves <code>{ }</code>; cuando es una sola, basta con ponerla después de la flecha y terminar con <code>;</code>. Con la flecha no hay que escribir <code>break</code>: cada caso termina solo.</p>
+<p>Y en <code>BotonNeon.paintComponent</code> (capítulo 44) aparece la otra forma, el <b>switch como expresión</b>, que <i>produce un valor</i> que se guarda en una variable:</p>
+<pre class="java">double arco = switch (estilo) {
+    case MENU -&gt; 30;
+    case ICONO -&gt; 16;
+    default -&gt; alto;        // pildora: extremos totalmente redondos
+};
+</pre>
+<p>Léelo así: «el arco de las esquinas vale 30 si el estilo es MENU, 16 si es ICONO y, en cualquier otro caso (PILDORA y CONTORNO), la altura completa del botón, lo que hace los extremos perfectamente redondos». Observa el <code>;</code> después de la llave de cierre: toda la expresión es parte de una asignación, y una asignación termina en punto y coma.</p>
+<p>Aquí está la ventaja escondida de los enums: un switch expresión <b>tiene que cubrir todos los casos</b>. Como Java conoce la lista completa de constantes, puede comprobarlo. Si te olvidas de una y no pones <code>default</code>, no compila:</p>
+<pre class="java">static String texto(Estado estado) {
+    return switch (estado) {
+        case EN_CURSO -&gt; "Sigue jugando";
+        case VICTORIA -&gt; "¡Tres en línea!";
+    };
+}
+</pre>
+<pre class="salida">Incompleto.java:6: error: the switch expression does not cover all possible input values
+        return switch (estado) {
+               ^
+1 error</pre>
+<p>Con un <code>int</code> eso sería imposible de detectar. Por eso, cuando agregas una constante a un enum, conviene preferir switches sin <code>default</code>: el compilador te lleva de la mano a cada lugar que debes actualizar.</p>
+
+<h3>Enums con datos y comportamiento</h3>
+<p>Como un enum es una clase, puede tener campos, un constructor y métodos. Cada constante «nace» llamando a ese constructor con sus propios datos. Piensa en los tamaños de café de una cafetería: no solo hay tres tamaños, cada uno <i>sabe</i> cuántos mililitros lleva y cuánto cuesta.</p>
+<pre class="java">public class EnumConDatos {
+
+    /** Tamaños de café de una cafetería: cada uno sabe su precio y sus mililitros. */
+    enum Tamano {
+        PEQUENO("Pequeño", 240, 12.00),
+        MEDIANO("Mediano", 350, 15.50),
+        GRANDE("Grande", 470, 18.75);
+
+        private final String etiqueta;
+        private final int mililitros;
+        private final double precio;
+
+        Tamano(String etiqueta, int mililitros, double precio) {
+            this.etiqueta = etiqueta;
+            this.mililitros = mililitros;
+            this.precio = precio;
+        }
+
+        public double precioPorMililitro() {
+            return precio / mililitros;
+        }
+
+        public int getMililitros() {
+            return mililitros;
+        }
+
+        public String getEtiqueta() {
+            return etiqueta;
+        }
+
+        public double getPrecio() {
+            return precio;
+        }
+    }
+
+    public static void main(String[] args) {
+        for (Tamano t : Tamano.values()) {
+            System.out.printf("%-8s %3d ml  Q%6.2f  (Q%.4f por ml)%n",
+                    t.getEtiqueta(), t.getMililitros(), t.getPrecio(), t.precioPorMililitro());
+        }
+        Tamano pedido = Tamano.valueOf("MEDIANO");
+        System.out.println("Pediste un " + pedido.getEtiqueta() + ": Q" + pedido.getPrecio());
+    }
+}
+</pre>
+<pre class="salida">Pequeño  240 ml  Q 12.00  (Q0.0500 por ml)
+Mediano  350 ml  Q 15.50  (Q0.0443 por ml)
+Grande   470 ml  Q 18.75  (Q0.0399 por ml)
+Pediste un Mediano: Q15.5</pre>
+<ul>
+<li><code>PEQUENO("Pequeño", 240, 12.00)</code>: la constante con paréntesis llama al constructor del enum con esos tres datos.</li>
+<li>El <code>;</code> después de <code>GRANDE(...)</code> es obligatorio: separa la lista de constantes del resto del cuerpo.</li>
+<li>El constructor <code>Tamano(...)</code> no lleva <code>public</code>: el constructor de un enum es siempre privado, aunque no lo escribas, porque solo las constantes de la lista pueden usarlo.</li>
+<li>Los campos son <code>private final</code>: cada tamaño tiene sus datos fijos para siempre (capítulos 19 y 20).</li>
+</ul>
+<p>El Totito no necesitó enums con datos: sus enums son simples etiquetas y la información (colores, tamaños) vive en <code>Tema</code> y en los métodos de fábrica. Pero si quisieras agregar niveles de dificultad a la IA, un <code>enum Dificultad { FACIL(2), MEDIO(4), DIFICIL(9); ... }</code> con la profundidad máxima que puede explorar Minimax sería el lugar natural.</p>
+
+<h3>¿Y si el Totito no tuviera enums?</h3>
+<p>Imagina <code>BotonNeon</code> con <code>int estilo</code>: <code>BotonNeon.crear("Jugar", 0)</code>, <code>BotonNeon.crear("Volver", 2)</code>. Quien lea el código no sabe qué es el 2, nadie impide pasar un 9, y el switch de <code>paintComponent</code> necesitaría un <code>default</code> para «estilos desconocidos» que nunca deberían existir. Con <code>Partida.Estado</code> como <code>String</code>, un <code>"VICTORIA "</code> con un espacio de más rompería en silencio la pantalla de resultado. El enum convierte esos errores de ejecución, difíciles de encontrar, en errores de compilación, que NetBeans subraya en rojo antes de que corras nada.</p>
+
+<div class="caja consejo"><b>Cuándo usar un enum</b> Cuando puedas escribir en un papel la lista completa de valores posibles y esa lista cambie poco: estados, modos, categorías fijas, direcciones (NORTE, SUR, ESTE, OESTE), palos de la baraja. Si la lista la crea el usuario (nombres de productos, alumnos), no es un enum: es una lista de objetos normales.</div>
+
+<h2>Segunda parte: las excepciones</h2>
+
+<h3>La idea: un aviso que no se puede ignorar</h3>
+<p>Hasta ahora, cuando un método no podía hacer su trabajo, devolvía algo especial: <code>Tablero.marcarCasilla</code> devuelve <code>false</code> si la casilla está ocupada (capítulo 19). Eso funciona cuando el problema es <b>esperable</b> y quien llama está listo para revisarlo. Pero hay situaciones en las que seguir como si nada sería peor que detenerse.</p>
+<p>Piensa en una alarma de incendio en un edificio. Si se activa en el tercer piso, el aviso no se queda en ese cuarto: sube por el edificio hasta que alguien responsable lo atiende (el conserje, los bomberos). Y si nadie lo atiende, se evacúa todo el edificio. Una <b>excepción</b> es exactamente eso: un objeto que representa un problema, que se <b>lanza</b> en el punto donde ocurre y viaja hacia atrás por los métodos que se llamaron, hasta que alguno lo <b>atrapa</b>. Si nadie lo atrapa, el programa (más exactamente, ese hilo) se detiene y escribe un informe del problema.</p>
+
+<div class="caja concepto"><b>Excepción</b> Un objeto que describe un error ocurrido durante la ejecución. Lanzarla (<code>throw</code>) interrumpe el método en ese instante; la excepción sube por la pila de llamadas hasta encontrar un bloque <code>catch</code> que la atienda. Si no lo encuentra, el programa se detiene e imprime la <b>traza de pila</b>.</div>
+
+<h3>Lanzar: el constructor de Partida</h3>
+<p>En el Totito hay una regla que nunca debe romperse: los dos jugadores tienen fichas distintas. Si ambos jugaran con X, <code>verificarGanador</code> no sabría de quién es una línea de X, y en el modo contra la IA, <code>IA_Minimax</code> recibiría la misma ficha para ella y para su rival, así que sus cálculos no tendrían ningún sentido. El constructor de <code>Partida</code> se protege así:</p>
+<pre class="java">public Partida(Jugador jugador1, Jugador jugador2, Modo modo) {
+    if (jugador1.getFicha() == jugador2.getFicha()) {
+        throw new IllegalArgumentException("Los dos jugadores no pueden usar la misma ficha");
+    }
+    this.jugadores = new Jugador[]{jugador1, jugador2};
+</pre>
+<p>Símbolo por símbolo:</p>
+<ul>
+<li><code>throw</code>: «lanza». Detiene el método aquí mismo; las líneas siguientes no se ejecutan.</li>
+<li><code>new IllegalArgumentException(...)</code>: crea un objeto de la clase <code>IllegalArgumentException</code> («argumento no válido»), que viene con Java en el paquete <code>java.lang</code> (por eso no hace falta <code>import</code>). Las excepciones son objetos normales: se crean con <code>new</code>, como cualquier otro (capítulo 18).</li>
+<li><code>"Los dos jugadores…"</code>: el mensaje, un <code>String</code> que se guarda dentro del objeto y que luego se puede leer con <code>getMessage()</code>. Escríbelo pensando en quien tendrá que arreglar el error: di <i>qué</i> estaba mal.</li>
+<li><code>;</code>: <code>throw</code> es una instrucción y termina en punto y coma.</li>
+</ul>
+<p>¿Por qué en el <b>constructor</b> y no más tarde? Porque así una partida inválida <b>nunca llega a existir</b>. Si el constructor lanza una excepción, el <code>new Partida(...)</code> no devuelve ningún objeto. Es la forma más fuerte de proteger una invariante, la idea del capítulo 19: el objeto está bien desde el primer instante o no está.</p>
+<p>¿Y por qué <code>IllegalArgumentException</code>? Porque el problema no es de la partida ni del tablero: es que <i>quien llamó</i> pasó argumentos que no valen. Elegir la excepción con el nombre que mejor describe el problema es parte del mensaje. Las más usadas de Java para esto son <code>IllegalArgumentException</code> (un parámetro no vale), <code>IllegalStateException</code> (el objeto no está en condiciones de hacer eso ahora) y <code>NullPointerException</code> (llegó un <code>null</code> donde no debía, capítulo 18).</p>
+
+<div class="caja cuidado"><b>¿Entonces por qué marcarCasilla no lanza una excepción?</b> Por la diferencia entre algo <b>esperable</b> y un <b>error del programa</b>. Que el usuario haga clic en una casilla ocupada es normal: pasa todo el tiempo y la respuesta correcta es ignorarlo, por eso <code>marcarCasilla</code> y <code>Partida.jugar</code> devuelven <code>false</code>. En cambio, que una pantalla cree una partida con dos fichas iguales <b>no debería pasar nunca</b>: si pasa, hay un error en el código de esa pantalla y conviene que salte a la vista. Regla práctica: <code>boolean</code> u otro valor de retorno para lo esperable; excepción para lo que indica un error o lo verdaderamente excepcional.</div>
+
+<h3>La traza de pila: leer el informe del error</h3>
+<p>Para verlo en acción, este programa trae una versión mini de la partida con la misma comprobación, y la llama primero bien y luego mal:</p>
+<pre class="java">public class PartidaMini {
+
+    public static void main(String[] args) {
+        System.out.println("Creando una partida válida...");
+        comenzar('X', 'O');
+        System.out.println("Creando una partida con fichas repetidas...");
+        comenzar('X', 'X');
+        System.out.println("Esta línea nunca se imprime");
+    }
+
+    static void comenzar(char ficha1, char ficha2) {
+        Juego juego = new Juego(ficha1, ficha2);
+        System.out.println("Listo: " + juego);
+    }
+}
+
+class Juego {
+    private final char ficha1;
+    private final char ficha2;
+
+    Juego(char ficha1, char ficha2) {
+        if (ficha1 == ficha2) {
+            throw new IllegalArgumentException("Los dos jugadores no pueden usar la misma ficha");
+        }
+        this.ficha1 = ficha1;
+        this.ficha2 = ficha2;
+    }
+
+    @Override
+    public String toString() {
+        return "Juego " + ficha1 + " contra " + ficha2;
+    }
+}
+</pre>
+<pre class="ps">java PartidaMini.java</pre>
+<pre class="salida">Creando una partida válida...
+Listo: Juego X contra O
+Creando una partida con fichas repetidas...
+Exception in thread "main" java.lang.IllegalArgumentException: Los dos jugadores no pueden usar la misma ficha
+	at Juego.&lt;init&gt;(PartidaMini.java:23)
+	at PartidaMini.comenzar(PartidaMini.java:12)
+	at PartidaMini.main(PartidaMini.java:7)</pre>
+<p>Ese bloque de texto es la <b>traza de pila</b> (en inglés, <i>stack trace</i>), y aprender a leerla te va a ahorrar horas. Se lee de arriba abajo:</p>
+<ol>
+<li><code>Exception in thread "main"</code>: la excepción no la atrapó nadie y mató al hilo <code>main</code>, el que ejecuta tu método <code>main</code>.</li>
+<li><code>java.lang.IllegalArgumentException</code>: la clase de la excepción, con su paquete. Ya te dice el tipo de problema.</li>
+<li><code>: Los dos jugadores…</code>: el mensaje que escribiste en el <code>throw</code>.</li>
+<li><code>at Juego.&lt;init&gt;(PartidaMini.java:23)</code>: <b>dónde nació</b>. <code>&lt;init&gt;</code> es el nombre interno que Java da a los constructores. Línea 23 del archivo: el <code>throw</code>.</li>
+<li><code>at PartidaMini.comenzar(PartidaMini.java:12)</code>: quién llamó a ese constructor: el método <code>comenzar</code>, en la línea 12 (el <code>new Juego(...)</code>).</li>
+<li><code>at PartidaMini.main(PartidaMini.java:7)</code>: y quién llamó a <code>comenzar</code>: <code>main</code>, en la línea 7.</li>
+</ol>
+<p>Es la pila de llamadas del capítulo 16 «fotografiada» en el momento del error: arriba el método más reciente, abajo el primero. La excepción viajó de <code>Juego()</code> a <code>comenzar</code> y de ahí a <code>main</code>, buscando quién la atendiera; como nadie lo hizo, el programa terminó, y por eso «Esta línea nunca se imprime» no aparece.</p>
+<div class="caja consejo"><b>Truco para depurar</b> En una traza larga, busca la <b>primera línea que mencione un archivo tuyo</b>. Las de arriba suelen ser de Java (por ejemplo <code>at java.base/...</code>) y casi nunca están mal; la primera que dice <code>Partida.java</code> o <code>PantallaJuego.java</code> es donde debes mirar. En NetBeans, esas líneas de la ventana <i>Output</i> son enlaces: un clic y te lleva a la línea exacta. El capítulo 62 profundiza en depurar.</div>
+<p>Un detalle sobre las ventanas: en un programa Swing como el Totito, los clics se procesan en otro hilo, el de eventos (capítulo 37). Si una excepción escapa de un clic, la traza aparece en <i>Output</i> como <code>Exception in thread "AWT-EventQueue-0"</code>, ese clic no termina su trabajo, pero la ventana <b>sigue abierta</b>. Por eso un error puede pasar desapercibido si no miras la consola mientras pruebas.</p>
+
+<h3>La familia de las excepciones</h3>
+<p>Todas las excepciones son clases que heredan (capítulo 22) de una raíz común, <code>Throwable</code> («lanzable»). El árbol, simplificado:</p>
+<svg viewBox="0 0 640 300" width="100%">
+<rect x="0" y="0" width="640" height="300" fill="#1C1740"/>
+<rect x="250" y="16" width="140" height="40" rx="10" fill="none" stroke="#C8BCF6" stroke-width="2"/>
+<text x="320" y="42" fill="#FFFFFF" font-size="16" font-family="sans-serif" text-anchor="middle">Throwable</text>
+<line x1="320" y1="56" x2="160" y2="96" stroke="#C8BCF6" stroke-width="2"/>
+<line x1="320" y1="56" x2="470" y2="96" stroke="#C8BCF6" stroke-width="2"/>
+<rect x="90" y="96" width="140" height="40" rx="10" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="160" y="122" fill="#FFFFFF" font-size="16" font-family="sans-serif" text-anchor="middle">Error</text>
+<text x="160" y="156" fill="#C8BCF6" font-size="12" font-family="sans-serif" text-anchor="middle">fallas graves de la JVM:</text>
+<text x="160" y="172" fill="#C8BCF6" font-size="12" font-family="sans-serif" text-anchor="middle">OutOfMemoryError…</text>
+<text x="160" y="188" fill="#C8BCF6" font-size="12" font-family="sans-serif" text-anchor="middle">(no se atrapan)</text>
+<rect x="400" y="96" width="140" height="40" rx="10" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="470" y="122" fill="#FFFFFF" font-size="16" font-family="sans-serif" text-anchor="middle">Exception</text>
+<line x1="470" y1="136" x2="370" y2="196" stroke="#2F84FF" stroke-width="2"/>
+<line x1="470" y1="136" x2="560" y2="196" stroke="#2F84FF" stroke-width="2"/>
+<rect x="280" y="196" width="180" height="40" rx="10" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="370" y="222" fill="#FFFFFF" font-size="15" font-family="sans-serif" text-anchor="middle">RuntimeException</text>
+<text x="370" y="256" fill="#FF3BD4" font-size="12" font-family="sans-serif" text-anchor="middle">NO comprobadas: IllegalArgument…,</text>
+<text x="370" y="272" fill="#FF3BD4" font-size="12" font-family="sans-serif" text-anchor="middle">NullPointer…, NumberFormat…</text>
+<rect x="490" y="196" width="140" height="40" rx="10" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="560" y="222" fill="#FFFFFF" font-size="15" font-family="sans-serif" text-anchor="middle">IOException…</text>
+<text x="560" y="256" fill="#2F84FF" font-size="12" font-family="sans-serif" text-anchor="middle">COMPROBADAS: el</text>
+<text x="560" y="272" fill="#2F84FF" font-size="12" font-family="sans-serif" text-anchor="middle">compilador te obliga</text>
+</svg>
+<ul>
+<li><b>Error</b>: problemas de la máquina virtual, como quedarse sin memoria. Tu programa no puede hacer nada sensato con ellos; no se atrapan.</li>
+<li><b>Exception</b> y sus hijas: problemas que un programa sí puede prever y manejar. Se dividen en dos grupos, y la diferencia es importantísima.</li>
+</ul>
+
+<h3>Comprobadas y no comprobadas</h3>
+<p>Las <b>no comprobadas</b> (en inglés <i>unchecked</i>) son <code>RuntimeException</code> y todas sus hijas. Suelen indicar un error de programación: un índice fuera del arreglo, un <code>null</code>, un argumento inválido. Java no te obliga a hacer nada con ellas, porque lo correcto es <b>arreglar el código</b>, no atraparlas. <code>IllegalArgumentException</code> es de este grupo.</p>
+<p>Las <b>comprobadas</b> (<i>checked</i>) son las demás hijas de <code>Exception</code>, como <code>IOException</code> (falló una lectura o escritura de archivo). Representan problemas del <b>mundo exterior</b> que pueden ocurrir aunque tu código esté perfecto: el disco está lleno, el archivo no existe, la red se cayó. Como son inevitables, Java te <b>obliga</b> a decidir qué hacer con ellas. Si no lo haces, no compila. Mira este intento de guardar el marcador en un archivo:</p>
+<pre class="java">import java.io.FileWriter;
+
+public class GuardarMarcador {
+
+    public static void main(String[] args) {
+        FileWriter archivo = new FileWriter("marcador.txt");
+        archivo.write("Ana 3 - Luis 1");
+        archivo.close();
+    }
+}
+</pre>
+<pre class="salida">GuardarMarcador.java:6: error: unreported exception IOException; must be caught or declared to be thrown
+        FileWriter archivo = new FileWriter("marcador.txt");
+                             ^
+GuardarMarcador.java:7: error: unreported exception IOException; must be caught or declared to be thrown
+        archivo.write("Ana 3 - Luis 1");
+                     ^
+GuardarMarcador.java:8: error: unreported exception IOException; must be caught or declared to be thrown
+        archivo.close();
+                     ^
+3 errors</pre>
+<p>El mensaje lo dice todo: «excepción IOException no informada; debe ser <b>atrapada</b> o <b>declarada</b> para ser lanzada». Tienes exactamente esas dos salidas: atraparla con <code>try</code>/<code>catch</code>, o avisar con <code>throws</code> que tu método puede dejarla pasar. Las dos aparecen en el Totito.</p>
+
+<h3>Declarar con throws: GeneradorIcono</h3>
+<p><code>herramientas/GeneradorIcono.java</code> (capítulo 64) escribe el archivo <code>totito.ico</code>. Sus métodos que tocan archivos llevan <code>throws IOException</code> en la firma:</p>
+<pre class="java">public static void main(String[] args) throws IOException {
+</pre>
+<pre class="java">/** El formato .ico guarda los numeros "al reves" (little-endian). */
+private static void corto(DataOutputStream salida, int valor) throws IOException {
+    salida.writeByte(valor &amp; 0xFF);
+    salida.writeByte((valor &gt;&gt; 8) &amp; 0xFF);
+}
+</pre>
+<p><code>throws IOException</code> (con <b>s</b> final, distinta de <code>throw</code>) va después de los paréntesis de los parámetros y significa: «este método puede terminar lanzando una IOException; quien me llame, que se haga cargo». No lanza nada por sí mismo: solo <b>avisa</b>. Es parte del contrato del método, igual que su tipo de retorno.</p>
+<p>¿Por qué ahí está bien no atraparla? Porque <code>GeneradorIcono</code> es una herramienta que ejecuta el programador una vez. Si no puede escribir el icono, no hay nada razonable que hacer más que detenerse y mostrar la traza. Que <code>main</code> declare <code>throws IOException</code> significa exactamente eso: si ocurre, el programa se detiene y la traza explica qué archivo falló. Para una herramienta interna es lo más honesto; para el juego que usa la gente, no.</p>
+<p>Hay un segundo caso, más sutil, en la clase interna <code>LimiteDeLargo</code> de <code>CampoTexto</code> (capítulos 25 y 47):</p>
+<pre class="java">@Override
+public void insertString(FilterBypass fb, int offset, String texto, AttributeSet attr)
+        throws BadLocationException {
+    replace(fb, offset, 0, texto, attr);
+}
+</pre>
+<p>Aquí <code>throws BadLocationException</code> no es una decisión del Totito: el método sobrescribe uno de <code>DocumentFilter</code>, que ya declara esa excepción, y llama a <code>replace</code>, que también puede lanzarla. Una regla de la sobrescritura (capítulo 23): el método hijo puede declarar las mismas excepciones comprobadas que el padre, o menos, pero <b>nunca más</b>. Quien usa un <code>DocumentFilter</code> está preparado para <code>BadLocationException</code> y nada más; un hijo no puede sorprenderlo con otra.</p>
+
+<h3>Atrapar con try, catch y finally</h3>
+<p>La otra salida es atender el problema tú mismo. Analogía: un cajero de supermercado con un billete sospechoso. No cierra la tienda (eso sería dejar caer la excepción): sigue un procedimiento («si el billete es falso, pide otro») y continúa atendiendo. El procedimiento se escribe así:</p>
+<pre class="java">public class Atrapar {
+
+    public static void main(String[] args) {
+        String[] escritos = {"2", "uno", "", "1"};
+        for (String texto : escritos) {
+            System.out.println("Fila escrita: \"" + texto + "\"");
+            try {
+                int fila = Integer.parseInt(texto);
+                System.out.println("  Número válido: " + fila);
+            } catch (NumberFormatException e) {
+                System.out.println("  No es un número: " + e.getMessage());
+            } finally {
+                System.out.println("  (finally: esto se ejecuta siempre)");
+            }
+        }
+        System.out.println("El programa sigue vivo.");
+    }
+}
+</pre>
+<pre class="salida">Fila escrita: "2"
+  Número válido: 2
+  (finally: esto se ejecuta siempre)
+Fila escrita: "uno"
+  No es un número: For input string: "uno"
+  (finally: esto se ejecuta siempre)
+Fila escrita: ""
+  No es un número: For input string: ""
+  (finally: esto se ejecuta siempre)
+Fila escrita: "1"
+  Número válido: 1
+  (finally: esto se ejecuta siempre)
+El programa sigue vivo.</pre>
+<ul>
+<li><code>try { … }</code>: «intenta». El bloque de código que podría fallar. Si una línea lanza una excepción, las siguientes del bloque se saltan.</li>
+<li><code>catch (NumberFormatException e) { … }</code>: «atrapa». Entre paréntesis va <b>qué tipo</b> de excepción atiende este bloque y un nombre de variable (<code>e</code>, por costumbre) para usar el objeto excepción dentro. <code>Integer.parseInt</code> lanza <code>NumberFormatException</code> cuando el texto no es un número. El catch solo atrapa ese tipo y sus hijos; cualquier otra excepción sigue subiendo.</li>
+<li><code>e.getMessage()</code>: el mensaje guardado en la excepción.</li>
+<li><code>finally { … }</code>: «finalmente». Se ejecuta <b>siempre</b>: si todo salió bien, si hubo excepción atrapada, incluso si hubo una que no se atrapó o un <code>return</code> dentro del try. Sirve para liberar algo que tomaste (cerrar un archivo, apagar un temporizador). Es opcional.</li>
+</ul>
+<p>Puedes poner varios <code>catch</code> seguidos para distintos tipos. Java los revisa en orden y usa el primero que encaje, así que los más específicos van primero; si pones <code>catch (Exception e)</code> antes que <code>catch (NumberFormatException e)</code>, el segundo nunca se alcanzaría y el compilador lo marca como error.</p>
+
+<h3>Mejor prevenir: PruebaConsola</h3>
+<p>Atrapar no es la única forma de lidiar con errores; a veces es mejor <b>evitar</b> que ocurran. <code>herramientas/PruebaConsola.java</code> (capítulo 32) lee números con un <code>Scanner</code> (capítulo 17). Si el usuario escribe letras, <code>nextInt()</code> lanzaría <code>InputMismatchException</code>; y si la entrada se cierra, <code>NoSuchElementException</code>. En vez de envolverlo todo en un try, el programa pregunta antes:</p>
+<pre class="java">System.out.print("Tu jugada: ");
+if (!teclado.hasNextInt()) {
+    return;   // se cerro la entrada: terminar sin error
+}
+int fila = teclado.nextInt();
+</pre>
+<p><code>hasNextInt()</code> responde <code>true</code> o <code>false</code> sin lanzar nada: «¿lo que viene es un entero?». Es como mirar si hay tráfico antes de cruzar en vez de confiar en el seguro médico. Cuando puedes comprobar una condición de forma barata, compruébala; reserva las excepciones para lo que no puedes prever.</p>
+
+<h3>try-with-resources: cerrar sin olvidarse</h3>
+<p>Un archivo abierto es un <b>recurso</b>: algo que el sistema operativo te presta y que hay que devolver. Si abres un archivo para escribir y no lo cierras, lo escrito puede no guardarse completo y Windows puede negarse a borrarlo o moverlo («el archivo está en uso»). Antes se cerraba en un <code>finally</code>, con bastante código repetitivo. Desde Java 7 existe una forma mejor: <b>try con recursos</b>. Es como un servicio de alquiler de bicicletas que te recoge la bici en la puerta de tu casa cuando terminas, pase lo que pase en el camino.</p>
+<p><code>GeneradorIcono.main</code> la usa para escribir el <code>.ico</code>:</p>
+<pre class="java">try (DataOutputStream ico = new DataOutputStream(
+        new FileOutputStream(new File(carpeta, "totito.ico")))) {
+    // Cabecera: reservado (0), tipo 1 = icono, cantidad de imagenes.
+    corto(ico, 0);
+    corto(ico, 1);
+    corto(ico, TAMANOS.length);
+    // ... (las entradas y las imagenes)
+}
+</pre>
+<ul>
+<li><code>try (</code> … <code>)</code>: entre los paréntesis, justo después de <code>try</code>, se declara y crea el recurso. Aquí, un <code>DataOutputStream</code> (escribe números en bytes) montado sobre un <code>FileOutputStream</code> (escribe en un archivo).</li>
+<li>Al salir del bloque <code>{ }</code>, por el camino que sea (terminó bien, hubo <code>return</code> o saltó una excepción), Java llama <b>solo</b> a <code>ico.close()</code>. No hay forma de olvidarlo.</li>
+<li>Este try no tiene <code>catch</code>: no lo necesita, porque <code>main</code> ya declara <code>throws IOException</code>. El try-with-resources solo se encarga de cerrar; si algo falla, la excepción sigue subiendo, ya con el archivo cerrado.</li>
+</ul>
+<p>Cualquier clase que implemente la interfaz <code>AutoCloseable</code> (capítulo 24) puede ir entre esos paréntesis. Este programa escribe el marcador en un archivo de texto, lo lee de vuelta, intenta leer uno que no existe, y muestra con un recurso de juguete que <code>close()</code> se llama incluso cuando hay un error:</p>
+<pre class="java">import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+public class Recursos {
+
+    public static void main(String[] args) {
+        // 1) Escribir el marcador en un archivo de texto.
+        try (PrintWriter salida = new PrintWriter(new FileWriter("marcador.txt"))) {
+            salida.println("Ana 3");
+            salida.println("Luis 1");
+            salida.println("Empates 2");
+        } catch (IOException e) {
+            System.out.println("No se pudo guardar: " + e.getMessage());
+        }
+
+        // 2) Leerlo de vuelta, línea por línea.
+        try (BufferedReader entrada = new BufferedReader(new FileReader("marcador.txt"))) {
+            String linea;
+            while ((linea = entrada.readLine()) != null) {
+                System.out.println("Leído: " + linea);
+            }
+        } catch (IOException e) {
+            System.out.println("No se pudo leer: " + e.getMessage());
+        }
+
+        // 3) Un archivo que no existe: la excepción se atrapa y el programa sigue.
+        try (BufferedReader entrada = new BufferedReader(new FileReader("no-existe.txt"))) {
+            System.out.println(entrada.readLine());
+        } catch (IOException e) {
+            System.out.println("Atrapada " + e.getClass().getSimpleName() + ": " + e.getMessage());
+        }
+
+        // 4) El cierre ocurre aunque haya un error dentro del bloque.
+        try (Grifo grifo = new Grifo()) {
+            System.out.println("Usando el grifo...");
+            throw new IllegalStateException("se fue el agua");
+        } catch (IllegalStateException e) {
+            System.out.println("Atrapada: " + e.getMessage());
+        }
+    }
+}
+
+/** Un recurso de juguete: avisa cuando lo cierran. */
+class Grifo implements AutoCloseable {
+    Grifo() {
+        System.out.println("Grifo abierto");
+    }
+
+    @Override
+    public void close() {
+        System.out.println("Grifo cerrado (close se llamó solo)");
+    }
+}
+</pre>
+<pre class="salida">Leído: Ana 3
+Leído: Luis 1
+Leído: Empates 2
+Atrapada FileNotFoundException: no-existe.txt (No such file or directory)
+Grifo abierto
+Usando el grifo...
+Grifo cerrado (close se llamó solo)
+Atrapada: se fue el agua</pre>
+<p>Fíjate en el orden de las últimas cuatro líneas: el grifo se cierra <b>antes</b> de que se ejecute el <code>catch</code>. Esa salida es la de este libro probada en Linux; en Windows, el mensaje del punto 3 sale en el idioma del sistema, algo como <code>no-existe.txt (El sistema no puede encontrar el archivo especificado)</code>. Después de ejecutarlo verás <code>marcador.txt</code> en tu carpeta de prácticas: ábrelo con el Bloc de notas.</p>
+<p>Observa también que <code>FileNotFoundException</code> fue atrapada por <code>catch (IOException e)</code>: es hija de <code>IOException</code>, y un catch atrapa el tipo indicado <b>y todos sus descendientes</b>. Es el polimorfismo del capítulo 23 aplicado a los errores.</p>
+
+<h3>Un catch vacío con buena razón: Tema.elegirFamilia</h3>
+<p>Como regla, un <code>catch</code> vacío es sospechoso: «se tragó» un error sin decir nada. Pero el Totito tiene uno, y está justificado. <code>Tema</code> (capítulo 40) elige la fuente de letra buscando, entre las instaladas en la computadora, la primera de su lista de preferidas:</p>
+<pre class="java">private static String elegirFamilia() {
+    try {
+        List&lt;String&gt; instaladas = Arrays.asList(
+                GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
+        for (String familia : FAMILIAS) {
+            if (instaladas.contains(familia)) {
+                return familia;
+            }
+        }
+    } catch (RuntimeException e) {
+        // Sin acceso a las fuentes del sistema: se usa la generica.
+    }
+    return Font.SANS_SERIF;
+}
+</pre>
+<p>Tres decisiones a mirar con lupa:</p>
+<ol>
+<li><b>Por qué atrapar.</b> Preguntarle al sistema qué fuentes hay depende de cosas fuera del control del juego: la configuración gráfica del equipo, permisos, un sistema sin entorno gráfico completo. En esos casos raros la consulta puede fallar con una excepción no comprobada. Y la elección de fuente es <b>cosmética</b>: si falla, el juego debe abrirse igual, con una letra genérica. Este método se llama al inicializar el campo <code>static final String FAMILIA</code> (capítulo 20); si la excepción escapara de ahí, Java la envolvería en un <code>ExceptionInInitializerError</code> y la clase <code>Tema</code> quedaría inutilizable: <b>ninguna</b> pantalla podría pedir un color. Un detalle estético tumbaría el programa entero.</li>
+<li><b>Por qué <code>RuntimeException</code> y no <code>Exception</code>.</b> En ese bloque no hay ninguna llamada que lance excepciones comprobadas, así que no hay ninguna que atender. Atrapar <code>RuntimeException</code> dice con precisión «cualquier fallo inesperado en tiempo de ejecución de esta consulta». No se atrapa <code>Error</code> (quedarse sin memoria no se arregla eligiendo otra fuente).</li>
+<li><b>Por qué vacío, pero con comentario.</b> No hay nada que hacer en el <code>catch</code>: la solución es la línea siguiente, <code>return Font.SANS_SERIF;</code>, que se ejecuta tanto si no se encontró ninguna fuente preferida como si hubo excepción. El comentario explica que el silencio es intencional. Un catch vacío <b>sin</b> comentario hace pensar al siguiente programador que alguien se olvidó de algo.</li>
+</ol>
+<p>Esto tiene un nombre: <b>degradar con elegancia</b>. Ante un fallo en algo secundario, el programa ofrece una versión un poco menos bonita en lugar de no funcionar.</p>
+
+<h3>Excepciones propias</h3>
+<p>Puedes crear tus propias clases de excepción heredando de <code>Exception</code> (comprobada) o de <code>RuntimeException</code> (no comprobada). Valen la pena cuando el error es un concepto de <i>tu</i> problema y quien llama necesita distinguirlo o recibir datos extra. Un banco es el ejemplo clásico: intentar retirar más de lo que hay en la cuenta no es un error del programa, es algo que el cajero debe manejar.</p>
+<pre class="java">public class Banco {
+
+    public static void main(String[] args) {
+        Cuenta cuenta = new Cuenta("Ana", 500.00);
+        double[] retiros = {120.00, 450.00, -5.00, 80.00};
+        for (double monto : retiros) {
+            try {
+                cuenta.retirar(monto);
+                System.out.printf("Retiro de Q%.2f aprobado. Saldo: Q%.2f%n", monto, cuenta.getSaldo());
+            } catch (SaldoInsuficienteException e) {
+                System.out.printf("Rechazado: %s (faltan Q%.2f)%n", e.getMessage(), e.getFaltante());
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error del programa: " + e.getMessage());
+            }
+        }
+    }
+}
+
+/** Excepción propia y COMPROBADA: el que llame a retirar() está obligado a decidir qué hacer. */
+class SaldoInsuficienteException extends Exception {
+    private final double faltante;
+
+    SaldoInsuficienteException(String mensaje, double faltante) {
+        super(mensaje);
+        this.faltante = faltante;
+    }
+
+    double getFaltante() {
+        return faltante;
+    }
+}
+
+class Cuenta {
+    private final String titular;
+    private double saldo;
+
+    Cuenta(String titular, double saldoInicial) {
+        this.titular = titular;
+        this.saldo = saldoInicial;
+    }
+
+    void retirar(double monto) throws SaldoInsuficienteException {
+        if (monto &lt;= 0) {
+            throw new IllegalArgumentException("el monto debe ser positivo: " + monto);
+        }
+        if (monto &gt; saldo) {
+            throw new SaldoInsuficienteException("saldo insuficiente en la cuenta de " + titular, monto - saldo);
+        }
+        saldo -= monto;
+    }
+
+    double getSaldo() {
+        return saldo;
+    }
+}
+</pre>
+<pre class="salida">Retiro de Q120.00 aprobado. Saldo: Q380.00
+Rechazado: saldo insuficiente en la cuenta de Ana (faltan Q70.00)
+Error del programa: el monto debe ser positivo: -5.0
+Retiro de Q80.00 aprobado. Saldo: Q300.00</pre>
+<ul>
+<li><code>class SaldoInsuficienteException extends Exception</code>: hereda de <code>Exception</code>, así que es comprobada. El nombre termina en <code>Exception</code> por convención, para que se reconozca de un vistazo.</li>
+<li><code>super(mensaje)</code>: pasa el mensaje al constructor de la clase padre (capítulo 22), que lo guarda para <code>getMessage()</code>.</li>
+<li>El campo <code>faltante</code> es información extra: el cajero puede decirle al cliente cuánto le falta.</li>
+<li><code>retirar</code> usa los dos tipos con criterio: un monto negativo es un <b>error del programa</b> (<code>IllegalArgumentException</code>, no comprobada); el saldo insuficiente es una <b>situación del negocio</b> que el llamador debe atender (comprobada, y por eso la firma lleva <code>throws</code>).</li>
+<li>Tras cada error el ciclo sigue: el retiro de 80 se aprueba. Atrapar dentro del <code>for</code> permite que un problema no detenga los demás.</li>
+</ul>
+
+<h3>Malas prácticas que debes reconocer</h3>
+<table class="tabla">
+<tr><th>Práctica</th><th>Por qué es mala</th><th>Qué hacer</th></tr>
+<tr><td><code>catch (Exception e) { }</code> vacío y sin comentario</td><td>Esconde todos los errores, incluso los que no imaginaste. El programa falla después, lejos de la causa.</td><td>Atrapa el tipo concreto; si el silencio es intencional, explícalo como en <code>Tema</code>.</td></tr>
+<tr><td>Atrapar <code>NullPointerException</code> o <code>ArrayIndexOutOfBoundsException</code></td><td>Son señales de un error en tu código. Atraparlas es tapar la gotera con una toalla.</td><td>Corrige la causa: comprueba <code>null</code>, revisa los índices.</td></tr>
+<tr><td>Usar excepciones para el flujo normal</td><td>Lentas y confusas: una excepción dice «algo salió mal».</td><td>Para lo esperable, un <code>boolean</code> o un <code>if</code> (como <code>marcarCasilla</code> y <code>hasNextInt</code>).</td></tr>
+<tr><td>Mensajes vacíos: <code>throw new IllegalArgumentException()</code></td><td>La traza dice dónde, pero no qué.</td><td>Incluye el dato que falló: <code>"el monto debe ser positivo: " + monto</code>.</td></tr>
+<tr><td>Abrir archivos sin try-with-resources</td><td>Si algo falla a mitad, el archivo queda abierto.</td><td>Siempre <code>try (recurso) { … }</code>.</td></tr>
+</table>
+<div class="caja concepto"><b>Falla rápido</b> Es mejor que un error se detecte lo antes posible y cerca de su causa, como hace el constructor de <code>Partida</code>, que dejar que un dato inválido viaje por el programa y cause un fallo raro diez pantallas después. Las excepciones bien lanzadas son tu sistema de alarma temprana.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Un <b>enum</b> es un tipo con una lista cerrada de constantes con nombre; cada constante es un objeto único, por eso se comparan con <code>==</code>. El Totito usa <code>Partida.Modo</code>, <code>Partida.Estado</code>, <code>BotonNeon.Estilo</code> y <code>Rotulo.Tipo</code>.</li>
+<li>Los enums traen <code>values()</code>, <code>name()</code>, <code>ordinal()</code> y <code>valueOf()</code>; pueden tener campos, constructor (siempre privado) y métodos.</li>
+<li>El <code>switch</code> con enums usa las constantes sin prefijo; el switch expresión obliga a cubrir todos los casos, y el compilador avisa si falta uno.</li>
+<li>Una <b>excepción</b> es un objeto que se lanza con <code>throw</code>, sube por la pila de llamadas y se atrapa con <code>try</code>/<code>catch</code>; <code>finally</code> se ejecuta siempre. Si nadie la atrapa, la traza de pila muestra el tipo, el mensaje y el camino del error.</li>
+<li>Las <b>comprobadas</b> (como <code>IOException</code>) obligan a atrapar o a declarar con <code>throws</code>; las <b>no comprobadas</b> (<code>RuntimeException</code> y sus hijas) suelen indicar errores de programación.</li>
+<li><b>try-with-resources</b> cierra solo los archivos y demás recursos <code>AutoCloseable</code>, como en <code>GeneradorIcono</code>.</li>
+<li>Para lo esperable, valores de retorno (<code>marcarCasilla</code> devuelve <code>false</code>); para los errores, excepciones (<code>Partida</code> rechaza fichas repetidas). Un catch vacío solo se justifica con un motivo y un comentario, como en <code>Tema.elegirFamilia</code>.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Tienda en línea:</b> <code>enum EstadoPedido { PENDIENTE, PAGADO, ENVIADO, ENTREGADO, CANCELADO }</code> con un método <code>puedePasarA(EstadoPedido otro)</code> que impida saltos absurdos (de ENTREGADO a PENDIENTE). Y una excepción <code>SinExistenciasException</code> cuando se compra más de lo que hay en bodega.</li>
+<li><b>Sistema escolar:</b> <code>enum Rol { ALUMNO, DOCENTE, DIRECTOR }</code> para los permisos, y un constructor de <code>Nota</code> que lance <code>IllegalArgumentException</code> si la calificación no está entre 0 y 100: una nota inválida nunca llega a la base de datos.</li>
+<li><b>Banco:</b> excepciones comprobadas propias para lo que el cajero debe manejar (saldo insuficiente, cuenta bloqueada) y no comprobadas para los errores del programa (montos negativos). Cualquier archivo o conexión, siempre con try-with-resources.</li>
+<li><b>Otro juego:</b> en un Conecta 4 (capítulo 68), <code>enum Direccion { HORIZONTAL, VERTICAL, DIAGONAL_SUBE, DIAGONAL_BAJA }</code> con los pasos <code>dFila</code>, <code>dColumna</code> como campos simplifica la búsqueda de cuatro en línea; y la columna llena se maneja con un <code>boolean</code>, porque es algo esperable.</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Escribe <code>enum Dia { LUNES, …, DOMINGO }</code> y un programa que recorra <code>Dia.values()</code> e imprima cada día con su <code>ordinal()</code>. Agrega un método <code>esFinDeSemana()</code> dentro del enum. Pista: dentro de un método del enum, <code>this</code> es la constante actual; compara <code>this == SABADO || this == DOMINGO</code>.</li>
+<li>Agrega una constante <code>ABANDONADA</code> al enum <code>Estado</code> de <code>EnumsBasicos</code> y ejecútalo sin cambiar nada más. ¿Qué error da el compilador y en qué línea? Arréglalo agregando el caso que falta.</li>
+<li>Modifica <code>Atrapar</code> para que, en vez de imprimir el error, pida el número otra vez con un <code>Scanner</code> hasta que el usuario escriba un entero entre 0 y 2. Pista: un <code>while</code> con una variable <code>boolean valido</code>; usa <code>hasNextInt()</code> y descarta lo inválido con <code>next()</code>.</li>
+<li>Crea la clase <code>Nota</code> con un constructor que reciba un <code>int</code> y lance <code>IllegalArgumentException</code> con un mensaje claro si no está entre 0 y 100. Provoca el error a propósito, lee la traza y señala en qué línea nació la excepción y quién llamó al constructor.</li>
+<li>Reto: escribe un programa que guarde en <code>tareas.txt</code> una lista de tareas (una por línea) y luego la lea y numere, todo con try-with-resources. Después crea <code>ArchivoVacioException</code> (comprobada) y lánzala desde un método <code>leerTareas()</code> si el archivo no tiene ninguna línea.</li>
+</ol>
+</div>
+</section>

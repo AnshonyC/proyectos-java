@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Java desde cero con el Totito</title>
+<style>
+@page {
+  size: letter;
+  margin: 17mm 16mm 18mm 16mm;
+  @bottom-center { content: counter(page); font: 8.5pt "DejaVu Sans", sans-serif; color: #7a6fa8; }
+  @top-right { content: "Java desde cero con el Totito"; font: 7.5pt "DejaVu Sans", sans-serif; color: #b3a9d6; }
+}
+@page portada { margin: 0; @bottom-center { content: none; } @top-right { content: none; } }
+@page separador { @bottom-center { content: none; } @top-right { content: none; } }
+* { box-sizing: border-box; }
+body { font-family: "DejaVu Serif", "Liberation Serif", serif; font-size: 10.3pt; line-height: 1.55; color: #211e36; margin: 0;
+  hyphens: auto; }
+h1, h2, h3, .num, .rango, table.tabla th, .caja b:first-child, .separador, .portada, .indice { font-family: "DejaVu Sans", "Liberation Sans", sans-serif; }
+p { margin: 0 0 8px; text-align: justify; }
+a { color: #4b2a8f; text-decoration: none; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.7pt; background: #f1edfb; padding: 0 3px; border-radius: 3px; color: #4b2a8f; hyphens: none; }
+b { color: #1c1740; }
+
+/* ---------- portada ---------- */
+.portada { page: portada; height: 279.4mm; width: 215.9mm; display: flex; flex-direction: column; justify-content: center; align-items: center;
+  text-align: center; color: white; padding: 25mm;
+  background: radial-gradient(circle at 50% 42%, #3a2a7a 0%, #1c1740 45%, #0e0b24 100%); }
+.portada .eti { letter-spacing: 7px; font-size: 10pt; color: #a89be2; }
+.portada img { width: 70mm; margin: 18mm 0 12mm; filter: drop-shadow(0 0 18px #a05cffaa); }
+.portada .titulo { font-size: 38pt; font-weight: bold; line-height: 1.1; }
+.portada .titulo span { color: #ff5ce0; }
+.portada .sub { font-size: 13pt; color: #c8bcf6; margin-top: 10mm; line-height: 1.5; }
+.portada .pie { margin-top: 22mm; font-size: 9.5pt; color: #8f83c4; letter-spacing: 2px; }
+
+.creditos { break-before: page; font-family: "DejaVu Sans", sans-serif; font-size: 9pt; color: #5a527c; padding-top: 150mm; }
+.creditos p { text-align: left; }
+
+/* ---------- indice ---------- */
+.indice { break-before: page; }
+.indice h1 { margin-bottom: 6mm; }
+.indice > ol { list-style: none; padding: 0; columns: 2; column-gap: 9mm; font-size: 8.8pt; }
+.indice li.parte { break-inside: avoid-column; margin-bottom: 4mm; }
+.indice li.parte > a { font-weight: bold; color: #4a2a9a; display: block; border-bottom: 1.5px solid #a05cff; margin-bottom: 1.5mm; }
+.indice ol ol { list-style: none; padding: 0; }
+.indice ol ol li { margin: 0.6mm 0; }
+.indice ol ol a { color: #2b2160; }
+.indice ol ol a { display: flex; }
+.indice ol ol a span { flex: none; width: 7mm; color: #a05cff; font-weight: bold; }
+.indice ol ol a span.pag { width: auto; margin-left: auto; padding-left: 2mm; color: #7a6fa8; font-weight: normal; }
+p, li { orphans: 3; widows: 3; }
+
+/* ---------- separadores de parte ---------- */
+.separador { page: separador; break-before: page; break-after: page; min-height: 240mm; display: flex; flex-direction: column;
+  justify-content: center; padding: 20mm 14mm; color: white; border-radius: 10px;
+  background: linear-gradient(160deg, #1c1740 0%, #0e0b24 100%); }
+.separador .romano { font-size: 13pt; letter-spacing: 8px; color: #ff5ce0; text-transform: uppercase; }
+.separador .nombre { font-size: 30pt; font-weight: bold; line-height: 1.15; margin: 6mm 0; }
+.separador p { color: #c8bcf6; font-size: 12pt; text-align: left; }
+.separador ul { list-style: none; padding: 0; margin-top: 10mm; color: #a89be2; font-size: 10pt; }
+.separador li { padding: 1.2mm 0; border-bottom: 1px solid #ffffff18; }
+
+/* ---------- capitulos ---------- */
+section.capitulo { break-before: page; }
+h1 { font-size: 22pt; color: #2b2160; margin: 0 0 6mm; line-height: 1.15; break-after: avoid; }
+h1 .num { display: block; font-size: 10pt; letter-spacing: 4px; text-transform: uppercase; color: #a05cff; margin-bottom: 2mm; }
+h2 { font-size: 14.5pt; color: #4a2a9a; margin: 7mm 0 3mm; border-bottom: 2px solid #e4dcfa; padding-bottom: 1mm; break-after: avoid; }
+h2.archivo { color: #1c1740; }
+h2 .lineas { font-size: 8.5pt; color: #8d82bb; font-weight: normal; }
+h3 { font-size: 11.5pt; color: #2b2160; margin: 5mm 0 2mm; break-after: avoid; }
+p.entrada { font-size: 11.5pt; color: #4a4170; font-style: italic; border-left: 4px solid #ff3bd4; padding-left: 4mm; text-align: left; }
+ul, ol { margin: 0 0 8px; padding-left: 7mm; }
+li { margin-bottom: 1.2mm; }
+figure { margin: 4mm auto; text-align: center; break-inside: avoid; }
+figure img { max-width: 100%; max-height: 105mm; border-radius: 8px; }
+figcaption { font-family: "DejaVu Sans", sans-serif; font-size: 8pt; color: #6b5fa0; margin-top: 1.5mm; }
+svg { max-width: 100%; height: auto; display: block; margin: 3mm auto; break-inside: avoid; }
+
+table.tabla { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 8.9pt; font-family: "DejaVu Sans", sans-serif; }
+table.tabla th { background: #2b2160; color: white; text-align: left; padding: 1.6mm 2.2mm; }
+table.tabla td { border-bottom: 1px solid #e2dcf3; padding: 1.4mm 2.2mm; vertical-align: top; }
+table.tabla tr:nth-child(even) td { background: #faf8ff; }
+table.tabla tr { break-inside: avoid; }
+
+pre { font-family: "DejaVu Sans Mono", monospace; font-size: 8pt; line-height: 1.42; padding: 3mm 4mm; border-radius: 6px;
+  white-space: pre-wrap; word-break: break-word; margin: 3mm 0 4mm; break-inside: avoid; hyphens: none; }
+pre.java { background: #161331; color: #e9e5ff; }
+pre.ps { background: #012456; color: #eef3ff; }
+pre.ps .prompt { color: #ffe066; }
+pre.ps .c { color: #9fb6dd; font-style: italic; }
+pre.salida { background: #0c0c0c; color: #d7d7d7; }
+pre.texto { background: #f4f1fb; color: #2b2160; border: 1px solid #e0d8f5; }
+.k { color: #ff7ae2; font-weight: bold; } .t { color: #7fd3ff; } .s { color: #a5f3a0; } .n { color: #ffcf70; }
+.c { color: #9188c6; font-style: italic; } .a { color: #ffcf70; }
+
+.caja { border-radius: 0 7px 7px 0; padding: 3mm 4.5mm; margin: 4mm 0; break-inside: avoid; border-left: 5px solid; }
+.caja > b:first-child { display: block; font-size: 10pt; margin-bottom: 1.2mm; }
+.caja p:last-child, .caja ol:last-child, .caja ul:last-child { margin-bottom: 0; }
+.caja.concepto { border-color: #a05cff; background: #f5f0ff; }
+.caja.concepto > b:first-child::before { content: "💡 "; }
+.caja.consejo { border-color: #2fbf71; background: #effaf3; }
+.caja.consejo > b:first-child::before { content: "✓ "; color: #2fbf71; }
+.caja.cuidado { border-color: #ff8a3d; background: #fff4ec; }
+.caja.cuidado > b:first-child::before { content: "⚠ "; color: #ff8a3d; }
+.caja.aplica { border-color: #2f84ff; background: #eef5ff; break-inside: auto; }
+.caja.aplica > b:first-child::before { content: "➜ "; color: #2f84ff; }
+.caja.ejercicio { border-color: #ff3bd4; background: #fff1fc; break-inside: auto; }
+.caja.ejercicio > b:first-child::before { content: "✎ "; color: #ff3bd4; }
+.caja.git { border-color: #f05133; background: #fff3f0; }
+.caja.git > b:first-child::before { content: "⎇ "; color: #f05133; }
+.caja.hito { border-color: #ffb800; background: linear-gradient(90deg, #fff7da, #fffdf3); }
+.caja.hito > b:first-child::before { content: "★ "; color: #ffb800; }
+
+/* ---------- codigo linea por linea ---------- */
+.bloque { margin: 3mm 0 5mm; break-inside: avoid; }
+.bloque.largo { break-inside: auto; }
+table.codigo { width: 100%; border-collapse: collapse; background: #161331; border-radius: 6px 6px 0 0;
+  font-family: "DejaVu Sans Mono", monospace; font-size: 7.6pt; line-height: 1.42; hyphens: none; }
+table.codigo td { padding: 0 2mm; vertical-align: top; }
+table.codigo tr:first-child td { padding-top: 2mm; }
+table.codigo tr:last-child td { padding-bottom: 2mm; }
+td.ln { width: 9mm; text-align: right; color: #6f66a6; background: #110e28; }
+td.cd { color: #e9e5ff; white-space: pre-wrap; word-break: break-all; }
+.nota { border: 1.5px solid #a05cff; border-top: none; border-radius: 0 0 6px 6px; padding: 2.5mm 4mm; background: #fbf9ff; font-size: 9.6pt; }
+.nota p { margin-bottom: 1.6mm; }
+.nota p.l b:first-child { font-family: "DejaVu Sans Mono", monospace; font-size: 8pt; color: white; background: #a05cff;
+  padding: 0 1.4mm; border-radius: 3px; margin-right: 1.5mm; }
+.rango { display: inline-block; font-size: 7.4pt; color: #a05cff; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 1mm; }
+
+.prologo { break-before: page; }
+.prologo p { font-size: 10.8pt; }
+</style>
+</head>
+<body>
+
+<div class="portada">
+  <div class="eti">PROGRAMACIÓN · DISEÑO · GIT · DISTRIBUCIÓN</div>
+  <img src="recursos/totito.png">
+  <div class="titulo">Java desde cero<br>con el <span>Totito</span></div>
+  <div class="sub">Programación orientada a objetos, diseño y color, Git y GitHub,<br>
+  y cómo convertir tu programa en un .exe para el mundo,<br>construyendo un juego completo de principio a fin.</div>
+  <div class="pie">EDICIÓN 1.0 · OCTUBRE 2026</div>
+</div>
+
+<div class="creditos">
+  <p><b>Java desde cero con el Totito</b><br>Edición 1.0 — octubre de 2026</p>
+  <p>Proyecto de referencia: repositorio <b>proyectos-java</b>, carpeta <code>Totito/</code>. Todo el código
+  del libro es el código real de ese proyecto. Se compiló y se probó antes de escribir cada capítulo.</p>
+  <p>Herramientas usadas en el libro: Java 21 (Eclipse Temurin), Apache NetBeans 25, Git, GitHub CLI,
+  jpackage, WiX Toolset 3.14 e Inno Setup. Todas son gratuitas.</p>
+  <p>Puedes usar, copiar y modificar el código del Totito para aprender y para tus propios proyectos.</p>
+</div>
+
+<div class="prologo">
+<h1><span class="num">Antes de empezar</span>Prólogo</h1>
+<p>Este libro tiene una promesa sencilla: si nunca has programado, al terminarlo habrás construido, con tus
+propias manos y entendiendo cada línea, un juego completo. Será el <b>totito</b> de toda la vida (el tres en
+raya), con una interfaz de colores neón, una inteligencia artificial que no pierde nunca y un instalador
+<code>.exe</code> que podrás mandarle a cualquiera.</p>
+<p>No es un libro de recetas. Cada vez que escribamos algo, por pequeño que sea (un punto y coma, una llave,
+la palabra <code>private</code>), vas a saber <b>qué hace</b>, <b>por qué está ahí</b> y <b>para qué sirve</b>.
+También vas a ver qué pasaría si no estuviera. El totito es la excusa: lo que de verdad te llevas es la forma de
+pensar de un programador. Por eso cada capítulo termina con una sección <i>«Aplícalo fuera del Totito»</i>, que
+enseña a usar lo aprendido en una tienda, una escuela, otro juego o cualquier idea que tengas.</p>
+<p>El camino tiene nueve partes. Primero preparamos la computadora y aprendemos a usar la terminal y Git, la
+herramienta que guarda cada paso de tu trabajo. Después vienen los fundamentos de Java y la programación orientada
+a objetos, siempre con ejemplos del juego. Con esa base escribimos la primera versión del totito: la lógica, una IA
+y una ventana sencilla. Luego estudiamos diseño, color y cómo dibuja Java, y construimos la versión final, clase por
+clase. Al final aprendemos a probar, empaquetar, crear el instalador y publicarlo en GitHub, y a llevar todo esto a
+otros proyectos.</p>
+<p>Un consejo antes de empezar: <b>escribe el código, no lo copies y pegues</b>. Al escribirlo te vas a equivocar, el
+compilador te va a avisar y vas a aprender a leer sus mensajes. Esa es, quizá, la habilidad más valiosa de todas.
+Si algo no funciona, el apéndice D reúne los errores más comunes y su solución.</p>
+<p>Bienvenido. Abre tu computadora y empecemos.</p>
+</div>
+
+<nav class="indice">
+<h1><span class="num">Mapa del libro</span>Contenido</h1>
+<ol>{{INDICE}}</ol>
+</nav>
+
+{{CUERPO}}
+
+</body>
+</html>

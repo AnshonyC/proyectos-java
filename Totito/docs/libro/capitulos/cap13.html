@@ -1,0 +1,449 @@
+<section class="capitulo" id="cap13">
+<h1><span class="num">Capítulo 13</span>Decisiones</h1>
+<p class="entrada">Un juego está hecho de preguntas: ¿esta casilla está libre?, ¿alguien hizo tres en línea?, ¿le toca a la computadora? En este capítulo aprendes a que tu programa tome caminos distintos según la respuesta, con <code>if</code>, <code>else</code>, los operadores lógicos, <code>switch</code> y el operador ternario, todos tal como aparecen en el Totito.</p>
+
+<h2>Por qué un programa necesita decidir</h2>
+<p>Hasta ahora tus programas eran una lista que se ejecutaba de arriba abajo, siempre igual. Pero el Totito no hace siempre lo mismo: si haces clic en una casilla vacía pone tu ficha; si está ocupada, no hace nada; si tu jugada completa una línea, anuncia la victoria; si no, pasa el turno. Esas bifurcaciones se llaman <b>estructuras de control</b> o de <b>decisión</b>: le dicen a la computadora «ejecuta esto solo si se cumple tal condición».</p>
+<div class="caja concepto"><b>Analogía: el semáforo.</b> Cuando llegas a una esquina decides: si está en verde, avanzas; si está en amarillo, frenas con cuidado; si no (rojo), te detienes. Nunca haces las tres cosas, siempre exactamente una, y la elección depende de una condición que miras en ese momento. Un <code>if … else if … else</code> es eso mismo, escrito en Java.</div>
+
+<h2>El <code>if</code>: ejecutar algo solo si…</h2>
+<p>La forma más simple:</p>
+<pre class="java">if (condicion) {
+    // instrucciones que se ejecutan solo si la condicion es true
+}</pre>
+<ul>
+<li><b><code>if</code></b> («si» en inglés) es una palabra reservada.</li>
+<li><b>Los paréntesis</b> encierran la <b>condición</b>: cualquier expresión cuyo resultado sea un <code>boolean</code> (capítulo 12). No puede ser un número ni un texto: <code>if (turno)</code> no compila si <code>turno</code> es un <code>int</code>; hay que preguntar algo, como <code>if (turno == 1)</code>.</li>
+<li><b>Las llaves</b> encierran el bloque que depende de la condición. Si la condición es <code>false</code>, Java salta el bloque entero y sigue con lo que haya después de la llave de cierre.</li>
+</ul>
+<p>Un ejemplo real, de <code>BotonNeon.paintComponent</code>:</p>
+<pre class="java">if (!isEnabled()) {
+    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
+}</pre>
+<p>«Si el botón <i>no</i> está habilitado, dibuja todo al 40 % de opacidad». Un botón desactivado se ve apagado; uno activo se dibuja normal porque el bloque simplemente no se ejecuta. El <code>!</code> significa «no» y lo verás en un momento.</p>
+
+<h2><code>else</code> y <code>else if</code>: elegir entre varios caminos</h2>
+<p><code>else</code> («si no») añade el camino alternativo: lo que se hace cuando la condición es falsa. Y <code>else if</code> encadena más preguntas. Este programa decide qué pasó en una partida a partir de lo que devolverían <code>verificarGanador()</code> y <code>tableroLleno()</code> del <code>Tablero</code>:</p>
+<pre class="java">public class EstadoPartida {
+    public static void main(String[] args) {
+        char ganador = 'O';          // lo que devolveria verificarGanador()
+        boolean lleno = false;       // lo que devolveria tableroLleno()
+
+        if (ganador != ' ') {
+            System.out.println("Gano " + ganador);
+        } else if (lleno) {
+            System.out.println("Empate");
+        } else {
+            System.out.println("La partida sigue");
+        }
+        System.out.println("(fin de la revision)");
+    }
+}</pre>
+<pre class="salida">Gano O
+(fin de la revision)</pre>
+<p>Cómo lo recorre Java, paso a paso:</p>
+<ol>
+<li>Evalúa <code>ganador != ' '</code>: <code>'O'</code> es distinto de espacio, así que es <code>true</code>. Ejecuta el primer bloque e imprime «Gano O».</li>
+<li><b>Salta todos los demás</b> <code>else if</code> y <code>else</code> sin mirarlos. En una cadena así se ejecuta como máximo <b>un</b> bloque: el primero cuya condición sea verdadera.</li>
+<li>Continúa después de la última llave: «(fin de la revision)».</li>
+</ol>
+<p>Cambia <code>ganador</code> a <code>' '</code> y <code>lleno</code> a <code>true</code>: la primera condición es falsa, la segunda verdadera → «Empate». Con <code>' '</code> y <code>false</code>, ninguna lo es y se ejecuta el <code>else</code> → «La partida sigue». El <code>else</code> final no lleva condición: es el «en cualquier otro caso».</p>
+<svg viewBox="0 0 720 250" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="720" height="250" rx="14" fill="#1C1740"/>
+<rect x="20" y="30" width="170" height="44" rx="22" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="105" y="57" fill="#FFFFFF" font-size="14" text-anchor="middle">¿ganador != ' '?</text>
+<line x1="190" y1="52" x2="250" y2="52" stroke="#FF3BD4" stroke-width="2"/>
+<text x="220" y="45" fill="#FF3BD4" font-size="12" text-anchor="middle">sí</text>
+<rect x="250" y="30" width="150" height="44" rx="8" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="325" y="57" fill="#FFFFFF" font-size="14" text-anchor="middle">«Gano O»</text>
+<line x1="105" y1="74" x2="105" y2="110" stroke="#C8BCF6" stroke-width="2"/>
+<text x="120" y="96" fill="#C8BCF6" font-size="12">no</text>
+<rect x="20" y="110" width="170" height="44" rx="22" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="105" y="137" fill="#FFFFFF" font-size="14" text-anchor="middle">¿lleno?</text>
+<line x1="190" y1="132" x2="250" y2="132" stroke="#FF3BD4" stroke-width="2"/>
+<text x="220" y="125" fill="#FF3BD4" font-size="12" text-anchor="middle">sí</text>
+<rect x="250" y="110" width="150" height="44" rx="8" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="325" y="137" fill="#FFFFFF" font-size="14" text-anchor="middle">«Empate»</text>
+<line x1="105" y1="154" x2="105" y2="190" stroke="#C8BCF6" stroke-width="2"/>
+<text x="120" y="176" fill="#C8BCF6" font-size="12">no</text>
+<rect x="20" y="190" width="170" height="44" rx="8" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="105" y="217" fill="#FFFFFF" font-size="14" text-anchor="middle">«La partida sigue»</text>
+<line x1="400" y1="52" x2="560" y2="52" stroke="#C8BCF6" stroke-width="2"/>
+<line x1="400" y1="132" x2="560" y2="132" stroke="#C8BCF6" stroke-width="2"/>
+<line x1="190" y1="212" x2="560" y2="212" stroke="#C8BCF6" stroke-width="2"/>
+<line x1="560" y1="52" x2="560" y2="212" stroke="#C8BCF6" stroke-width="2"/>
+<line x1="560" y1="132" x2="580" y2="132" stroke="#C8BCF6" stroke-width="2"/>
+<rect x="580" y="110" width="125" height="44" rx="8" fill="none" stroke="#C8BCF6" stroke-width="2"/>
+<text x="642" y="137" fill="#FFFFFF" font-size="13" text-anchor="middle">fin de la revisión</text>
+</svg>
+<p>El Totito hace exactamente esto en <code>Partida.jugar</code>, después de colocar la ficha:</p>
+<pre class="java">if (tablero.verificarGanador() != Tablero.VACIA) {
+    estado = Estado.VICTORIA;
+    ganador = jugadores[turno];
+    victorias[turno]++;
+} else if (tablero.tableroLleno()) {
+    estado = Estado.EMPATE;
+    empates++;
+} else {
+    turno = 1 - turno;
+}</pre>
+<p>Tres caminos y solo uno se recorre: o alguien ganó (se anota la victoria), o se llenó el tablero (se anota el empate), o la partida sigue (se pasa el turno). Fíjate en por qué el <b>orden importa</b>: si la última jugada llena el tablero <i>y</i> forma una línea, hay que anunciar victoria, no empate. Como la victoria se pregunta primero, gana ella. Si invirtieras los dos primeros bloques, el jugador que gana con la novena ficha vería «¡Empate!». Un error de lógica sin ningún mensaje de error.</p>
+
+<h3>Varias comprobaciones seguidas: las cláusulas de guarda</h3>
+<p>Otra forma muy común de usar <code>if</code> es para salir en cuanto algo no está bien. Así empieza <code>Tablero.marcarCasilla</code>:</p>
+<pre class="java">if (fila &lt; 0 || fila &gt; 2 || columna &lt; 0 || columna &gt; 2) {
+    return false;
+}
+if (casillas[fila][columna] != VACIA) {
+    return false;
+}
+casillas[fila][columna] = ficha;
+return true;</pre>
+<p><code>return</code> termina el método en ese instante y devuelve un valor a quien lo llamó (capítulo 16). Así que se lee: «si la posición está fuera del tablero, rechaza; si la casilla está ocupada, rechaza; si llegaste hasta aquí, todo está bien: coloca la ficha y acepta». A estos <code>if</code> que filtran los casos malos al principio se les llama <b>cláusulas de guarda</b>, como el guardia de la entrada de un edificio que revisa credenciales antes de dejarte pasar. Evitan amontonar <code>if</code> dentro de <code>if</code> y dejan el «camino feliz» al final, limpio. Este programa simula esa validación con <code>else if</code>:</p>
+<pre class="java">public class ValidarJugada {
+    public static void main(String[] args) {
+        int fila = 1;
+        int columna = 3;
+        char ocupante = ' ';
+
+        if (fila &lt; 0 || fila &gt; 2 || columna &lt; 0 || columna &gt; 2) {
+            System.out.println("(" + fila + ", " + columna + ") esta fuera del tablero");
+        } else if (ocupante != ' ') {
+            System.out.println("La casilla ya tiene una " + ocupante);
+        } else {
+            System.out.println("Jugada valida en (" + fila + ", " + columna + ")");
+        }
+    }
+}</pre>
+<pre class="salida">(1, 3) esta fuera del tablero</pre>
+<p>¿Por qué importa que la comprobación de rango vaya antes que la de «ocupada»? Porque en el <code>Tablero</code> real la segunda lee <code>casillas[fila][columna]</code>, y con columna 3 eso sería el <code>ArrayIndexOutOfBoundsException</code> del capítulo 11. La primera guarda protege a la segunda.</p>
+
+<h3>Ifs anidados</h3>
+<p>Un <code>if</code> puede ir dentro de otro. <code>IA_Minimax.calcularMejorJugada</code> lo hace dentro de dos bucles: «si la casilla está vacía, simula la jugada; y si el valor obtenido es mejor que el récord, guárdala»:</p>
+<pre class="java">if (tablero.obtenerCasilla(fila, columna) == Tablero.VACIA) {
+    Tablero copia = tablero.obtenerCopia();
+    copia.marcarCasilla(fila, columna, fichaIA);
+    int valor = minimax(copia, 0, false);
+    if (valor &gt; mejorValor) {
+        mejorValor = valor;
+        mejorJugada[0] = fila;
+        mejorJugada[1] = columna;
+    }
+}</pre>
+<p>El <code>if</code> interior solo se evalúa si el exterior fue verdadero. Es como «si tengo hambre, abro la refri; y si hay pollo, lo caliento». Con más de dos o tres niveles el código se vuelve difícil de seguir; entonces conviene usar guardas o los operadores lógicos que vienen ahora.</p>
+
+<h2>Operadores lógicos: <code>&amp;&amp;</code>, <code>||</code> y <code>!</code></h2>
+<p>Sirven para combinar condiciones:</p>
+<table class="tabla">
+<tr><th>Operador</th><th>Se lee</th><th>Es true cuando…</th><th>En el Totito</th></tr>
+<tr><td><code>&amp;&amp;</code></td><td>y</td><td>las <b>dos</b> condiciones son true</td><td><code>ia != null &amp;&amp; turno == 1 &amp;&amp; estado == Estado.EN_CURSO</code></td></tr>
+<tr><td><code>||</code></td><td>o</td><td><b>al menos una</b> es true</td><td><code>fila &lt; 0 || fila &gt; 2</code></td></tr>
+<tr><td><code>!</code></td><td>no</td><td>la condición es false (la invierte)</td><td><code>!tablero.marcarCasilla(…)</code>, <code>!isEnabled()</code></td></tr>
+</table>
+<p>La <b>tabla de verdad</b> muestra todos los casos posibles:</p>
+<pre class="java">public class TablaVerdad {
+    public static void main(String[] args) {
+        System.out.println("a      b      a &amp;&amp; b  a || b  !a");
+        boolean a = true, b = true;
+        System.out.println(a + "   " + b + "   " + (a &amp;&amp; b) + "    " + (a || b) + "    " + !a);
+        b = false;
+        System.out.println(a + "   " + b + "  " + (a &amp;&amp; b) + "   " + (a || b) + "    " + !a);
+        a = false; b = true;
+        System.out.println(a + "  " + b + "   " + (a &amp;&amp; b) + "   " + (a || b) + "    " + !a);
+        b = false;
+        System.out.println(a + "  " + b + "  " + (a &amp;&amp; b) + "   " + (a || b) + "   " + !a);
+    }
+}</pre>
+<pre class="salida">a      b      a &amp;&amp; b  a || b  !a
+true   true   true    true    false
+true   false  false   true    false
+false  true   false   true    true
+false  false  false   false   true</pre>
+<p>(<code>boolean a = true, b = true;</code> declara dos variables del mismo tipo en una línea, separadas por coma.)</p>
+
+<h3>Cómo lee el Totito sus condiciones compuestas</h3>
+<p><code>Partida.esTurnoDeIA()</code>:</p>
+<pre class="java">return ia != null &amp;&amp; turno == 1 &amp;&amp; estado == Estado.EN_CURSO;</pre>
+<p>«Le toca a la IA si: <i>existe</i> una IA (estamos en modo contra la computadora) <b>y</b> el turno es del jugador 2 <b>y</b> la partida no ha terminado». Las tres a la vez. Si falta una, no es su turno.</p>
+<p>La condición de victoria en una fila, de <code>Tablero.verificarGanador</code>:</p>
+<pre class="java">if (casillas[i][0] != VACIA &amp;&amp; casillas[i][0] == casillas[i][1] &amp;&amp; casillas[i][1] == casillas[i][2]) {</pre>
+<p>«La primera casilla no está vacía <b>y</b> la primera es igual a la segunda <b>y</b> la segunda igual a la tercera». ¿Por qué hace falta la primera parte? Porque una fila completamente vacía también tiene tres casillas iguales (tres espacios) y, sin esa comprobación, ¡el juego diría que ganó el espacio en blanco al empezar!</p>
+<p>Y en <code>PanelTablero.actualizarCursor</code>, una condición partida en dos líneas para leerla mejor:</p>
+<pre class="java">boolean sePuedeJugar = interactivo &amp;&amp; filaEncima &gt;= 0
+        &amp;&amp; fichas[filaEncima][columnaEncima] == Tablero.VACIA;</pre>
+<p>La manita del ratón aparece solo si el tablero acepta clics, el ratón está sobre alguna casilla y esa casilla está vacía. Guardar el resultado en un <code>boolean</code> con buen nombre hace que la línea siguiente se lea sola: <code>sePuedeJugar ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR</code>.</p>
+<div class="caja consejo"><b>Precedencia lógica.</b> <code>!</code> se aplica primero, luego <code>&amp;&amp;</code> y por último <code>||</code>; y todos van después de las comparaciones (<code>&lt;</code>, <code>==</code>…). Por eso <code>fila &lt; 0 || fila &gt; 2</code> funciona sin paréntesis. Si mezclas <code>&amp;&amp;</code> y <code>||</code> en la misma condición, pon paréntesis aunque no hagan falta: <code>(a &amp;&amp; b) || c</code>.</div>
+
+<h3>El cortocircuito: por qué el orden importa</h3>
+<p><code>&amp;&amp;</code> y <code>||</code> son perezosos, y eso es una virtud. Evalúan de izquierda a derecha y <b>se detienen en cuanto saben la respuesta</b>:</p>
+<ul>
+<li>En <code>a &amp;&amp; b</code>, si <code>a</code> es false, el resultado ya es false: <code>b</code> no se evalúa.</li>
+<li>En <code>a || b</code>, si <code>a</code> es true, el resultado ya es true: <code>b</code> no se evalúa.</li>
+</ul>
+<p>A eso se le llama <b>evaluación en cortocircuito</b>, y el Totito depende de ella. En <code>BotonNeon.pintarContenidoCentrado</code>:</p>
+<pre class="java">if (texto == null || texto.isEmpty()) {</pre>
+<p><code>null</code> significa «no hay ningún objeto» (capítulo 18). Si <code>texto</code> es <code>null</code>, la primera parte ya es true y Java <i>no</i> llama a <code>texto.isEmpty()</code>, lo cual es una suerte: pedirle algo a un objeto que no existe detiene el programa. Mira qué pasa si inviertes el orden:</p>
+<pre class="java">public class Cortocircuito {
+    public static void main(String[] args) {
+        String texto = null;   // un boton sin texto
+
+        // Como BotonNeon: si es null, ni siquiera mira isEmpty()
+        if (texto == null || texto.isEmpty()) {
+            System.out.println("Boton solo con icono");
+        }
+
+        // Al reves, el orden importa: aqui se llama isEmpty() sobre null
+        if (texto.isEmpty() || texto == null) {
+            System.out.println("Nunca llega aqui");
+        }
+    }
+}</pre>
+<pre class="salida">Boton solo con icono
+Exception in thread "main" java.lang.NullPointerException: Cannot invoke "String.isEmpty()" because "&lt;local1&gt;" is null
+	at Cortocircuito.main(Cortocircuito.java:11)</pre>
+<p>La famosa <code>NullPointerException</code>: «no puedo llamar a <code>isEmpty()</code> porque la variable es null». (<code>&lt;local1&gt;</code> es como llama Java a <code>texto</code> cuando se compila sin información de depuración; desde NetBeans verás el nombre real.) Lo mismo protege <code>ia != null &amp;&amp; …</code> en <code>esTurnoDeIA()</code> y <code>interactivo &amp;&amp; oyente != null &amp;&amp; filaEncima &gt;= 0</code> en <code>PanelTablero</code>: primero se comprueba que la cosa existe, y solo después se usa.</p>
+<div class="caja concepto"><b>Analogía.</b> «¿Tienes carro y está lleno el tanque?» Si la respuesta a la primera parte es «no tengo carro», nadie va a revisar el tanque. El cortocircuito es ese sentido común: no preguntes por el tanque de un carro que no existe.</div>
+<div class="caja cuidado">Existen también <code>&amp;</code> y <code>|</code> (con un solo símbolo). Con <code>boolean</code> calculan lo mismo, pero <b>sin</b> cortocircuito: evalúan siempre las dos partes. Con <code>texto == null | texto.isEmpty()</code> el programa fallaría igual. En condiciones usa siempre los dobles.</div>
+
+<h3>El «no» y cómo negar condiciones compuestas</h3>
+<p><code>!</code> invierte un <code>boolean</code>. En <code>Partida.jugar</code>:</p>
+<pre class="java">if (!tablero.marcarCasilla(fila, columna, jugadores[turno].getFicha())) {
+    return false;
+}</pre>
+<p>Ojo con lo que hace esta línea: <i>llama</i> a <code>marcarCasilla</code>, que intenta colocar la ficha y devuelve true si pudo; el <code>!</code> invierte ese resultado. Se lee «si <b>no</b> se pudo marcar la casilla, la jugada no vale». Cuando sí se pudo, la ficha ya quedó puesta y el método sigue.</p>
+<p>Para negar una condición con <code>&amp;&amp;</code> o <code>||</code> se usan las <b>leyes de De Morgan</b>: <code>!(a &amp;&amp; b)</code> es lo mismo que <code>!a || !b</code>, y <code>!(a || b)</code> es <code>!a &amp;&amp; !b</code>. Ejemplo: «fuera del tablero» es <code>fila &lt; 0 || fila &gt; 2</code>; «dentro» es lo contrario, <code>fila &gt;= 0 &amp;&amp; fila &lt;= 2</code>. Es la condición que verás en <code>PanelTablero</code>: <code>fila &gt;= 0 &amp;&amp; fila &lt; 3</code>.</p>
+
+<h2>Errores clásicos con <code>if</code></h2>
+<h3>El punto y coma fantasma</h3>
+<pre class="java">public class PuntoYComa {
+    public static void main(String[] args) {
+        int fila = 5;
+        if (fila &gt; 2); {
+            System.out.println("Fila fuera de rango");
+        }
+        fila = 1;
+        if (fila &gt; 2); {
+            System.out.println("Fila fuera de rango (y fila vale " + fila + ")");
+        }
+    }
+}</pre>
+<pre class="salida">Fila fuera de rango
+Fila fuera de rango (y fila vale 1)</pre>
+<p>Con fila 1 no debería imprimir nada, y lo imprime. El <code>;</code> después del paréntesis termina el <code>if</code> ahí mismo, con una instrucción vacía; el bloque de llaves queda suelto y se ejecuta siempre. Compila sin quejarse. <b>Nunca</b> pongas <code>;</code> entre la condición y la llave.</p>
+<h3>Olvidar las llaves</h3>
+<p>Java permite un <code>if</code> sin llaves cuando el bloque es una sola instrucción: <code>if (fila &gt; 2) return false;</code>. Pero si después añades una segunda línea, creyendo que también depende del <code>if</code>, te equivocas: solo la primera depende de él, la segunda se ejecuta siempre, por mucho que la sangría diga lo contrario. Por eso el Totito usa llaves en <i>todos</i> sus <code>if</code>, aunque tengan una sola línea. Es una de las buenas prácticas más aceptadas.</p>
+<h3>Comparar textos con <code>==</code></h3>
+<p>Con <code>int</code>, <code>char</code> y <code>boolean</code>, <code>==</code> compara valores. Con <code>String</code> no: compara si son <i>el mismo objeto</i> en memoria, y dos textos iguales pueden ser objetos distintos. Para textos se usa <code>nombre.equals("Ana")</code>. Lo verás con detalle en el capítulo 17. (Otra razón por la que la ficha es <code>char</code>.)</p>
+
+<h2><code>switch</code>: elegir según un valor</h2>
+<p>Cuando la pregunta es «¿cuál de estos valores tiene esta variable?», una cadena de <code>else if</code> se vuelve repetitiva. Para eso existe <code>switch</code> («conmutador», como el selector de canales de una radio). Java tiene dos formas: la clásica, heredada del lenguaje C, y la moderna con flechas.</p>
+<h3>El switch clásico</h3>
+<pre class="java">public class SwitchClasico {
+    public static void main(String[] args) {
+        int casilla = 4;   // casillas numeradas de 0 a 8
+        String nombre;
+        switch (casilla) {
+            case 0:
+            case 2:
+            case 6:
+            case 8:
+                nombre = "esquina";
+                break;
+            case 4:
+                nombre = "centro";
+                break;
+            default:
+                nombre = "borde";
+                break;
+        }
+        System.out.println("La casilla " + casilla + " es " + nombre);
+    }
+}</pre>
+<pre class="salida">La casilla 4 es centro</pre>
+<ul>
+<li><b><code>switch (casilla)</code></b>: el valor que se examina. Puede ser <code>int</code>, <code>char</code>, <code>String</code> o un enum (más abajo).</li>
+<li><b><code>case 4:</code></b>: una etiqueta. Java salta directamente a la etiqueta que coincide con el valor y empieza a ejecutar desde ahí.</li>
+<li><b><code>break;</code></b>: «rompe», sale del <code>switch</code>. Sin él, la ejecución <b>sigue hacia abajo</b> por los casos siguientes.</li>
+<li><b><code>default:</code></b>: lo que se hace si ningún <code>case</code> coincide; es el <code>else</code> del switch.</li>
+<li>Varias etiquetas seguidas (<code>case 0: case 2: …</code>) comparten el mismo código: las cuatro esquinas.</li>
+</ul>
+<p>Ese «seguir hacia abajo» (en inglés <i>fall-through</i>) es la mayor trampa del switch clásico. Olvida los <code>break</code>:</p>
+<pre class="java">public class SinBreak {
+    public static void main(String[] args) {
+        char ficha = 'X';
+        switch (ficha) {
+            case 'X':
+                System.out.println("rosa");
+            case 'O':
+                System.out.println("azul");
+            default:
+                System.out.println("sin color");
+        }
+    }
+}</pre>
+<pre class="salida">rosa
+azul
+sin color</pre>
+<p>Entró en <code>'X'</code> y, como nada lo detuvo, ejecutó también los casos de <code>'O'</code> y el <code>default</code>. Compila sin advertencias. Es un error tan frecuente que Java creó una forma nueva.</p>
+
+<h3>El switch con flechas <code>-&gt;</code></h3>
+<p>Desde Java 14, cada caso puede escribirse con una flecha. Con flechas <b>no hay fall-through</b>: se ejecuta solo lo que está a la derecha de la flecha del caso que coincide, y se acabó. Además, el switch puede <b>devolver un valor</b>, como una expresión. Así decide <code>BotonNeon</code> cuánto redondear las esquinas según su estilo:</p>
+<pre class="java">double arco = switch (estilo) {
+    case MENU -&gt; 30;
+    case ICONO -&gt; 16;
+    default -&gt; alto;        // pildora: extremos totalmente redondos
+};</pre>
+<p>Se lee: «el arco vale 30 si el estilo es MENU, 16 si es ICONO, y en cualquier otro caso (las dos píldoras) vale lo mismo que la altura del botón». Un arco igual a la altura hace los extremos completamente redondos: por eso los botones «Comenzar partida» o «Volver» parecen cápsulas. Fíjate en el <code>;</code> después de la llave de cierre: todo el <code>switch</code> es el valor de una asignación, y la asignación termina con punto y coma.</p>
+<p><code>estilo</code> es de tipo <code>Estilo</code>, un <b>enum</b>: una lista cerrada de valores con nombre que define el propio programador (<code>MENU</code>, <code>PILDORA</code>, <code>CONTORNO</code>, <code>ICONO</code>). Los enums se estudian en el capítulo 26; por ahora basta saber que son perfectos para un switch, porque el compilador conoce todos los valores posibles. Este programa reproduce el switch de <code>BotonNeon</code> y añade otra novedad: varias etiquetas separadas por comas en un mismo caso.</p>
+<pre class="java">public class SwitchFlecha {
+    enum Estilo { MENU, PILDORA, CONTORNO, ICONO }
+
+    public static void main(String[] args) {
+        double alto = 48;
+        Estilo estilo = Estilo.ICONO;
+
+        // Como en BotonNeon.paintComponent: un switch que DEVUELVE un valor
+        double arco = switch (estilo) {
+            case MENU -&gt; 30;
+            case ICONO -&gt; 16;
+            default -&gt; alto;        // pildora: extremos totalmente redondos
+        };
+        System.out.println(estilo + " -&gt; arco " + arco);
+
+        estilo = Estilo.CONTORNO;
+        arco = switch (estilo) {
+            case MENU -&gt; 30;
+            case ICONO -&gt; 16;
+            default -&gt; alto;
+        };
+        System.out.println(estilo + " -&gt; arco " + arco);
+
+        // Varias etiquetas en un mismo caso
+        int casilla = 6;
+        String tipo = switch (casilla) {
+            case 0, 2, 6, 8 -&gt; "esquina";
+            case 4 -&gt; "centro";
+            default -&gt; "borde";
+        };
+        System.out.println("La casilla " + casilla + " es " + tipo);
+    }
+}</pre>
+<pre class="salida">ICONO -&gt; arco 16.0
+CONTORNO -&gt; arco 48.0
+La casilla 6 es esquina</pre>
+<p>Compara el último switch con <code>SwitchClasico</code>: hace lo mismo en tres líneas, sin <code>break</code> y sin posibilidad de olvidarlo.</p>
+
+<h3>Switch que ejecuta acciones</h3>
+<p>No todo switch devuelve un valor; también puede ejecutar instrucciones distintas en cada caso. Si un caso necesita varias líneas, se envuelven en llaves. Así actualiza <code>PantallaJuego</code> el letrero de arriba del tablero según el estado de la partida:</p>
+<pre class="java">public class SwitchEstado {
+    enum Estado { EN_CURSO, VICTORIA, EMPATE }
+
+    public static void main(String[] args) {
+        Estado estado = Estado.VICTORIA;
+        String nombreEnTurno = "Ana";
+        boolean turnoDeIA = false;
+
+        // Como PantallaJuego.actualizar(): un switch que HACE algo en cada caso
+        switch (estado) {
+            case EN_CURSO -&gt; {
+                String texto = turnoDeIA
+                        ? "La computadora esta pensando..."
+                        : "Turno de " + nombreEnTurno;
+                System.out.println(texto);
+            }
+            case VICTORIA -&gt; System.out.println("¡Tres en linea!");
+            case EMPATE -&gt; System.out.println("¡Empate!");
+        }
+    }
+}</pre>
+<pre class="salida">¡Tres en linea!</pre>
+<p>En el Totito real, en lugar de <code>println</code>, cada caso llama a <code>turno.setTexto(…)</code> con el texto y los colores adecuados: rosa o azul según la ficha en curso, lavanda y morado para el empate. Al usar un enum, dentro de los <code>case</code> se escribe solo <code>VICTORIA</code>, no <code>Estado.VICTORIA</code>: Java ya sabe de qué enum se trata.</p>
+<div class="caja concepto"><b>El compilador te cuida.</b> Cuando un switch con flechas <i>devuelve</i> un valor, debe cubrir todos los casos posibles. Si olvidas uno y no hay <code>default</code>, no compila:
+<pre class="salida">SwitchSinCaso.java:6: error: the switch expression does not cover all possible input values
+        String letrero = switch (estado) {
+                         ^</pre>
+Esto es una gran ventaja: si algún día añades un estado nuevo al enum (por ejemplo <code>PAUSA</code>), el compilador te señala cada switch que se quedó sin tratarlo.</div>
+<table class="tabla">
+<tr><th></th><th>Switch clásico (<code>case X:</code>)</th><th>Switch con flechas (<code>case X -&gt;</code>)</th></tr>
+<tr><td>¿Sigue a los casos de abajo?</td><td>Sí, si no pones <code>break</code></td><td>Nunca</td></tr>
+<tr><td>¿Puede devolver un valor?</td><td>No (con <code>case X:</code> habría que usar <code>yield</code>)</td><td>Sí: <code>double arco = switch (…) { … };</code></td></tr>
+<tr><td>¿Varias etiquetas?</td><td>Apilando <code>case</code></td><td>Con comas: <code>case 0, 2, 6, 8 -&gt;</code></td></tr>
+<tr><td>¿Cuándo usarlo?</td><td>Al leer código antiguo</td><td>En código nuevo: es lo que usa el Totito</td></tr>
+</table>
+<p>¿Switch o <code>if</code>? Usa <code>switch</code> cuando compares <b>una</b> variable contra <b>valores fijos</b> (un estado, un estilo, una opción de menú). Usa <code>if</code> cuando las condiciones sean rangos (<code>fila &gt; 2</code>), mezclen varias variables o lleven <code>&amp;&amp;</code>/<code>||</code>.</p>
+
+<h2>El operador ternario <code>? :</code></h2>
+<p>Muchas decisiones del Totito no ejecutan acciones distintas, sino que eligen <b>entre dos valores</b>. Para eso hay un atajo, el único operador de Java con tres partes:</p>
+<pre class="java">condicion ? valorSiTrue : valorSiFalse</pre>
+<p>Se lee «¿se cumple la condición? entonces esto; si no, aquello». El resultado es un valor que se puede guardar, devolver o pasar a un método. Ejemplos reales:</p>
+<table class="tabla">
+<tr><th>Código del Totito</th><th>Dónde</th><th>Qué decide</th></tr>
+<tr><td><code>char fichaJugador2 = fichaJugador1 == 'X' ? 'O' : 'X';</code></td><td><code>PantallaConfiguracion</code></td><td>El jugador 2 usa la ficha que no eligió el 1</td></tr>
+<tr><td><code>turno = jugadores[0].getFicha() == FICHA_INICIAL ? 0 : 1;</code></td><td><code>Partida.reiniciar</code></td><td>Empieza quien tenga la X</td></tr>
+<tr><td><code>return ficha == 'X' ? ROSA : AZUL;</code></td><td><code>Tema.colorDeFicha</code></td><td>La X es rosa y la O azul, siempre</td></tr>
+<tr><td><code>return nombre.isEmpty() ? titulo : nombre;</code></td><td><code>TarjetaJugador.getNombre</code></td><td>Si no escribiste nombre, usa «Jugador 1»</td></tr>
+<tr><td><code>this.ia = modo == Modo.CONTRA_IA ? new IA_Minimax(…) : null;</code></td><td>constructor de <code>Partida</code></td><td>Solo se crea la IA si se juega contra ella</td></tr>
+<tr><td><code>resaltado ? 1.5f : 1f</code></td><td><code>BotonNeon</code></td><td>Con el ratón encima, el neón brilla 50 % más</td></tr>
+</table>
+<pre class="java">public class Ternario {
+    public static void main(String[] args) {
+        char fichaJugador1 = 'O';
+        char fichaJugador2 = fichaJugador1 == 'X' ? 'O' : 'X';
+        System.out.println("Jugador 2 juega con " + fichaJugador2);
+
+        // Partida.reiniciar(): empieza quien tenga la X
+        int turno = fichaJugador1 == 'X' ? 0 : 1;
+        System.out.println("Empieza el jugador de indice " + turno);
+
+        // TarjetaJugador.getNombre(): si no escribio nombre, se usa el titulo
+        String escrito = "   ".trim();
+        String nombre = escrito.isEmpty() ? "Jugador 1" : escrito;
+        System.out.println("Nombre: " + nombre);
+
+        // Tema.colorDeFicha(): la X siempre rosa, la O siempre azul
+        String color = fichaJugador2 == 'X' ? "ROSA" : "AZUL";
+        System.out.println("Color del jugador 2: " + color);
+    }
+}</pre>
+<pre class="salida">Jugador 2 juega con X
+Empieza el jugador de indice 1
+Nombre: Jugador 1
+Color del jugador 2: ROSA</pre>
+<p>Traza: el jugador 1 eligió la O. <code>fichaJugador1 == 'X'</code> es false → se toma el valor de después de los dos puntos, <code>'X'</code>. Como la X no la tiene el jugador 1 (índice 0), empieza el índice 1. El usuario dejó solo espacios en el nombre; <code>trim()</code> los quita (capítulo 17), queda vacío, y se usa «Jugador 1».</p>
+<p>Esto mismo con <code>if</code> ocuparía cinco líneas:</p>
+<pre class="java">char fichaJugador2;
+if (fichaJugador1 == 'X') {
+    fichaJugador2 = 'O';
+} else {
+    fichaJugador2 = 'X';
+}</pre>
+<p>El ternario lo dice en una y, además, permite declarar la variable ya con su valor (incluso como <code>final</code>).</p>
+<div class="caja consejo"><b>Cuándo no usarlo.</b> El ternario es para elegir entre <b>dos valores sencillos</b>. Si hay que ejecutar acciones, o si te ves anidando un ternario dentro de otro (<code>a ? b : c ? d : e</code>), vuelve al <code>if</code> o al <code>switch</code>: el código se lee más veces de las que se escribe. Cuando la condición o los valores son largos, pártelo en líneas como <code>PantallaJuego</code>, con el <code>?</code> y el <code>:</code> al principio de cada línea.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li><code>if (condición) { … }</code> ejecuta un bloque solo si la condición (un <code>boolean</code>) es true; <code>else if</code> encadena alternativas y <code>else</code> recoge el resto. Se ejecuta como mucho un bloque de la cadena, y el orden de las preguntas importa.</li>
+<li>Las <b>cláusulas de guarda</b> (<code>if (malo) { return …; }</code> al principio) filtran los casos inválidos, como hace <code>marcarCasilla</code>.</li>
+<li><code>&amp;&amp;</code> (y), <code>||</code> (o) y <code>!</code> (no) combinan condiciones. Evalúan en <b>cortocircuito</b>: pon primero la comprobación que protege (<code>texto == null || texto.isEmpty()</code>).</li>
+<li>Errores típicos: <code>;</code> después del <code>if</code>, omitir llaves, comparar textos con <code>==</code>.</li>
+<li>El <code>switch</code> clásico sigue de largo sin <code>break</code>; el <code>switch</code> con <code>-&gt;</code> no, puede devolver un valor y el compilador exige cubrir todos los casos.</li>
+<li>El ternario <code>cond ? a : b</code> elige entre dos valores en una línea: la ficha del rival, el color, quién empieza.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Validar formularios.</b> En un registro de clientes, cláusulas de guarda: si el nombre está vacío, rechaza; si el correo no tiene <code>@</code>, rechaza; si la edad es menor de 18, rechaza; si todo pasó, guarda. Es <code>marcarCasilla</code> con otros datos.</li>
+<li><b>Precios por rangos.</b> Una tienda que da 5 % de descuento desde Q100 y 10 % desde Q500 usa <code>if / else if / else</code> preguntando primero por el rango más alto, igual que el Totito pregunta por la victoria antes que por el empate.</li>
+<li><b>Menús y estados.</b> Una calculadora (<code>switch</code> sobre el operador <code>'+'</code>, <code>'-'</code>, <code>'*'</code>, <code>'/'</code>), un semáforo o un reproductor de música (<code>REPRODUCIENDO</code>, <code>PAUSA</code>, <code>DETENIDO</code>) se resuelven con un enum y un switch con flechas.</li>
+<li><b>Textos según el caso.</b> <code>cantidad == 1 ? "1 producto" : cantidad + " productos"</code> evita el feo «1 productos» en cualquier aplicación.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Escribe un programa con una variable <code>int victorias</code> que imprima «Principiante» si tiene menos de 3, «Intermedio» de 3 a 9 y «Experto» con 10 o más. Prueba con 0, 3, 9 y 10.</li>
+<li>Reescribe la condición «la casilla (fila, columna) está dentro del tablero» usando <code>&amp;&amp;</code> en lugar de <code>||</code>, y comprueba con varios valores que da lo contrario de la de <code>marcarCasilla</code>. Pista: leyes de De Morgan.</li>
+<li>Con un <code>switch</code> con flechas sobre un <code>char</code>, convierte la ficha en su color como texto: <code>'X'</code> → «rosa», <code>'O'</code> → «azul», cualquier otra → «vacía». Luego hazlo con un ternario anidado y decide cuál se lee mejor.</li>
+<li>Las tres variables <code>char a, b, c</code> representan una fila del tablero. Escribe la condición que diga si esa fila es ganadora, sin olvidar el caso de la fila vacía. Pruébala con <code>'X','X','X'</code>, <code>' ',' ',' '</code> y <code>'X','O','X'</code>.</li>
+<li>Reto: simula <code>Partida.jugar</code> con variables. Declara <code>boolean hayGanador</code>, <code>boolean lleno</code> e <code>int turno</code>, y con un <code>if / else if / else</code> imprime «Victoria del jugador N», «Empate» o «Ahora juega el jugador M» (calcula M con <code>1 - turno</code>). ¿Qué pasa si <code>hayGanador</code> y <code>lleno</code> son true a la vez?</li>
+</ol></div>
+</section>

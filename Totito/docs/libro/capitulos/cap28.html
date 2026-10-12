@@ -1,0 +1,323 @@
+<section class="capitulo" id="cap28">
+<h1><span class="num">Capítulo 28</span>Plan de la lógica: pensar antes de programar</h1>
+<p class="entrada">Antes de escribir una sola línea del Totito vamos a hacer lo que hacen los programadores con experiencia: entender el problema, partirlo en piezas con una sola tarea cada una y decidir en qué orden construirlas. Este capítulo no tiene código para escribir, pero es el mapa de los cinco capítulos que siguen; si lo entiendes, cada archivo te parecerá la consecuencia natural de un plan, no una ocurrencia.</p>
+
+<h2>Dónde estamos y adónde vamos</h2>
+<p>En las Partes III y IV aprendiste las piezas sueltas de Java: variables, <code>if</code>, <code>for</code>, arreglos, métodos, clases, objetos, constructores, <code>private</code>, <code>static</code>, <code>final</code>, lambdas. Ahora toca juntarlas en un programa de verdad. La Parte V construye la <b>versión 0.1</b> del Totito: toda la lógica del juego (las reglas y una inteligencia artificial que nunca pierde) y una primera ventana sencilla, gris y blanca, en la que ya se puede jugar con el ratón. Es fea a propósito: aquí lo importante es que <i>funcione</i>.</p>
+<p>En la Parte VI aprenderás diseño visual y en la Parte VII construirás la interfaz neón definitiva (la versión 1.0). Lo interesante es que la versión 1.0 <b>reutiliza sin cambiar ni una coma</b> las tres clases de lógica que escribirás aquí. Eso no es suerte: es el resultado del plan de este capítulo.</p>
+<table class="tabla">
+<tr><th>Capítulo</th><th>Qué construyes</th><th>Qué puedes hacer al terminarlo</th></tr>
+<tr><td>28</td><td>El plan (este capítulo)</td><td>Saber qué clases hay, qué hace cada una y en qué orden se escriben</td></tr>
+<tr><td>29</td><td><code>src\Tablero.java</code></td><td>Guardar el estado del tablero y aplicar las reglas</td></tr>
+<tr><td>30</td><td><code>src\Jugador.java</code></td><td>Representar a una persona con su nombre y su ficha</td></tr>
+<tr><td>31</td><td><code>src\IA_Minimax.java</code></td><td>Calcular la mejor jugada de la computadora</td></tr>
+<tr><td>32</td><td><code>herramientas\PruebaConsola.java</code></td><td>Jugar contra la IA escribiendo en la terminal, sin ventana</td></tr>
+<tr><td>33</td><td><code>src\JuegoMain.java</code></td><td>Jugar con el ratón en una ventana: <b>Totito v0.1</b></td></tr>
+</table>
+
+<h2>Paso 1: describir el problema con palabras</h2>
+<p>El error más común de quien empieza es abrir NetBeans y ponerse a escribir código «a ver qué sale». Funciona con programas de diez líneas; con uno de mil termina en un enredo que nadie entiende. La alternativa es sencilla y no necesita computadora: <b>escribir en español, con frases cortas, qué tiene que hacer el programa</b>. Hagámoslo con el totito:</p>
+<ol>
+<li>Hay un <b>tablero</b> de 3 filas por 3 columnas, es decir, 9 <b>casillas</b>. Al principio todas están vacías.</li>
+<li>Hay dos <b>jugadores</b>. Cada uno tiene una <b>ficha</b>: X u O. En nuestra versión 0.1 uno es una persona (X) y el otro es la <b>computadora</b> (O). Siempre empieza la X.</li>
+<li>Por turnos, cada jugador <b>marca</b> una casilla vacía con su ficha. No se puede marcar una casilla ocupada.</li>
+<li>Si un jugador consigue tres fichas suyas en línea (una fila, una columna o una diagonal), <b>gana</b> y la partida termina.</li>
+<li>Si las 9 casillas se llenan y nadie hizo línea, es <b>empate</b>.</li>
+<li>La computadora <b>elige</b> su casilla pensando en todas las jugadas posibles, para no perder nunca.</li>
+<li>Al terminar, se puede <b>reiniciar</b> y jugar otra vez.</li>
+</ol>
+<p>Parece obvio, pero ese párrafo ya contiene casi todo el diseño. Solo hay que saber leerlo.</p>
+
+<h2>Paso 2: sustantivos y verbos</h2>
+<p>Hay una técnica clásica para pasar de la descripción a las clases: <b>subrayar los sustantivos y los verbos</b>. Los sustantivos importantes suelen convertirse en <b>clases</b> o en <b>atributos</b> (datos que una clase guarda); los verbos suelen convertirse en <b>métodos</b> (acciones). Recuerda del capítulo 18 que una clase es un molde que junta datos y acciones que van juntos.</p>
+<table class="tabla">
+<tr><th>Palabra de la descripción</th><th>Tipo</th><th>En qué se convierte</th></tr>
+<tr><td>tablero</td><td>sustantivo central</td><td>la clase <code>Tablero</code></td></tr>
+<tr><td>casillas</td><td>sustantivo que pertenece al tablero</td><td>el atributo <code>casillas</code> (una matriz de 3×3) dentro de <code>Tablero</code></td></tr>
+<tr><td>jugador</td><td>sustantivo con datos propios</td><td>la clase <code>Jugador</code></td></tr>
+<tr><td>ficha, nombre</td><td>sustantivos que pertenecen al jugador</td><td>atributos <code>ficha</code> y <code>nombre</code> de <code>Jugador</code></td></tr>
+<tr><td>computadora que elige</td><td>sustantivo con una tarea difícil</td><td>la clase <code>IA_Minimax</code></td></tr>
+<tr><td>marcar una casilla</td><td>verbo sobre el tablero</td><td>el método <code>marcarCasilla</code> de <code>Tablero</code></td></tr>
+<tr><td>ganar (revisar si hay tres en línea)</td><td>verbo sobre el tablero</td><td>el método <code>verificarGanador</code></td></tr>
+<tr><td>empate (revisar si está lleno)</td><td>verbo sobre el tablero</td><td>el método <code>tableroLleno</code></td></tr>
+<tr><td>reiniciar</td><td>verbo sobre el tablero</td><td>el método <code>reiniciar</code></td></tr>
+<tr><td>elegir la casilla</td><td>verbo de la computadora</td><td>el método <code>calcularMejorJugada</code> de <code>IA_Minimax</code></td></tr>
+<tr><td>turnos</td><td>sustantivo de «cómo va la partida»</td><td>un atributo <code>turnoJugador</code> en quien dirige la partida (<code>JuegoMain</code>)</td></tr>
+</table>
+<div class="caja concepto"><b>Atributo y método, en una frase</b> Un <b>atributo</b> es una variable que vive dentro de un objeto y guarda algo de él (el tablero guarda sus casillas). Un <b>método</b> es una acción que el objeto sabe hacer (el tablero sabe marcar una casilla). Si dudas si algo es atributo o método, pregúntate: ¿es algo que <i>tiene</i> o algo que <i>hace</i>?</div>
+
+<h2>Paso 3: descomponer en preguntas</h2>
+<p>Descomponer es partir un problema grande en problemas pequeños que se pueden resolver por separado. Para cualquier juego (y para casi cualquier programa) sirven estas cuatro preguntas:</p>
+<table class="tabla">
+<tr><th>Pregunta</th><th>Respuesta en el totito</th><th>Quién se encarga</th></tr>
+<tr><td>¿Qué hay que <b>recordar</b>? (el estado)</td><td>Qué hay en cada una de las 9 casillas</td><td><code>Tablero</code></td></tr>
+<tr><td>¿Qué <b>reglas</b> hay que aplicar?</td><td>No marcar casillas ocupadas, detectar tres en línea, detectar tablero lleno</td><td><code>Tablero</code></td></tr>
+<tr><td>¿Quién <b>decide</b> las jugadas?</td><td>La persona (con el ratón o el teclado) y la computadora (con un algoritmo)</td><td>la persona y <code>IA_Minimax</code></td></tr>
+<tr><td>¿Cómo se <b>muestra</b> y se <b>controla</b>?</td><td>Dibujar el tablero, recibir clics, alternar turnos, anunciar el resultado</td><td><code>PruebaConsola</code> (en texto) y <code>JuegoMain</code> (en ventana)</td></tr>
+</table>
+<p>Fíjate en algo importante: las reglas del totito <b>no dependen</b> de cómo se muestre. Tres X en diagonal son victoria en una ventana, en la terminal o en una hoja de papel. Por eso las reglas van en una clase que no sabe nada de ventanas. Esa idea, separar la lógica de la interfaz, la viste en el capítulo 27 con el nombre de MVC; aquí la vas a aplicar de verdad.</p>
+
+<h2>Paso 4: elegir cómo se guardan los datos</h2>
+<p>Antes de programar el tablero hay que decidir cómo se guarda en la memoria. Hay varias opciones razonables, y elegir bien hace que el resto del código sea más fácil:</p>
+<table class="tabla">
+<tr><th>Opción</th><th>Ventaja</th><th>Desventaja</th></tr>
+<tr><td><code>char[3][3]</code> con <code>'X'</code>, <code>'O'</code> y <code>' '</code></td><td>Se parece al tablero real (filas y columnas); cada casilla guarda directamente la letra que se ve</td><td>Ninguna importante para un juego de 3×3</td></tr>
+<tr><td><code>int[3][3]</code> con 0, 1 y 2</td><td>Números fáciles de comparar</td><td>Hay que recordar que 1 significa X y 2 significa O: un «número mágico» (capítulo 27)</td></tr>
+<tr><td><code>char[9]</code> (una fila de 9)</td><td>Un solo índice</td><td>Hay que convertir: la casilla de la fila 2, columna 1 es la número 2×3+1 = 7. Más errores</td></tr>
+<tr><td><code>String[3][3]</code> con <code>"X"</code></td><td>Texto fácil de mostrar</td><td>Un <code>String</code> es un objeto; para una sola letra es más pesado y se compara con <code>equals</code>, no con <code>==</code></td></tr>
+</table>
+<p>Elegimos <code>char[3][3]</code>: una <b>matriz</b> (capítulo 15) de caracteres. Una casilla vacía guarda un espacio en blanco <code>' '</code>, al que le pondremos el nombre <code>VACIA</code> para que el código se lea solo. Para ubicar una casilla se dan dos números, primero la fila y luego la columna, contando desde 0:</p>
+<svg viewBox="0 0 640 344" width="70%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Coordenadas fila y columna del tablero">
+<rect x="0" y="0" width="640" height="344" rx="16" fill="#1C1740"/>
+<text x="134" y="109" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#2F84FF" text-anchor="end" font-weight="bold">0</text>
+<text x="134" y="189" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#2F84FF" text-anchor="end" font-weight="bold">1</text>
+<text x="134" y="269" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#2F84FF" text-anchor="end" font-weight="bold">2</text>
+<text x="100" y="189" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" fill="#2F84FF" text-anchor="end" font-weight="bold">fila</text>
+<text x="270" y="30" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" fill="#FF3BD4" text-anchor="middle" font-weight="bold">columna</text>
+<text x="190" y="52" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#FF3BD4" text-anchor="middle" font-weight="bold">0</text>
+<text x="270" y="52" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#FF3BD4" text-anchor="middle" font-weight="bold">1</text>
+<text x="350" y="52" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#FF3BD4" text-anchor="middle" font-weight="bold">2</text>
+<rect x="153" y="67" width="74" height="74" rx="6" fill="#2A2357" stroke="#A05CFF" stroke-width="1.5"/>
+<text x="190" y="110" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" fill="#C8BCF6" text-anchor="middle">[0][0]</text>
+<rect x="233" y="67" width="74" height="74" rx="6" fill="#2A2357" stroke="#A05CFF" stroke-width="1.5"/>
+<text x="270" y="110" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" fill="#C8BCF6" text-anchor="middle">[0][1]</text>
+<rect x="313" y="67" width="74" height="74" rx="6" fill="#2A2357" stroke="#A05CFF" stroke-width="1.5"/>
+<text x="350" y="110" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" fill="#C8BCF6" text-anchor="middle">[0][2]</text>
+<rect x="153" y="147" width="74" height="74" rx="6" fill="#2A2357" stroke="#A05CFF" stroke-width="1.5"/>
+<text x="190" y="190" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" fill="#C8BCF6" text-anchor="middle">[1][0]</text>
+<rect x="233" y="147" width="74" height="74" rx="6" fill="#2A2357" stroke="#A05CFF" stroke-width="1.5"/>
+<text x="270" y="190" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" fill="#C8BCF6" text-anchor="middle">[1][1]</text>
+<rect x="313" y="147" width="74" height="74" rx="6" fill="#2A2357" stroke="#A05CFF" stroke-width="1.5"/>
+<text x="350" y="190" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" fill="#C8BCF6" text-anchor="middle">[1][2]</text>
+<rect x="153" y="227" width="74" height="74" rx="6" fill="#2A2357" stroke="#A05CFF" stroke-width="1.5"/>
+<text x="190" y="270" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" fill="#C8BCF6" text-anchor="middle">[2][0]</text>
+<rect x="233" y="227" width="74" height="74" rx="6" fill="#2A2357" stroke="#A05CFF" stroke-width="1.5"/>
+<text x="270" y="270" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" fill="#C8BCF6" text-anchor="middle">[2][1]</text>
+<rect x="313" y="227" width="74" height="74" rx="6" fill="#2A2357" stroke="#A05CFF" stroke-width="1.5"/>
+<text x="350" y="270" font-family="DejaVu Sans, Arial, sans-serif" font-size="17" fill="#C8BCF6" text-anchor="middle">[2][2]</text>
+<text x="420" y="110" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#C8BCF6" text-anchor="start" font-weight="bold">casillas[fila][columna]</text>
+<text x="420" y="140" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#C8BCF6" text-anchor="start">primero la fila (de arriba</text>
+<text x="420" y="160" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#C8BCF6" text-anchor="start">abajo), luego la columna</text>
+<text x="420" y="180" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#C8BCF6" text-anchor="start">(de izquierda a derecha).</text>
+<text x="420" y="215" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#C8BCF6" text-anchor="start">Se cuenta desde 0:</text>
+<text x="420" y="235" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#FF3BD4" text-anchor="start" font-weight="bold">el centro es [1][1].</text>
+</svg>
+<p>Así, <code>casillas[0][0]</code> es la esquina de arriba a la izquierda, <code>casillas[1][1]</code> es el centro y <code>casillas[2][2]</code> la esquina de abajo a la derecha. Esta convención (fila, columna, desde 0) la usan <b>todos</b> los métodos del juego y también la terminal de pruebas del capítulo 32, donde escribirás «1 1» para jugar en el centro.</p>
+
+<h2>Paso 5: enumerar los casos</h2>
+<p>Un <b>caso</b> es una situación concreta que el programa tiene que manejar bien. Listarlos antes de programar tiene dos ventajas: te obliga a pensar en lo que puede salir mal y te da una lista de pruebas para comprobar el programa al final. Empecemos por las formas de ganar. En un tablero de 3×3 hay exactamente <b>8 líneas ganadoras</b>:</p>
+<table class="tabla">
+<tr><th>Tipo</th><th>Casillas</th><th>Cuántas</th></tr>
+<tr><td>Filas</td><td>[0][0] [0][1] [0][2] · [1][0] [1][1] [1][2] · [2][0] [2][1] [2][2]</td><td>3</td></tr>
+<tr><td>Columnas</td><td>[0][0] [1][0] [2][0] · [0][1] [1][1] [2][1] · [0][2] [1][2] [2][2]</td><td>3</td></tr>
+<tr><td>Diagonal principal (de arriba a la izquierda hacia abajo a la derecha)</td><td>[0][0] [1][1] [2][2]</td><td>1</td></tr>
+<tr><td>Diagonal secundaria (de arriba a la derecha hacia abajo a la izquierda)</td><td>[0][2] [1][1] [2][0]</td><td>1</td></tr>
+</table>
+<p>Observa el patrón: en la fila <i>i</i> el primer número se queda fijo y el segundo va de 0 a 2; en la columna <i>i</i> es al revés. Ese patrón es el que permitirá revisar filas y columnas con un solo ciclo <code>for</code> en el capítulo 29. Las diagonales no siguen el patrón, así que se revisan aparte.</p>
+<p>Ahora el resto de los casos, con lo que debe pasar en cada uno:</p>
+<table class="tabla">
+<tr><th>Caso</th><th>Ejemplo</th><th>Qué debe pasar</th></tr>
+<tr><td>Victoria por fila</td><td>X en [0][0], [0][1] y [0][2]</td><td><code>verificarGanador()</code> devuelve <code>'X'</code></td></tr>
+<tr><td>Victoria por columna</td><td>O en [0][1], [1][1] y [2][1]</td><td>devuelve <code>'O'</code></td></tr>
+<tr><td>Victoria por diagonal</td><td>X en [0][2], [1][1] y [2][0]</td><td>devuelve <code>'X'</code></td></tr>
+<tr><td>Nadie ha ganado aún</td><td>Tablero vacío, o fichas sin línea</td><td>devuelve <code>' '</code> (<code>VACIA</code>)</td></tr>
+<tr><td>Tres casillas iguales pero vacías</td><td>Una fila entera en blanco</td><td><b>No</b> es victoria: tres espacios en línea no ganan</td></tr>
+<tr><td>Empate</td><td>9 casillas llenas sin línea</td><td><code>tableroLleno()</code> es <code>true</code> y <code>verificarGanador()</code> es <code>' '</code></td></tr>
+<tr><td>Casilla ocupada</td><td>Marcar en [1][1] cuando ya tiene X</td><td><code>marcarCasilla</code> devuelve <code>false</code> y no cambia nada</td></tr>
+<tr><td>Casilla fuera del tablero</td><td>Marcar en la fila 5</td><td><code>marcarCasilla</code> devuelve <code>false</code> (sin que el programa se caiga)</td></tr>
+<tr><td>Victoria en la última casilla</td><td>La novena ficha completa una línea</td><td>Es victoria, no empate: hay que preguntar primero por el ganador</td></tr>
+<tr><td>Clic fuera de turno</td><td>La persona hace clic mientras la IA «piensa»</td><td>Se ignora</td></tr>
+<tr><td>Clic con la partida terminada</td><td>Clic después de que alguien ganó</td><td>Se ignora hasta reiniciar</td></tr>
+</table>
+<div class="caja cuidado"><b>El caso que casi todos olvidan</b> «Tres casillas iguales» no basta para ganar: tres espacios en blanco también son iguales entre sí. Si el código solo compara las casillas entre ellas, declarará ganador al «espacio» en el primer turno. Por eso cada comprobación de línea empieza preguntando si la primera casilla <b>no está vacía</b>. Lo verás en la línea 65 de <code>Tablero.java</code>.</div>
+<div class="caja cuidado"><b>El orden de las preguntas importa</b> Cuando la novena ficha completa una línea, el tablero está lleno <i>y</i> hay ganador a la vez. Si el programa preguntara primero «¿está lleno?», anunciaría un empate falso. Todo el código del libro pregunta primero «¿hay ganador?» y solo después «¿está lleno?».</div>
+
+<h2>Las cinco clases y por qué esas</h2>
+<p>Con los pasos anteriores ya podemos decidir las clases. Cada una tiene una <b>responsabilidad</b>: una sola razón para existir y para cambiar (el principio de responsabilidad única del capítulo 27).</p>
+<table class="tabla">
+<tr><th>Clase</th><th>Responsabilidad</th><th>Sabe</th><th>No sabe (a propósito)</th></tr>
+<tr><td><code>Tablero</code></td><td>Estado y reglas</td><td>Qué hay en cada casilla; si una jugada es válida; si alguien ganó; si está lleno</td><td>Quién juega, de qué color se pinta, cómo piensa la IA</td></tr>
+<tr><td><code>Jugador</code></td><td>Datos de un participante</td><td>Su nombre y su ficha</td><td>Las reglas, el tablero, la pantalla</td></tr>
+<tr><td><code>IA_Minimax</code></td><td>Decisión de la computadora</td><td>Cómo elegir la mejor casilla dado un tablero</td><td>Cómo se dibuja; cuándo es su turno</td></tr>
+<tr><td><code>PruebaConsola</code></td><td>Probar la lógica sin ventana</td><td>Leer jugadas del teclado y escribir el tablero con letras</td><td>Nada de Swing</td></tr>
+<tr><td><code>JuegoMain</code></td><td>Primera ventana y control de la partida</td><td>Botones, turnos, mensajes, cuándo llamar a la IA</td><td>Cómo se detecta una victoria (se lo pregunta a <code>Tablero</code>)</td></tr>
+</table>
+<h3>Tablero: el árbitro con la hoja de anotaciones</h3>
+<p>Piensa en un árbitro que tiene la hoja del partido. Anota cada jugada, rechaza las que no valen y sabe decir en cualquier momento si alguien ganó. No juega ni le importa quién es quién: solo vigila que se cumplan las reglas. Es la clase más importante, porque todas las demás dependen de ella, y la más fácil de probar, porque solo maneja datos.</p>
+<h3>Jugador: el gafete</h3>
+<p>Un jugador, para el programa, es un nombre y una ficha, como un gafete de identificación. Parece demasiado poco para una clase, pero tiene sentido: agrupa dos datos que siempre van juntos, y en la Parte VII el marcador mostrará el nombre de cada uno y la clase <code>Partida</code> guardará un arreglo de dos jugadores. Si guardáramos nombres y fichas en variables sueltas, tarde o temprano se mezclarían el nombre de uno con la ficha del otro.</p>
+<h3>IA_Minimax: el que piensa</h3>
+<p>Decidir una jugada bien es lo más difícil del programa. Merece su clase propia por dos motivos: porque así su complejidad no ensucia las demás, y porque se podría cambiar por otra IA (una más fácil, una que elija al azar) sin tocar el resto. El nombre lleva el algoritmo que usa, Minimax, que estudiarás a fondo en el capítulo 31.</p>
+<h3>PruebaConsola: el banco de pruebas</h3>
+<p>Un mecánico prueba un motor en un banco, fuera del carro, antes de montarlo: si algo falla, sabe que es el motor y no la carrocería. <code>PruebaConsola</code> hace lo mismo con la lógica: te deja jugar contra la IA escribiendo en la terminal, sin ninguna ventana. Si ahí todo funciona y luego la ventana falla, el problema está en la ventana. No forma parte del juego que se entrega: vive en la carpeta <code>herramientas\</code>, fuera de <code>src\</code>.</p>
+<h3>JuegoMain: la primera ventana</h3>
+<p>Es el punto de entrada de la versión 0.1 (tiene el método <code>main</code>) y hace dos trabajos: construye la ventana con Swing y dirige la partida (de quién es el turno, cuándo le toca a la IA, cuándo se terminó). En un programa grande esos dos trabajos irían separados, y eso es justo lo que harás en la Parte VII con <code>Partida</code> y <code>PantallaJuego</code>. Para una primera ventana, tenerlos juntos es aceptable y más fácil de seguir.</p>
+
+<h3>¿Por qué no todo en una sola clase?</h3>
+<p>Se podría escribir el totito entero en un solo archivo de 300 líneas, y funcionaría. El problema aparece después:</p>
+<ul>
+<li><b>Para entenderlo</b> habría que leerlo todo, porque las reglas estarían mezcladas con los colores de los botones.</li>
+<li><b>Para probar las reglas</b> habría que abrir una ventana y hacer clics, en lugar de probarlas en segundos con <code>jshell</code> o con la terminal.</li>
+<li><b>Para cambiar la interfaz</b> (lo que harás en la Parte VII) habría que reescribir también las reglas, con el riesgo de romperlas.</li>
+<li><b>Para reutilizar</b> la IA en otro proyecto habría que separarla a mano de todo lo demás.</li>
+</ul>
+<p>Separadas, cada clase es pequeña, se entiende sola y se prueba sola. A esa propiedad se le llama <b>alta cohesión</b> (cada clase hace una cosa) con <b>bajo acoplamiento</b> (las clases dependen poco unas de otras), dos ideas del capítulo 27.</p>
+
+<h2>El diagrama de clases</h2>
+<p>Un <b>diagrama de clases</b> es un dibujo que muestra las clases de un programa y cómo se relacionan. Se usa una notación llamada UML (lenguaje unificado de modelado) que ya viste por encima en el capítulo 21. Así se ve el Totito v0.1:</p>
+<svg viewBox="0 0 1000 760" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama de clases del Totito v0.1">
+<rect x="0" y="0" width="1000" height="760" rx="16" fill="#1C1740"/>
+<rect x="20" y="20" width="330" height="223" rx="8" fill="#2A2357" stroke="#2F84FF" stroke-width="2"/>
+<text x="185" y="43" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" fill="#2F84FF" text-anchor="middle" font-weight="bold">JuegoMain</text>
+<text x="342" y="43" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" fill="#C8BCF6" text-anchor="end">extends JFrame</text>
+<line x1="20" y1="54" x2="350" y2="54" stroke="#2F84FF" stroke-width="1"/>
+<text x="30" y="69" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- tablero : Tablero</text>
+<text x="30" y="88" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- jugador : Jugador</text>
+<text x="30" y="107" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- ia : IA_Minimax</text>
+<text x="30" y="126" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- botones : JButton[3][3]</text>
+<text x="30" y="145" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- turnoJugador : boolean</text>
+<line x1="20" y1="157" x2="350" y2="157" stroke="#2F84FF" stroke-width="1"/>
+<text x="30" y="172" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ JuegoMain()</text>
+<text x="30" y="191" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- manejarClicCasilla(fila, columna)</text>
+<text x="30" y="210" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- turnoIA()</text>
+<text x="30" y="229" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ main(args)  (static)</text>
+<rect x="650" y="20" width="330" height="128" rx="8" fill="#2A2357" stroke="#FF3BD4" stroke-width="2"/>
+<text x="815" y="43" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" fill="#FF3BD4" text-anchor="middle" font-weight="bold">PruebaConsola</text>
+<text x="972" y="43" font-family="DejaVu Sans, Arial, sans-serif" font-size="11" fill="#C8BCF6" text-anchor="end">herramientas/</text>
+<line x1="650" y1="54" x2="980" y2="54" stroke="#FF3BD4" stroke-width="1"/>
+<text x="660" y="69" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">(sin atributos)</text>
+<line x1="650" y1="81" x2="980" y2="81" stroke="#FF3BD4" stroke-width="1"/>
+<text x="660" y="96" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ main(args)  (static)</text>
+<text x="660" y="115" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- terminoLaPartida(tablero) : boolean</text>
+<text x="660" y="134" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- imprimir(tablero)</text>
+<rect x="335" y="300" width="330" height="147" rx="8" fill="#2A2357" stroke="#A05CFF" stroke-width="2"/>
+<text x="500" y="323" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" fill="#A05CFF" text-anchor="middle" font-weight="bold">IA_Minimax</text>
+<line x1="335" y1="334" x2="665" y2="334" stroke="#A05CFF" stroke-width="1"/>
+<text x="345" y="349" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- fichaIA : char</text>
+<text x="345" y="368" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- fichaJugador : char</text>
+<line x1="335" y1="380" x2="665" y2="380" stroke="#A05CFF" stroke-width="1"/>
+<text x="345" y="395" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ IA_Minimax(fichaIA, fichaJugador)</text>
+<text x="345" y="414" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ calcularMejorJugada(tablero) : int[]</text>
+<text x="345" y="433" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- minimax(tablero, prof, esMax) : int</text>
+<rect x="20" y="500" width="380" height="223" rx="8" fill="#2A2357" stroke="#C8BCF6" stroke-width="2"/>
+<text x="210" y="523" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" fill="#C8BCF6" text-anchor="middle" font-weight="bold">Tablero</text>
+<line x1="20" y1="534" x2="400" y2="534" stroke="#C8BCF6" stroke-width="1"/>
+<text x="30" y="549" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ VACIA : char = ' '  (static final)</text>
+<text x="30" y="568" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- casillas : char[3][3]</text>
+<line x1="20" y1="580" x2="400" y2="580" stroke="#C8BCF6" stroke-width="1"/>
+<text x="30" y="595" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ Tablero()</text>
+<text x="30" y="614" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ reiniciar()</text>
+<text x="30" y="633" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ marcarCasilla(fila, columna, ficha) : boolean</text>
+<text x="30" y="652" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ obtenerCasilla(fila, columna) : char</text>
+<text x="30" y="671" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ tableroLleno() : boolean</text>
+<text x="30" y="690" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ verificarGanador() : char</text>
+<text x="30" y="709" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ obtenerCopia() : Tablero</text>
+<rect x="650" y="560" width="330" height="147" rx="8" fill="#2A2357" stroke="#C8BCF6" stroke-width="2"/>
+<text x="815" y="583" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" fill="#C8BCF6" text-anchor="middle" font-weight="bold">Jugador</text>
+<line x1="650" y1="594" x2="980" y2="594" stroke="#C8BCF6" stroke-width="1"/>
+<text x="660" y="609" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- nombre : String</text>
+<text x="660" y="628" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">- ficha : char</text>
+<line x1="650" y1="640" x2="980" y2="640" stroke="#C8BCF6" stroke-width="1"/>
+<text x="660" y="655" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ Jugador(nombre, ficha)</text>
+<text x="660" y="674" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ getNombre() : String</text>
+<text x="660" y="693" font-family="DejaVu Sans, Arial, sans-serif" font-size="12.5" fill="#C8BCF6" text-anchor="start">+ getFicha() : char</text>
+<polyline points="90,243 90,500" fill="none" stroke="#2F84FF" stroke-width="2" stroke-dasharray="7 4"/><polygon points="90,500 85.7164,489.868 94.2836,489.868" fill="#2F84FF"/>
+<polyline points="300,243 400,300" fill="none" stroke="#2F84FF" stroke-width="2" stroke-dasharray="7 4"/><polygon points="400,300 389.077,298.704 393.319,291.261" fill="#2F84FF"/>
+<polyline points="200,243 200,270 700,270 700,560" fill="none" stroke="#2F84FF" stroke-width="2" stroke-dasharray="7 4"/><polygon points="700,560 695.716,549.868 704.284,549.868" fill="#2F84FF"/>
+<polyline points="930,148 930,560" fill="none" stroke="#FF3BD4" stroke-width="2" stroke-dasharray="7 4"/><polygon points="930,560 925.716,549.868 934.284,549.868" fill="#FF3BD4"/>
+<polyline points="700,148 600,300" fill="none" stroke="#FF3BD4" stroke-width="2" stroke-dasharray="7 4"/><polygon points="600,300 601.99,289.181 609.147,293.89" fill="#FF3BD4"/>
+<polyline points="800,148 800,240 300,240 300,500" fill="none" stroke="#FF3BD4" stroke-width="2" stroke-dasharray="7 4"/><polygon points="300,500 295.716,489.868 304.284,489.868" fill="#FF3BD4"/>
+<polyline points="400,447 340,500" fill="none" stroke="#A05CFF" stroke-width="2" stroke-dasharray="7 4"/><polygon points="340,500 344.758,490.082 350.429,496.503" fill="#A05CFF"/>
+<text x="500" y="744" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" fill="#C8BCF6" text-anchor="middle">Flecha discontinua = «usa a» (depende de)   ·   + public   - private</text>
+</svg>
+<p>Cómo se lee:</p>
+<ul>
+<li>Cada <b>caja</b> es una clase, con tres partes: el nombre arriba, los <b>atributos</b> en medio y los <b>métodos</b> abajo.</li>
+<li>El signo <code>+</code> significa <code>public</code> (cualquiera lo puede usar) y el <code>-</code> significa <code>private</code> (solo la propia clase). Repasa el capítulo 19 si dudas.</li>
+<li>Lo que va después de los dos puntos es el <b>tipo</b>: <code>verificarGanador() : char</code> quiere decir que el método no recibe nada y devuelve un carácter.</li>
+<li>Una <b>flecha discontinua</b> de A hacia B significa «A usa a B»: A necesita que B exista para compilar. Es una <b>dependencia</b>.</li>
+<li>En <code>JuegoMain</code> solo aparecen los miembros principales; el capítulo 33 los recorre todos.</li>
+</ul>
+<p>La misma información en una tabla, que es otra forma válida de documentar un diseño:</p>
+<table class="tabla">
+<tr><th>Clase</th><th>Usa a</th><th>La usan</th></tr>
+<tr><td><code>Tablero</code></td><td>nadie (solo Java básico)</td><td><code>IA_Minimax</code>, <code>PruebaConsola</code>, <code>JuegoMain</code></td></tr>
+<tr><td><code>Jugador</code></td><td>nadie</td><td><code>PruebaConsola</code>, <code>JuegoMain</code></td></tr>
+<tr><td><code>IA_Minimax</code></td><td><code>Tablero</code></td><td><code>PruebaConsola</code>, <code>JuegoMain</code></td></tr>
+<tr><td><code>PruebaConsola</code></td><td><code>Tablero</code>, <code>Jugador</code>, <code>IA_Minimax</code>, <code>Scanner</code></td><td>nadie (se ejecuta a mano)</td></tr>
+<tr><td><code>JuegoMain</code></td><td><code>Tablero</code>, <code>Jugador</code>, <code>IA_Minimax</code>, Swing</td><td>nadie (es el programa)</td></tr>
+</table>
+<div class="caja concepto"><b>Las flechas solo bajan</b> Mira el diagrama: todas las flechas van de las clases de arriba (las que muestran cosas) hacia las de abajo (la lógica). Ninguna flecha sale de <code>Tablero</code> o de <code>Jugador</code>. Eso significa que la lógica no depende de la interfaz, y por eso en la Parte VII podrás tirar <code>JuegoMain</code> a un lado, poner una interfaz completamente nueva y seguir usando <code>Tablero</code>, <code>Jugador</code> e <code>IA_Minimax</code> tal como están.</div>
+
+<h2>Los contratos: qué promete cada método</h2>
+<p>Antes de programar una clase conviene decidir su <b>interfaz pública</b>: la lista de métodos <code>public</code> que las demás clases podrán llamar, con lo que reciben y lo que devuelven. Es como el menú de un restaurante: el cliente sabe qué puede pedir y qué le van a traer, sin entrar a la cocina. A esa promesa se le llama <b>contrato</b>.</p>
+<table class="tabla">
+<tr><th>Método</th><th>Recibe</th><th>Devuelve</th><th>Promesa</th></tr>
+<tr><td><code>new Tablero()</code></td><td>nada</td><td>un tablero nuevo</td><td>Las 9 casillas empiezan vacías</td></tr>
+<tr><td><code>reiniciar()</code></td><td>nada</td><td>nada (<code>void</code>)</td><td>Vacía las 9 casillas</td></tr>
+<tr><td><code>marcarCasilla(fila, columna, ficha)</code></td><td>dos <code>int</code> y un <code>char</code></td><td><code>boolean</code></td><td><code>true</code> si colocó la ficha; <code>false</code> si la casilla no existe o está ocupada, y en ese caso no cambia nada</td></tr>
+<tr><td><code>obtenerCasilla(fila, columna)</code></td><td>dos <code>int</code></td><td><code>char</code></td><td>Lo que hay en esa casilla: <code>'X'</code>, <code>'O'</code> o <code>' '</code></td></tr>
+<tr><td><code>tableroLleno()</code></td><td>nada</td><td><code>boolean</code></td><td><code>true</code> si no queda ninguna casilla vacía</td></tr>
+<tr><td><code>verificarGanador()</code></td><td>nada</td><td><code>char</code></td><td>La ficha que hizo tres en línea, o <code>' '</code> si nadie</td></tr>
+<tr><td><code>obtenerCopia()</code></td><td>nada</td><td><code>Tablero</code></td><td>Otro tablero con las mismas fichas; cambiar la copia no cambia el original</td></tr>
+<tr><td><code>new Jugador(nombre, ficha)</code></td><td><code>String</code> y <code>char</code></td><td>un jugador</td><td>Guarda los dos datos para siempre</td></tr>
+<tr><td><code>getNombre()</code> / <code>getFicha()</code></td><td>nada</td><td><code>String</code> / <code>char</code></td><td>Devuelven esos datos</td></tr>
+<tr><td><code>new IA_Minimax(fichaIA, fichaJugador)</code></td><td>dos <code>char</code></td><td>una IA</td><td>Sabe con qué ficha juega ella y con cuál su rival</td></tr>
+<tr><td><code>calcularMejorJugada(tablero)</code></td><td>un <code>Tablero</code></td><td><code>int[]</code> de 2 números</td><td><code>{fila, columna}</code> de la mejor casilla, sin modificar el tablero recibido</td></tr>
+</table>
+<p>Con esta tabla, quien escribe <code>JuegoMain</code> no necesita saber <i>cómo</i> detecta el tablero una victoria: solo que <code>verificarGanador()</code> se lo dice. Si mañana alguien reescribe ese método de otra forma, mientras cumpla el contrato nada más se rompe.</p>
+
+<h2>El orden de construcción</h2>
+<p>Una clase solo compila si las clases que usa ya existen. Si escribes <code>IA_Minimax</code> antes que <code>Tablero</code>, NetBeans subrayará en rojo cada <code>Tablero</code> y no podrás probar nada. Por eso se construye <b>de abajo hacia arriba</b>, siguiendo las flechas al revés: primero lo que no depende de nadie, al final lo que depende de todos. Es como una casa: primero los cimientos, luego las paredes, al final el techo.</p>
+<ol>
+<li><b>Tablero</b> (capítulo 29). No depende de nadie. Es el corazón: si las reglas fallan, todo lo demás falla. Lo probarás con <code>jshell</code>.</li>
+<li><b>Jugador</b> (capítulo 30). Tampoco depende de nadie; podría ir primero, pero es tan simple que conviene tener antes la clase importante. Lo probarás con <code>jshell</code>.</li>
+<li><b>IA_Minimax</b> (capítulo 31). Necesita <code>Tablero</code>, que ya existe. La probarás pidiéndole su jugada en posiciones conocidas.</li>
+<li><b>PruebaConsola</b> (capítulo 32). Necesita las tres anteriores. Es la primera vez que juegas una partida completa.</li>
+<li><b>JuegoMain</b> (capítulo 33). Necesita las tres clases de lógica y Swing. Al terminarla tienes el Totito v0.1.</li>
+</ol>
+<p>Este orden tiene una ventaja que no se ve a primera vista: <b>al final de cada capítulo el proyecto compila y algo se puede probar</b>. Nunca pasas tres capítulos escribiendo código sin saber si funciona. Si aparece un error, sabes que está en lo último que escribiste, porque lo anterior ya se probó.</p>
+<div class="caja consejo"><b>Construir de abajo hacia arriba</b> Cuando empieces un proyecto propio, dibuja sus clases con flechas como las de arriba y numéralas empezando por las que no tienen flechas salientes. Ese es tu orden de trabajo. Si dos clases dependen una de la otra (A usa a B y B usa a A), suele ser una señal de que el diseño se puede mejorar.</div>
+
+<h2>Cómo se guarda este avance en Git</h2>
+<div class="caja git"><b>Git</b> Este capítulo no crea archivos, así que no hay commit. Desde el siguiente aplicarás el plan de commits de la Parte II: un commit por clase, con el archivo exacto del capítulo, y al terminar la ventana una etiqueta de versión.
+<table class="tabla">
+<tr><th>Capítulo</th><th>Archivo</th><th>Mensaje del commit</th></tr>
+<tr><td>29</td><td><code>src\Tablero.java</code></td><td><code>Tablero: estado y reglas del juego</code></td></tr>
+<tr><td>30</td><td><code>src\Jugador.java</code></td><td><code>Jugador: nombre y ficha</code></td></tr>
+<tr><td>31</td><td><code>src\IA_Minimax.java</code></td><td><code>IA con el algoritmo Minimax</code></td></tr>
+<tr><td>32</td><td><code>herramientas\PruebaConsola.java</code></td><td><code>Prueba de la logica en consola</code></td></tr>
+<tr><td>33</td><td><code>src\JuegoMain.java</code></td><td><code>Primera ventana jugable (Swing basico)</code> y etiqueta <code>v0.1.0</code></td></tr>
+</table>
+Antes de empezar, comprueba desde la carpeta del proyecto que no tienes cambios pendientes:
+<pre class="ps">cd $HOME\Proyectos\Totito
+git status</pre>
+Debe decir <code>nothing to commit, working tree clean</code>. Si no, guarda o descarta esos cambios como viste en el capítulo 9.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Antes de programar se describe el problema en frases cortas; los sustantivos sugieren clases y atributos, y los verbos, métodos.</li>
+<li>Cuatro preguntas descomponen casi cualquier programa: qué recordar, qué reglas aplicar, quién decide y cómo se muestra.</li>
+<li>El tablero se guarda en una matriz <code>char[3][3]</code>, con <code>' '</code> para vacía; las casillas se nombran por fila y columna desde 0.</li>
+<li>Hay 8 líneas ganadoras; antes de declarar victoria hay que comprobar que la línea no esté vacía, y hay que preguntar por el ganador antes que por el empate.</li>
+<li>Cinco clases con una responsabilidad cada una: <code>Tablero</code> (estado y reglas), <code>Jugador</code> (datos), <code>IA_Minimax</code> (decisión), <code>PruebaConsola</code> (probar sin ventana) y <code>JuegoMain</code> (primera ventana).</li>
+<li>Las dependencias van de la interfaz hacia la lógica, nunca al revés; por eso la lógica se reutilizará sin cambios en la versión 1.0.</li>
+<li>Se construye de abajo hacia arriba para que el proyecto compile y se pueda probar al final de cada capítulo.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> El mismo método de cinco pasos sirve para cualquier programa:
+<ul>
+<li><b>Conecta 4</b>: el tablero pasa a ser <code>char[6][7]</code>, «marcar» se convierte en «soltar una ficha en una columna» (cae a la fila libre más baja) y las líneas ganadoras son de 4. Las clases son las mismas: tablero, jugador, IA, interfaz.</li>
+<li><b>Una agenda de citas</b>: sustantivos «cita», «paciente», «agenda»; verbos «agendar», «cancelar», «buscar huecos». El caso «casilla ocupada» se llama aquí «horario ya tomado» y se resuelve igual: el método devuelve <code>false</code> y no cambia nada.</li>
+<li><b>Un punto de venta</b>: <code>Carrito</code> (estado y reglas: no vender más de lo que hay), <code>Producto</code> (datos), <code>CalculadoraDescuentos</code> (decisión) y la ventana de caja (interfaz). La lógica se prueba primero en consola, como harás en el capítulo 32.</li>
+<li><b>Cualquier proyecto escolar o de trabajo</b>: antes de abrir el editor, escribe la tabla «caso, ejemplo, qué debe pasar». Te servirá dos veces: para diseñar y para probar al final.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b><ol>
+<li>Escribe en tu cuaderno las 8 líneas ganadoras usando la notación <code>[fila][columna]</code> sin mirar la tabla. Luego compruébalas.</li>
+<li>Agrega a la tabla de casos dos situaciones más que el programa debería manejar. Pista: ¿qué pasa si la persona escribe letras en lugar de números en la terminal? ¿Y si pulsa «Reiniciar» a mitad de la partida?</li>
+<li>Aplica el paso de «sustantivos y verbos» a esta descripción: «Una biblioteca presta libros a sus socios; cada préstamo dura 15 días; si un socio devuelve tarde, paga una multa». ¿Qué clases, atributos y métodos te salen?</li>
+<li>Dibuja el diagrama de clases (cajas y flechas) de tu respuesta anterior y escribe el orden de construcción. ¿Cuál clase no depende de ninguna otra?</li>
+<li>Reto: imagina un totito de 4×4 donde se gana con 4 en línea. ¿Cuántas líneas ganadoras hay? ¿Qué clases del plan cambiarían y cuáles quedarían igual? Pista: son 4 filas, 4 columnas y 2 diagonales.</li>
+</ol></div>
+</section>

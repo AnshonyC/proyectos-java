@@ -1,0 +1,718 @@
+<section class="capitulo" id="cap25">
+<h1><span class="num">Capítulo 25</span>Lambdas, referencias a métodos, clases anónimas e internas</h1>
+<p class="entrada">Aquí aprendes a pasar <i>comportamiento</i> de un lado a otro como si fuera un dato: «cuando pulsen este botón, haz esto», «este icono se dibuja así». Son las flechitas <code>-&gt;</code> y los dobles dos puntos <code>::</code> que aparecen por todo el Totito, y las clases que viven dentro de otras clases. Sin esto, cada botón del juego necesitaría su propio archivo.</p>
+
+<h2>El problema: entregar una instrucción, no un dato</h2>
+<p>Hasta ahora, cuando llamabas a un método le pasabas <b>datos</b>: un número, un texto, un objeto <code>Jugador</code>. Pero muchas veces lo que quieres entregar es <b>una acción</b>. Piensa en el botón «Jugar» del menú: el botón sabe dibujarse y sabe detectar el clic, pero no sabe qué hacer después. Eso se lo tiene que decir quien lo crea: «cuando te pulsen, pide ir a la configuración».</p>
+<p>En la vida diaria pasa igual. Cuando sales de viaje le dejas una nota a tu vecino: «cuando llegue el paquete, recíbelo y guárdalo en tu casa». No le das el paquete (todavía no existe); le das una <b>instrucción para más tarde</b>. El vecino la guarda y la ejecuta cuando ocurre el evento.</p>
+<p>En el capítulo 24 viste la herramienta para esto: una interfaz. El botón acepta «cualquier objeto que cumpla <code>ActionListener</code>», y cuando lo pulsan llama a su método. El problema es que, sin lo que aprenderás en este capítulo, para cada botón tendrías que escribir una clase completa, en su propio archivo, con su nombre, su <code>implements</code>, su método… solo para decir una línea. Java ofrece formas cada vez más cortas de escribir esa «nota para el vecino». Las vemos de la más larga a la más corta.</p>
+
+<h2>Interfaces funcionales</h2>
+<p>Una <b>interfaz funcional</b> es una interfaz que tiene <b>exactamente un método abstracto</b>. Es el tipo de interfaz que representa «una sola acción»: <code>Runnable</code> (<code>run()</code>), <code>ActionListener</code> (<code>actionPerformed(...)</code>), y en el Totito <code>PanelTablero.OyenteCasilla</code> (<code>casillaPulsada(...)</code>) e <code>Iconos.Icono</code> (<code>dibujar(...)</code>).</p>
+<p>Este último lo declara así <code>src/Iconos.java</code> (capítulo 42):</p>
+<pre class="java">    /** Un icono sabe dibujarse en el cuadrado (x, y, tam, tam) con el color dado. */
+    @FunctionalInterface
+    public interface Icono {
+        void dibujar(Graphics2D g, double x, double y, double tam, Color color);
+    }</pre>
+<p><code>@FunctionalInterface</code> es una <b>anotación</b> (como <code>@Override</code>, una etiqueta para el compilador que empieza con <code>@</code>). No cambia nada del programa: le pide a Java que <b>compruebe</b> que la interfaz tiene un solo método abstracto. Si mañana alguien le agrega un segundo método a <code>Icono</code>, el compilador lo detiene ahí mismo, en vez de romper los trece iconos del juego. Las interfaces funcionales son las únicas que se pueden escribir con lambdas y referencias a métodos; por eso vale la pena protegerlas.</p>
+
+<h2>Tres formas de entregar un comportamiento</h2>
+<p>Vamos a definir nuestra propia interfaz funcional, <code>Operacion</code>, que recibe dos enteros y devuelve otro, y a crear objetos que la cumplan de todas las formas posibles. Guárdalo como <code>TresFormas.java</code>:</p>
+<pre class="java">public class TresFormas {
+    public static void main(String[] args) {
+        // 1) Con una clase que tiene nombre (la de abajo):
+        Operacion suma = new Suma();
+
+        // 2) Con una clase anonima: se escribe la clase y se crea el objeto en un solo paso.
+        Operacion resta = new Operacion() {
+            @Override
+            public int aplicar(int a, int b) {
+                return a - b;
+            }
+        };
+
+        // 3) Con una lambda: solo lo que cambia (parametros -&gt; resultado).
+        Operacion multiplica = (a, b) -&gt; a * b;
+
+        // 4) Con referencias a metodos que ya existen:
+        Operacion mayor = Math::max;                     // metodo static de la clase Math
+        Operacion potencia = TresFormas::elevar;         // metodo static nuestro
+
+        mostrar("suma", suma, 7, 3);
+        mostrar("resta", resta, 7, 3);
+        mostrar("multiplica", multiplica, 7, 3);
+        mostrar("mayor", mayor, 7, 3);
+        mostrar("potencia", potencia, 7, 3);
+    }
+
+    static int elevar(int base, int exponente) {
+        int resultado = 1;
+        for (int i = 0; i &lt; exponente; i++) {
+            resultado *= base;
+        }
+        return resultado;
+    }
+
+    static void mostrar(String nombre, Operacion op, int a, int b) {
+        System.out.println(nombre + "(" + a + ", " + b + ") = " + op.aplicar(a, b));
+    }
+}
+
+@FunctionalInterface
+interface Operacion {
+    int aplicar(int a, int b);
+}
+
+class Suma implements Operacion {
+    @Override
+    public int aplicar(int a, int b) {
+        return a + b;
+    }
+}</pre>
+<pre class="ps">cd $HOME\Proyectos\Practicas
+java TresFormas.java</pre>
+<pre class="salida">suma(7, 3) = 10
+resta(7, 3) = 4
+multiplica(7, 3) = 21
+mayor(7, 3) = 7
+potencia(7, 3) = 343</pre>
+<p>El método <code>mostrar</code> recibe un parámetro de tipo <code>Operacion</code> y llama a <code>op.aplicar(a, b)</code>. No sabe ni le importa cómo se creó ese objeto. Las cinco variables son <b>objetos que cumplen <code>Operacion</code></b>; lo que cambia es cuánto tuviste que escribir para crearlos:</p>
+<ol>
+<li><b>Clase con nombre</b> (<code>Suma</code>): lo que ya sabías del capítulo 24. Una clase, un <code>implements</code>, un método. Útil si la vas a usar en muchos lugares o si tiene datos propios.</li>
+<li><b>Clase anónima</b>: la clase y el objeto se escriben juntos, sin nombre. La verás a fondo más abajo.</li>
+<li><b>Lambda</b>: <code>(a, b) -&gt; a * b</code>. Solo los parámetros y lo que se hace con ellos.</li>
+<li><b>Referencia a método</b>: <code>Math::max</code>. Ni siquiera escribes el cuerpo: señalas un método que ya existe y que encaja.</li>
+</ol>
+
+<h2>La lambda, símbolo por símbolo</h2>
+<p>Una <b>lambda</b> (el nombre viene de la letra griega λ, que usaban los matemáticos para escribir funciones sin nombre) es <b>un método sin nombre escrito en el lugar donde se necesita</b>. Java la convierte en un objeto que cumple la interfaz funcional que se espera ahí. Desarmemos <code>Operacion multiplica = (a, b) -&gt; a * b;</code>:</p>
+<table class="tabla">
+<tr><th>Pieza</th><th>Qué significa</th></tr>
+<tr><td><code>Operacion multiplica =</code></td><td>Una variable normal de tipo <code>Operacion</code>. Este tipo es el que le dice a Java qué interfaz debe cumplir la lambda (se llama el <i>tipo destino</i>).</td></tr>
+<tr><td><code>(a, b)</code></td><td>Los parámetros, entre paréntesis y separados por coma. <b>No hace falta poner su tipo</b>: Java lo deduce del método <code>aplicar(int a, int b)</code> de la interfaz. Si quieres, puedes escribirlo: <code>(int a, int b)</code>. Los nombres los eliges tú; no tienen que coincidir con los de la interfaz.</td></tr>
+<tr><td><code>-&gt;</code></td><td>La flecha: un guion y un signo «mayor que», sin espacio entre ellos. Separa «lo que recibo» de «lo que hago». Léela como «se convierte en» o «entonces».</td></tr>
+<tr><td><code>a * b</code></td><td>El cuerpo. Si es <b>una sola expresión</b>, se escribe sin llaves y sin <code>return</code>: su valor es lo que la lambda devuelve.</td></tr>
+<tr><td><code>;</code></td><td>Termina la sentencia de asignación, como en <code>int x = 5;</code>. No es parte de la lambda.</td></tr>
+</table>
+<p>Hay algunas variantes que vas a ver en el Totito:</p>
+<ul>
+<li><b>Un solo parámetro:</b> se pueden quitar los paréntesis. <code>e -&gt; navegacion.irAlMenu()</code> es lo mismo que <code>(e) -&gt; navegacion.irAlMenu()</code>.</li>
+<li><b>Ningún parámetro:</b> los paréntesis vacíos son obligatorios: <code>() -&gt; elegirModo(Partida.Modo.DOS_JUGADORES)</code>.</li>
+<li><b>Cuerpo de varias líneas:</b> va entre llaves, cada sentencia con su <code>;</code>, y si la interfaz devuelve algo, con <code>return</code>: <code>(a, b) -&gt; { int r = a * b; return r; }</code>. Fíjate que aquí sí hay <code>;</code> dentro de las llaves, como en cualquier método.</li>
+</ul>
+<div class="caja concepto"><b>Una lambda no se ejecuta donde se escribe</b> Escribir <code>e -&gt; navegacion.irAlMenu()</code> <i>no</i> va al menú. Crea un objeto que <i>sabe</i> ir al menú y lo guarda. Se ejecutará cuando alguien llame a su método (en un botón, cuando lo pulsen). Es la nota para el vecino: escribirla no recibe el paquete.</div>
+
+<h2>Lambdas en los botones del Totito</h2>
+<p>Este es el uso más común. En <code>src/PantallaMenu.java</code> (capítulo 56):</p>
+<pre class="java">        BotonNeon jugar = BotonNeon.menu("Jugar", Iconos.JUGAR, Tema.ROSA);
+        jugar.addActionListener(e -&gt; navegacion.irAConfiguracion());</pre>
+<p><code>addActionListener</code> es un método que <code>BotonNeon</code> hereda de <code>JButton</code> (capítulo 22). Su parámetro es de tipo <code>ActionListener</code>, una interfaz funcional de Swing cuyo único método es <code>void actionPerformed(ActionEvent e)</code>. Por eso la lambda tiene un parámetro, <code>e</code>: es el <b>evento</b>, un objeto con información del clic (qué botón fue, a qué hora, si había teclas apretadas). Aquí no lo usamos, pero la lambda tiene que aceptarlo porque el método de la interfaz lo recibe. El nombre <code>e</code> es una costumbre; podrías llamarlo <code>evento</code>.</p>
+<p>Antes de que existieran las lambdas (Java 8, en 2014), esa misma línea se escribía con una clase anónima:</p>
+<pre class="java">        jugar.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                navegacion.irAConfiguracion();
+            }
+        });</pre>
+<p>Seis líneas y dos <code>import</code> más para decir lo mismo. Con siete u ocho botones por pantalla, el código se llenaba de ruido. La lambda deja a la vista solo lo que importa: <i>qué pasa al pulsar</i>.</p>
+<p>Cuando la acción tiene varias líneas, se usan llaves. En <code>src/PantallaJuego.java</code> (capítulo 59), el botón «Reiniciar»:</p>
+<pre class="java">        reiniciar.addActionListener(e -&gt; {
+            partida.reiniciar();
+            comenzar(partida);
+        });</pre>
+<p>Y no todo son botones. La interfaz <code>Runnable</code> (un único método <code>void run()</code>, sin parámetros) aparece cada vez que el Totito quiere guardar «algo que hacer después». En <code>src/PantallaConfiguracion.java</code> (capítulo 58):</p>
+<pre class="java">        opcionDosJugadores.setAlSeleccionar(() -&gt; elegirModo(Partida.Modo.DOS_JUGADORES));
+        opcionContraIA.setAlSeleccionar(() -&gt; elegirModo(Partida.Modo.CONTRA_IA));</pre>
+<p><code>OpcionModo</code> (capítulo 51) guarda ese <code>Runnable</code> en un campo y, cuando le hacen clic, ejecuta <code>alSeleccionar.run()</code>. En <code>PantallaJuego</code>, el método <code>esperar(int ms, Runnable accion)</code> recibe una acción que se ejecutará cuando pase la pausa: así la computadora «piensa» 450 milisegundos antes de jugar. Y en el <code>main</code> de <code>src/TotitoApp.java</code> (capítulo 61):</p>
+<pre class="java">        SwingUtilities.invokeLater(() -&gt; new TotitoApp().setVisible(true));</pre>
+<p>«Cuando el hilo de Swing esté listo (capítulo 37), ejecuta esto: crea la ventana y muéstrala.»</p>
+
+<h3>Pruébalo sin ventanas</h3>
+<p>Este programa imita lo que hace Swing por dentro: un botón que guarda una lista de oyentes y los avisa al pulsarse. Guárdalo como <code>BotonesDeMentira.java</code>:</p>
+<pre class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class BotonesDeMentira {
+    public static void main(String[] args) {
+        Menu menu = new Menu();
+        menu.jugar.pulsar();
+        menu.instrucciones.pulsar();
+        menu.salir.pulsar();
+    }
+}
+
+/** Como ActionListener de Swing: "algo que reacciona a un clic". */
+@FunctionalInterface
+interface OyenteAccion {
+    void accionRealizada(String evento);
+}
+
+/** Un boton muy simplificado: guarda oyentes y los avisa al pulsarse. */
+class Boton {
+    private final String texto;
+    private final List&lt;OyenteAccion&gt; oyentes = new ArrayList&lt;&gt;();
+
+    Boton(String texto) {
+        this.texto = texto;
+    }
+
+    void agregarOyente(OyenteAccion oyente) {
+        oyentes.add(oyente);
+    }
+
+    void pulsar() {
+        System.out.println("(clic en \"" + texto + "\")");
+        for (OyenteAccion oyente : oyentes) {
+            oyente.accionRealizada("clic:" + texto);
+        }
+    }
+}
+
+class Menu {
+    final Boton jugar = new Boton("Jugar");
+    final Boton instrucciones = new Boton("Instrucciones");
+    final Boton salir = new Boton("Salir");
+    private int clics;
+
+    Menu() {
+        jugar.agregarOyente(e -&gt; irAConfiguracion());              // lambda
+        instrucciones.agregarOyente(e -&gt; System.out.println("  Mostrando instrucciones (" + e + ")"));
+        salir.agregarOyente(this::despedirse);                       // referencia a metodo
+        // Un mismo boton puede tener varios oyentes:
+        salir.agregarOyente(e -&gt; {
+            clics++;
+            System.out.println("  Total de veces que se pidio salir: " + clics);
+        });
+    }
+
+    private void irAConfiguracion() {
+        System.out.println("  Pasando a la configuracion");
+    }
+
+    private void despedirse(String evento) {
+        System.out.println("  ¡Hasta luego! (" + evento + ")");
+    }
+}</pre>
+<pre class="ps">java BotonesDeMentira.java</pre>
+<pre class="salida">(clic en "Jugar")
+  Pasando a la configuracion
+(clic en "Instrucciones")
+  Mostrando instrucciones (clic:Instrucciones)
+(clic en "Salir")
+  ¡Hasta luego! (clic:Salir)
+  Total de veces que se pidio salir: 1</pre>
+<p>Observa el orden: cuando se ejecuta el constructor de <code>Menu</code> no se imprime nada. Las lambdas solo se guardan en las listas de cada botón. Se ejecutan después, en <code>pulsar()</code>, una por una. Y el botón «Salir» tiene dos oyentes: Swing también permite eso.</p>
+<p>Fíjate también en que la lambda puede llamar a <code>irAConfiguracion()</code>, que es <code>private</code>. Una lambda escrita dentro de una clase ve todo lo que esa clase ve, incluidos sus campos privados (por eso puede hacer <code>clics++</code>). Y dentro de una lambda, <code>this</code> sigue siendo el objeto <code>Menu</code>, no la lambda.</p>
+
+<h2>Los iconos del Totito son lambdas guardadas en constantes</h2>
+<p>En <code>Iconos.java</code> no hay trece clases de iconos. Hay trece <b>constantes</b>, y cada una guarda una lambda que sabe dibujar algo:</p>
+<pre class="java">    /** Triangulo de "reproducir" (botones Jugar y Comenzar partida). */
+    public static final Icono JUGAR = (g, x, y, t, c) -&gt; {
+        Path2D triangulo = new Path2D.Double();
+        triangulo.moveTo(x + t * 0.24, y + t * 0.14);
+        triangulo.lineTo(x + t * 0.86, y + t * 0.5);
+        triangulo.lineTo(x + t * 0.24, y + t * 0.86);
+        triangulo.closePath();
+        Dibujo.trazoNeon(g, triangulo, c, (float) (t * 0.1), 0.6f);
+        g.setPaint(new GradientPaint((float) x, (float) y, Tema.aclarar(c, 0.25f),
+                (float) (x + t), (float) (y + t), c));
+        g.fill(triangulo);
+    };</pre>
+<p>Léelo por partes:</p>
+<ul>
+<li><code>public static final Icono JUGAR =</code>: una constante pública de la clase (capítulo 20) de tipo <code>Icono</code>. Se usa en cualquier parte como <code>Iconos.JUGAR</code>.</li>
+<li><code>(g, x, y, t, c)</code>: cinco parámetros, en el mismo orden que <code>dibujar(Graphics2D g, double x, double y, double tam, Color color)</code>. Se usan nombres de una letra (<code>t</code> por «tamaño», <code>c</code> por «color») porque aparecen decenas de veces en fórmulas como <code>x + t * 0.24</code>, y así se leen mejor. Los tipos no se escriben: Java los toma de la interfaz.</li>
+<li><code>-&gt; { ... }</code>: un cuerpo de varias líneas que dibuja un triángulo con coordenadas relativas al tamaño (capítulo 42 explica la geometría).</li>
+<li><code>};</code>: la llave cierra la lambda y el punto y coma cierra la declaración de la constante. Es fácil olvidar ese <code>;</code>, y el compilador te lo recordará.</li>
+</ul>
+<p>¿Quién llama a <code>dibujar</code>? Quien tenga el icono. <code>BotonNeon</code> recibe un <code>Iconos.Icono</code> en sus métodos de fábrica y, al pintarse, hace <code>icono.dibujar(g2, ...)</code>. Así, <code>BotonNeon.menu("Jugar", Iconos.JUGAR, Tema.ROSA)</code> produce un botón con triángulo, y <code>BotonNeon.menu("Salir", Iconos.SALIR, Tema.MORADO)</code> uno con puerta, sin que <code>BotonNeon</code> tenga un solo <code>if</code> para decidir qué dibujar.</p>
+<p>¿Qué pasaría si no se hubiera hecho así? Habría dos alternativas, ambas peores. Una: un método <code>dibujarIcono(String nombre, ...)</code> con un <code>switch</code> gigante de trece casos, que habría que editar (y arriesgarse a romper) cada vez que se agrega un icono. Otra: trece clases, cada una en su archivo, con su <code>implements Icono</code>. La lambda en una constante es el punto medio: cada icono es un objeto independiente, pero todos viven juntos y cortos en un solo archivo. A esta idea de «elegir una forma de hacer algo pasándola como objeto» se le llama patrón <b>Estrategia</b> (<i>Strategy</i>), y el capítulo 27 la retoma.</p>
+<p>Lo mismo en pequeño, en consola. El «lienzo» es una matriz de letras (capítulo 15) y cada icono es una lambda de cinco parámetros. Guárdalo como <code>IconosDeTexto.java</code>:</p>
+<pre class="java">public class IconosDeTexto {
+    public static void main(String[] args) {
+        char[][] lienzo = new char[7][30];
+        for (char[] fila : lienzo) {
+            java.util.Arrays.fill(fila, '.');
+        }
+        Iconos.EQUIS.dibujar(lienzo, 1, 1, 5, 'X');
+        Iconos.MARCO.dibujar(lienzo, 8, 1, 5, '#');
+        Iconos.PERSONA.dibujar(lienzo, 15, 1, 5, '@');
+        Iconos.EQUIS.dibujar(lienzo, 22, 0, 7, '*');   // el mismo icono, a otro tamano y color
+        for (char[] fila : lienzo) {
+            System.out.println(new String(fila));
+        }
+    }
+}
+
+/** Como Iconos del Totito, pero el "lienzo" es una matriz de letras. */
+final class Iconos {
+
+    @FunctionalInterface
+    interface Icono {
+        void dibujar(char[][] lienzo, int x, int y, int t, char c);
+    }
+
+    private Iconos() {
+    }
+
+    /** Las dos diagonales de un cuadrado de lado t. */
+    static final Icono EQUIS = (l, x, y, t, c) -&gt; {
+        for (int i = 0; i &lt; t; i++) {
+            l[y + i][x + i] = c;
+            l[y + i][x + t - 1 - i] = c;
+        }
+    };
+
+    /** Solo el borde del cuadrado. */
+    static final Icono MARCO = (l, x, y, t, c) -&gt; {
+        for (int i = 0; i &lt; t; i++) {
+            l[y][x + i] = c;
+            l[y + t - 1][x + i] = c;
+            l[y + i][x] = c;
+            l[y + i][x + t - 1] = c;
+        }
+    };
+
+    /** Referencia a un metodo que ya existe (como Iconos::persona en el Totito). */
+    static final Icono PERSONA = Iconos::persona;
+
+    private static void persona(char[][] l, int x, int y, int t, char c) {
+        int centro = x + t / 2;
+        l[y][centro] = c;                       // cabeza
+        for (int i = x; i &lt; x + t; i++) {
+            l[y + 2][i] = c;                    // brazos
+        }
+        for (int i = 1; i &lt; t; i++) {
+            l[y + i][centro] = c;               // cuerpo
+        }
+        l[y + t - 1][centro - 1] = c;           // piernas
+        l[y + t - 1][centro + 1] = c;
+    }
+}</pre>
+<pre class="ps">java IconosDeTexto.java</pre>
+<pre class="salida">......................*.....*.
+.X...X..#####....@.....*...*..
+..X.X...#...#....@......*.*...
+...X....#...#..@@@@@.....*....
+..X.X...#...#....@......*.*...
+.X...X..#####...@@@....*...*..
+......................*.....*.</pre>
+<p>La misma lambda <code>EQUIS</code> dibujó una X de 5 y otra de 7 con distinto carácter: eso es lo que permite que en el Totito el mismo icono sirva en un botón grande del menú y en uno chiquito.</p>
+
+<h2>Lo que una lambda puede usar de su alrededor</h2>
+<p>Una lambda puede usar variables locales del método donde está escrita. A eso se le llama <b>capturar</b> la variable. Pero hay una condición: la variable tiene que ser <b><code>final</code> o «efectivamente final»</b>, es decir, que nunca cambie de valor después de asignarse (aunque no lleve la palabra <code>final</code>).</p>
+<p>¿Por qué? Porque la lambda se ejecuta <i>después</i>, quizá cuando el método ya terminó y sus variables locales ya no existen (las variables locales viven en la pila, capítulo 16, y desaparecen al salir del método). Java resuelve esto copiando el valor dentro de la lambda en el momento de crearla. Si la variable pudiera cambiar después, la copia y el original dirían cosas distintas, y nadie sabría cuál vale. Así que Java lo prohíbe.</p>
+<p>El caso típico es un <code>for</code>. Este código intenta crear tres acciones, una por fila:</p>
+<pre class="java">        for (int fila = 0; fila &lt; 3; fila++) {
+            acciones.add(() -&gt; System.out.println("Casilla de la fila " + fila));
+        }</pre>
+<pre class="salida">Captura.java:8: error: local variables referenced from a lambda expression must be final or effectively final
+            acciones.add(() -&gt; System.out.println("Casilla de la fila " + fila));
+                                                                          ^
+1 error
+error: compilation failed</pre>
+<p><code>fila</code> cambia en cada vuelta (<code>fila++</code>), así que no es efectivamente final. La solución es crear, <b>dentro</b> del ciclo, una variable nueva que nunca cambia. Guárdalo como <code>Captura.java</code>:</p>
+<pre class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class Captura {
+    public static void main(String[] args) {
+        List&lt;Runnable&gt; acciones = new ArrayList&lt;&gt;();
+        for (int fila = 0; fila &lt; 3; fila++) {
+            final int f = fila;   // una variable NUEVA en cada vuelta, que nunca cambia
+            acciones.add(() -&gt; System.out.println("Casilla de la fila " + f));
+        }
+        for (Runnable accion : acciones) {
+            accion.run();
+        }
+    }
+}</pre>
+<pre class="ps">java Captura.java</pre>
+<pre class="salida">Casilla de la fila 0
+Casilla de la fila 1
+Casilla de la fila 2</pre>
+<p>Este es exactamente el truco que usa la primera versión del Totito. En <code>src/JuegoMain.java</code>, método <code>crearPanelTablero</code> (capítulo 33), se crean nueve botones dentro de dos <code>for</code> anidados, y cada uno tiene que recordar su fila y su columna:</p>
+<pre class="java">                final int f = fila;
+                final int c = columna;
+                boton.addActionListener((ActionEvent e) -&gt; manejarClicCasilla(f, c));</pre>
+<p>Sin <code>f</code> y <code>c</code>, no compilaría. Y fíjate en <code>(ActionEvent e)</code>: aquí el autor escribió el tipo del parámetro, cosa opcional; es equivalente a <code>e -&gt;</code>.</p>
+<div class="caja cuidado"><b>Los campos no tienen esta restricción</b> En <code>PantallaJuego</code>, la lambda del botón «Reiniciar» usa <code>partida</code>, que sí cambia (cada partida nueva se guarda ahí). Compila porque <code>partida</code> es un <b>campo</b> del objeto, no una variable local: la lambda no copia su valor, sino que lo lee a través de <code>this</code> cada vez que se ejecuta. Por eso al pulsar «Reiniciar» siempre se reinicia la partida <i>actual</i>, no la que existía cuando se creó el botón.</div>
+
+<h2>Referencias a métodos: <code>::</code></h2>
+<p>Muchas lambdas no hacen más que llamar a un método que ya existe, pasándole los mismos parámetros que reciben. Para esos casos hay una forma aún más corta: la <b>referencia a método</b>, que se escribe con dos signos de dos puntos seguidos, <code>::</code>. Se lee «el método tal de tal cosa». No lleva paréntesis después del nombre del método, porque no lo estás llamando: lo estás <i>señalando</i> para que se llame después.</p>
+<p>Hay cuatro formas, y el Totito usa casi todas:</p>
+<table class="tabla">
+<tr><th>Forma</th><th>En el Totito</th><th>Lambda equivalente</th></tr>
+<tr><td><code>objeto::metodo</code> (de este objeto)</td><td><code>this::alPulsarCasilla</code> (<code>PantallaJuego</code>)</td><td><code>(fila, columna) -&gt; this.alPulsarCasilla(fila, columna)</code></td></tr>
+<tr><td><code>objeto::metodo</code> (de otro objeto)</td><td><code>navegacion::salir</code> (<code>PantallaBase</code>)</td><td><code>() -&gt; navegacion.salir()</code></td></tr>
+<tr><td><code>Clase::metodoStatic</code></td><td><code>Iconos::persona</code> (<code>Iconos</code>)</td><td><code>(g, x, y, t, c) -&gt; Iconos.persona(g, x, y, t, c)</code></td></tr>
+<tr><td><code>Clase::new</code> (constructor)</td><td><code>JuegoMain::new</code> (<code>JuegoMain.main</code>)</td><td><code>() -&gt; new JuegoMain()</code></td></tr>
+<tr><td><code>Clase::metodoDeInstancia</code></td><td>(no se usa; abajo verás <code>Producto::getPrecio</code>)</td><td><code>p -&gt; p.getPrecio()</code></td></tr>
+</table>
+<p>La regla para que una referencia encaje: el método señalado debe recibir los mismos parámetros (en cantidad y tipo) que el método de la interfaz, y devolver algo compatible. Veamos cada uso real.</p>
+<h3><code>this::alPulsarCasilla</code></h3>
+<p>En el constructor de <code>PantallaJuego</code>:</p>
+<pre class="java">        tablero.setOyente(this::alPulsarCasilla);</pre>
+<p><code>setOyente</code> pide un <code>PanelTablero.OyenteCasilla</code>, cuyo método es <code>void casillaPulsada(int fila, int columna)</code>. La pantalla tiene un método <code>private void alPulsarCasilla(int fila, int columna)</code>: dos enteros, no devuelve nada. Encaja. Desde ahora, cada vez que el tablero llame a <code>oyente.casillaPulsada(1, 2)</code>, en realidad se ejecutará <code>alPulsarCasilla(1, 2)</code> de esta pantalla. Nota que el método es <code>private</code> y aun así el tablero termina ejecutándolo: la referencia se creó <i>dentro</i> de la clase, que sí tiene permiso, y lo que se entrega es un objeto que cumple la interfaz, no el permiso de llamar métodos privados.</p>
+<h3><code>navegacion::salir</code> y <code>this::cerrar</code></h3>
+<p>En el constructor de <code>PantallaBase</code>:</p>
+<pre class="java">        add(new Encabezado(navegacion::salir), BorderLayout.NORTH);</pre>
+<p>El constructor de <code>Encabezado</code> pide un <code>Runnable alCerrar</code> (un método sin parámetros que no devuelve nada), y <code>navegacion.salir()</code> tiene justo esa forma. Fíjate en lo interesante: <code>salir</code> pertenece a la interfaz <code>Navegacion</code>, no a <code>Runnable</code>, y aun así sirve. A Java no le importa el nombre del método ni de qué interfaz venga; le importa que la <b>forma</b> (parámetros y retorno) coincida. Gracias a esto <code>Encabezado</code> no necesita conocer <code>Navegacion</code>: solo sabe «cuando pulsen la X, ejecuto esto».</p>
+<p>Lo mismo en <code>TotitoApp</code>:</p>
+<pre class="java">        setContentPane(new PanelPrincipal(this::cerrar));</pre>
+<p><code>PanelPrincipal</code> pide un <code>Runnable alSalir</code>, y <code>TotitoApp</code> le entrega su método privado <code>cerrar()</code>, que hace <code>dispose()</code> y <code>System.exit(0)</code>. Así el panel puede cerrar el programa sin saber que está dentro de un <code>JFrame</code>.</p>
+<h3><code>Iconos::persona</code></h3>
+<p>En <code>Iconos</code>, la silueta de persona no es una lambda sino una referencia:</p>
+<pre class="java">    /** Silueta de persona (tarjetas de jugador). */
+    public static final Icono PERSONA = Iconos::persona;</pre>
+<p>¿Por qué? Porque el dibujo de una persona se necesita también <i>dentro</i> de otro icono, <code>PERSONAS</code>, que dibuja dos personas de distinto tamaño llamando dos veces a <code>persona(...)</code>. Si fuera una lambda, no tendría nombre y no se podría llamar desde otro lado. Así que se escribió como método normal, <code>private static void persona(Graphics2D g, double x, double y, double t, Color c)</code>, y la constante solo lo señala. Es una forma de no repetir código (el principio DRY, capítulo 27).</p>
+<h3><code>JuegoMain::new</code></h3>
+<p>En el <code>main</code> de la primera versión:</p>
+<pre class="java">        SwingUtilities.invokeLater(JuegoMain::new);</pre>
+<p><code>invokeLater</code> pide un <code>Runnable</code>. <code>JuegoMain::new</code> es una <b>referencia a constructor</b>: «cuando te ejecuten, crea un <code>JuegoMain</code>». El objeto creado se descarta, pero no importa: el constructor de <code>JuegoMain</code> ya hace <code>setVisible(true)</code> y la ventana queda abierta. <code>TotitoApp</code> prefirió la lambda <code>() -&gt; new TotitoApp().setVisible(true)</code> porque ahí el constructor no muestra la ventana, y hacía falta una segunda llamada.</p>
+<div class="caja consejo"><b>¿Lambda o referencia?</b> Usa la referencia cuando la lambda solo pasaría sus parámetros a un método, sin hacer nada más: es más corta y el nombre del método documenta la intención (<code>this::alPulsarCasilla</code> se lee mejor que <code>(f, c) -&gt; alPulsarCasilla(f, c)</code>). Si hay que cambiar parámetros, agregar valores o hacer dos cosas, usa la lambda.</div>
+
+<h2>Clases dentro de clases</h2>
+<p>Hasta ahora cada clase del Totito vivía en su propio archivo. Pero Java permite declarar una clase <b>dentro</b> de otra. Piensa en un mueble con cajones: el cajón es una pieza con su propia forma, pero no tiene sentido fuera de ese mueble, y guardarlo dentro lo mantiene ordenado y a mano. Hay cuatro tipos, y conviene distinguirlos.</p>
+
+<h3>1. Clase anidada estática (<code>static class</code>)</h3>
+<p>Una clase declarada dentro de otra con la palabra <code>static</code>. Es una clase normal y corriente, solo que <b>su nombre vive dentro de la otra</b> y puede ser privada. No está atada a ningún objeto de la clase de afuera. En el Totito hay dos.</p>
+<p>En <code>src/CampoTexto.java</code> (capítulo 47), el filtro que no deja escribir más de 14 letras:</p>
+<pre class="java">    /** Impide que el texto pase de MAXIMO caracteres. */
+    private static class LimiteDeLargo extends DocumentFilter {
+        @Override
+        public void insertString(FilterBypass fb, int offset, String texto, AttributeSet attr)
+                throws BadLocationException {
+            replace(fb, offset, 0, texto, attr);
+        }</pre>
+<p>Y en <code>src/PantallaResultado.java</code> (capítulo 60), la tarjeta con confeti:</p>
+<pre class="java">    private static class TarjetaConConfeti extends Tarjeta {
+
+        private static final Color[] COLORES = {Tema.ROSA, Tema.CIAN, Tema.MORADO};
+        private boolean conConfeti = true;
+
+        TarjetaConConfeti() {
+            super(Tema.MORADO);
+        }</pre>
+<p>Por qué así:</p>
+<ul>
+<li><b><code>private</code></b>: solo <code>CampoTexto</code> usa el filtro y solo <code>PantallaResultado</code> usa la tarjeta con confeti. Al ser privadas, ninguna otra clase las ve ni puede depender de ellas; se pueden cambiar o borrar sin miedo. Una clase de primer nivel (en su archivo) no puede ser <code>private</code>; una anidada sí.</li>
+<li><b><code>static</code></b>: ninguna de las dos necesita un objeto concreto de la clase de afuera. El filtro usa <code>MAXIMO</code>, que es una constante <code>static</code> de <code>CampoTexto</code>, y eso sí puede verlo. Ser <code>static</code> la hace más liviana y más clara: no guarda una referencia escondida al objeto exterior.</li>
+<li><b>Dentro y no en su archivo</b>: un archivo menos en <code>src</code>, y quien lea <code>CampoTexto</code> encuentra el filtro justo ahí, al final.</li>
+</ul>
+<p>Las interfaces y los enums declarados dentro de una clase son <b>siempre</b> estáticos aunque no lo digan: <code>PanelTablero.OyenteCasilla</code>, <code>Iconos.Icono</code>, <code>Partida.Modo</code> (capítulo 26). Por eso se nombran desde fuera con el nombre de la clase y un punto.</p>
+
+<h3>2. Clase interna (sin <code>static</code>)</h3>
+<p>Si quitas el <code>static</code>, la clase pasa a ser <b>interna</b>: cada objeto suyo pertenece a un objeto concreto de la clase de afuera, y puede usar sus campos directamente, incluso los privados. Es como el aula de una escuela: el aula «3.º B» no existe en el aire, existe en una escuela determinada. El Totito no declara ninguna clase interna con nombre, pero sus clases anónimas (abajo) se comportan así. Lo verás en el ejemplo del final de esta sección.</p>
+
+<h3>3. Clase local</h3>
+<p>Una clase declarada dentro de un <b>método</b>. Solo existe dentro de ese método. Es rara; se usa cuando una pequeña clase de apoyo solo tiene sentido en un único lugar. El Totito no tiene ninguna.</p>
+
+<h3>4. Clase anónima</h3>
+<p>Una clase sin nombre que se declara y se instancia (se crea su objeto) en la misma expresión, con la forma <code>new Tipo(...) { cuerpo }</code>. <code>Tipo</code> puede ser una interfaz (como la <code>Navegacion</code> de mentira de <code>VistaPrevia</code>, capítulo 24) o una clase que se extiende. El caso más importante del Totito está en el constructor de <code>src/PanelTablero.java</code> (capítulo 48):</p>
+<pre class="java">        MouseAdapter raton = new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                actualizarCasillaEncima(e.getX(), e.getY());
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                actualizarCasillaEncima(-1, -1);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                actualizarCasillaEncima(e.getX(), e.getY());
+                if (interactivo &amp;&amp; oyente != null &amp;&amp; filaEncima &gt;= 0) {
+                    oyente.casillaPulsada(filaEncima, columnaEncima);
+                }
+            }
+        };
+        addMouseListener(raton);
+        addMouseMotionListener(raton);</pre>
+<p>Símbolo por símbolo:</p>
+<ul>
+<li><code>MouseAdapter raton =</code>: una variable local de tipo <code>MouseAdapter</code>.</li>
+<li><code>new MouseAdapter()</code>: «crea un objeto de… », y los paréntesis llaman al constructor del padre (aquí, sin argumentos).</li>
+<li><code>{</code>: la llave abierta justo después es lo que convierte esto en una clase anónima: «…de una clase nueva, sin nombre, que hereda de <code>MouseAdapter</code> y que es así:».</li>
+<li>Tres métodos con <code>@Override</code>: los tres que interesan (mover el ratón, salir del tablero, presionar el botón).</li>
+<li><code>};</code>: la llave cierra la clase, y el punto y coma la asignación.</li>
+</ul>
+<p>Dos cosas importantes. Primero, dentro de la clase anónima se usan <code>interactivo</code>, <code>oyente</code>, <code>filaEncima</code> y <code>columnaEncima</code>, que son <b>campos privados de <code>PanelTablero</code></b>, y se llama a <code>actualizarCasillaEncima</code>, un método privado. Puede hacerlo porque una clase anónima creada dentro de un método de instancia es una clase <b>interna</b>: está atada a <i>este</i> panel. Segundo, el mismo objeto <code>raton</code> se registra dos veces: como oyente de clics (<code>addMouseListener</code>) y como oyente de movimiento (<code>addMouseMotionListener</code>). Eso funciona porque <code>MouseAdapter</code> implementa a la vez las dos interfaces.</p>
+<p><code>CampoTexto</code> hace algo parecido con <code>new FocusAdapter() { ... }</code> para volver a pintar el borde cuando el campo gana o pierde el foco, y <code>SelectorSimbolo</code> y <code>OpcionModo</code> usan <code>new MouseAdapter() { ... }</code> con un solo método.</p>
+
+<h3>¿Por qué ahí no se usa una lambda?</h3>
+<p>Por dos razones, y las dos son obligatorias:</p>
+<ol>
+<li><code>MouseAdapter</code> es una <b>clase</b> (abstracta), no una interfaz. Las lambdas solo sirven para interfaces funcionales.</li>
+<li>Aunque se usara la interfaz <code>MouseListener</code>, esta tiene <b>cinco</b> métodos abstractos. Una lambda es un único método; no puede cumplir cinco.</li>
+</ol>
+<p>Si lo intentas con una interfaz de dos métodos, el compilador lo dice claramente:</p>
+<pre class="salida">SinLambda.java:3: error: incompatible types: OyenteSensor is not a functional interface
+        OyenteSensor oyente = () -&gt; System.out.println("abierta");
+                              ^
+    multiple non-overriding abstract methods found in interface OyenteSensor
+1 error
+error: compilation failed</pre>
+<p>«OyenteSensor no es una interfaz funcional: hay varios métodos abstractos». Aquí entra la idea del <b>adaptador</b>: <code>MouseAdapter</code> es una clase que implementa las interfaces del ratón con todos sus métodos <b>vacíos</b>. Tú heredas de ella y sobrescribes solo los que te interesan; los otros ya están «cumplidos» sin hacer nada. Sin el adaptador, el <code>PanelTablero</code> tendría que escribir también <code>mouseClicked</code>, <code>mouseReleased</code>, <code>mouseEntered</code>, <code>mouseDragged</code> y <code>mouseWheelMoved</code> vacíos.</p>
+<div class="caja concepto"><b><code>this</code> en una lambda y en una clase anónima</b> Dentro de una lambda, <code>this</code> es el objeto que la escribió (la pantalla, el panel). Dentro de una clase anónima, <code>this</code> es <b>el objeto anónimo</b>. Por eso en el <code>MouseAdapter</code> de <code>PanelTablero</code> se llama a <code>actualizarCasillaEncima(...)</code> sin <code>this</code>: Java lo busca primero en la clase anónima, no lo encuentra, y sigue buscando en <code>PanelTablero</code>.</div>
+
+<h3>Los cuatro tipos en un solo programa</h3>
+<p>Guárdalo como <code>ClasesDentro.java</code>. Usa una escuela (para la anidada estática, la interna y la local) y un sensor de puerta con su adaptador (para la anónima):</p>
+<pre class="java">public class ClasesDentro {
+    public static void main(String[] args) {
+        // 1) Clase anidada ESTATICA: se crea sin necesitar un objeto Escuela.
+        Escuela.Horario horario = new Escuela.Horario("07:30", "12:30");
+        System.out.println("Horario: " + horario);
+
+        // 2) Clase INTERNA (no estatica): cada Aula pertenece a UNA escuela concreta.
+        Escuela escuela = new Escuela("Escuela Las Flores");
+        Escuela.Aula aula = escuela.new Aula("3.º B");
+        aula.presentarse();
+
+        // 3) Clase LOCAL: declarada dentro de un metodo, solo existe ahi.
+        escuela.imprimirLista(new String[]{"Ana", "Luis", "Sofía"});
+
+        // 4) Clase ANONIMA que extiende una clase "adaptadora" con varios metodos.
+        Sensor puerta = new Sensor();
+        puerta.setOyente(new AdaptadorSensor() {
+            @Override
+            public void alAbrir() {
+                System.out.println("Alguien abrió la puerta");
+            }
+            // alCerrar() no se escribe: el adaptador ya trae uno vacio.
+        });
+        puerta.abrir();
+        puerta.cerrar();
+        System.out.println("Fin");
+    }
+}
+
+class Escuela {
+    private final String nombre;
+
+    Escuela(String nombre) {
+        this.nombre = nombre;
+    }
+
+    /** Anidada estatica: no necesita (ni puede ver) el "nombre" de una escuela. */
+    static class Horario {
+        private final String entrada;
+        private final String salida;
+
+        Horario(String entrada, String salida) {
+            this.entrada = entrada;
+            this.salida = salida;
+        }
+
+        @Override
+        public String toString() {
+            return entrada + " a " + salida;
+        }
+    }
+
+    /** Interna: cada Aula ve los campos de SU escuela (aqui, nombre). */
+    class Aula {
+        private final String grado;
+
+        Aula(String grado) {
+            this.grado = grado;
+        }
+
+        void presentarse() {
+            System.out.println("Soy el aula " + grado + " de " + nombre);
+        }
+    }
+
+    void imprimirLista(String[] alumnos) {
+        class Renglon {   // clase local
+            String formatear(int numero, String alumno) {
+                return String.format("%2d. %s", numero, alumno);
+            }
+        }
+        Renglon renglon = new Renglon();
+        for (int i = 0; i &lt; alumnos.length; i++) {
+            System.out.println(renglon.formatear(i + 1, alumnos[i]));
+        }
+    }
+}
+
+/** Como MouseListener: varios metodos que hay que atender. */
+interface OyenteSensor {
+    void alAbrir();
+
+    void alCerrar();
+}
+
+/** Como MouseAdapter: implementa todo con metodos vacios, para sobrescribir solo lo que importa. */
+abstract class AdaptadorSensor implements OyenteSensor {
+    @Override
+    public void alAbrir() {
+    }
+
+    @Override
+    public void alCerrar() {
+    }
+}
+
+class Sensor {
+    private OyenteSensor oyente;
+
+    void setOyente(OyenteSensor oyente) {
+        this.oyente = oyente;
+    }
+
+    void abrir() {
+        oyente.alAbrir();
+    }
+
+    void cerrar() {
+        oyente.alCerrar();
+    }
+}</pre>
+<pre class="ps">java ClasesDentro.java</pre>
+<pre class="salida">Horario: 07:30 a 12:30
+Soy el aula 3.º B de Escuela Las Flores
+ 1. Ana
+ 2. Luis
+ 3. Sofía
+Alguien abrió la puerta
+Fin</pre>
+<p>Fíjate en la sintaxis rara de la línea <code>escuela.new Aula("3.º B")</code>: como un <code>Aula</code> necesita <i>su</i> escuela, el <code>new</code> se escribe «desde» el objeto escuela. Con la clase estática <code>Horario</code>, en cambio, basta con <code>new Escuela.Horario(...)</code>. Y al llamar a <code>puerta.cerrar()</code> no se imprimió nada: se ejecutó el <code>alCerrar()</code> vacío del adaptador.</p>
+<div class="caja consejo"><b>Dónde quedan en el disco</b> Cada clase anidada o anónima se compila en su propio archivo <code>.class</code>, con un <code>$</code> en el nombre. Cuando compiles el Totito, en <code>target\classes</code> verás <code>CampoTexto$LimiteDeLargo.class</code>, <code>PantallaResultado$TarjetaConConfeti.class</code>, <code>Partida$Modo.class</code> y <code>PanelTablero$1.class</code> (el <code>1</code> es la primera clase anónima de <code>PanelTablero</code>: el <code>MouseAdapter</code>). No los borres: el programa los necesita.</div>
+
+<h3>¿Cuál usar?</h3>
+<table class="tabla">
+<tr><th>Necesitas…</th><th>Usa</th><th>En el Totito</th></tr>
+<tr><td>Una acción corta para una interfaz de un solo método</td><td>Lambda</td><td>Los <code>addActionListener</code>, los iconos, los <code>Runnable</code></td></tr>
+<tr><td>Que esa acción sea un método que ya existe</td><td>Referencia a método</td><td><code>this::alPulsarCasilla</code>, <code>navegacion::salir</code></td></tr>
+<tr><td>Varios métodos, o extender una clase (adaptador), en un solo lugar</td><td>Clase anónima</td><td><code>MouseAdapter</code> en <code>PanelTablero</code>, la <code>Navegacion</code> de <code>VistaPrevia</code></td></tr>
+<tr><td>Una clase de apoyo con nombre, que solo usa una clase</td><td>Anidada <code>private static</code></td><td><code>LimiteDeLargo</code>, <code>TarjetaConConfeti</code></td></tr>
+<tr><td>Una clase que se usa en varios archivos</td><td>Clase normal en su archivo</td><td>Todas las demás</td></tr>
+</table>
+<div class="caja cuidado"><b>No escondas lógica importante en lambdas largas</b> Si una lambda pasa de unas cinco líneas, sácala a un método privado con buen nombre y usa una referencia (<code>this::alPulsarCasilla</code>) o una lambda de una línea que lo llame. <code>PantallaJuego</code> lo hace así: la lógica del clic vive en <code>alPulsarCasilla</code> y en <code>despuesDeJugada</code>, no metida dentro del <code>setOyente(...)</code>. Así el método aparece en la lista de NetBeans, se le pueden poner puntos de interrupción (capítulo 62) y tiene un nombre que explica qué hace.</div>
+
+<h2>Las interfaces funcionales que trae Java</h2>
+<p>Para no tener que inventar una interfaz como <code>Operacion</code> cada vez, el paquete <code>java.util.function</code> trae las formas más comunes ya hechas. Las cuatro más usadas:</p>
+<table class="tabla">
+<tr><th>Interfaz</th><th>Método</th><th>Forma</th><th>Para qué</th></tr>
+<tr><td><code>Consumer&lt;T&gt;</code></td><td><code>accept(T t)</code></td><td>recibe algo, no devuelve nada</td><td>hacer algo con cada elemento (imprimir, guardar)</td></tr>
+<tr><td><code>Function&lt;T, R&gt;</code></td><td><code>R apply(T t)</code></td><td>recibe una cosa, devuelve otra</td><td>transformar (producto → etiqueta)</td></tr>
+<tr><td><code>Predicate&lt;T&gt;</code></td><td><code>boolean test(T t)</code></td><td>recibe algo, responde sí o no</td><td>filtrar (¿está agotado?)</td></tr>
+<tr><td><code>Supplier&lt;T&gt;</code></td><td><code>T get()</code></td><td>no recibe nada, entrega algo</td><td>fabricar valores bajo pedido</td></tr>
+</table>
+<p>A estas se suman <code>Runnable</code> (no recibe ni devuelve) y <code>Comparator&lt;T&gt;</code> (compara dos cosas para ordenarlas). Las listas de Java tienen métodos que las aceptan: <code>forEach</code> (con un <code>Consumer</code>), <code>removeIf</code> (con un <code>Predicate</code>) y <code>sort</code> (con un <code>Comparator</code>). Este inventario de una tienda las usa todas. Guárdalo como <code>Tienda.java</code>:</p>
+<pre class="java">import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+
+public class Tienda {
+    public static void main(String[] args) {
+        List&lt;Producto&gt; inventario = new ArrayList&lt;&gt;();
+        inventario.add(new Producto("Arroz 1 lb", 6.50, 40));
+        inventario.add(new Producto("Frijol negro", 9.75, 0));
+        inventario.add(new Producto("Café molido", 32.00, 12));
+        inventario.add(new Producto("Azúcar 5 lb", 21.25, 8));
+
+        // Consumer: recibe algo y no devuelve nada.
+        Consumer&lt;Producto&gt; imprimir = p -&gt; System.out.printf("  %-14s Q%6.2f  (%d)%n",
+                p.getNombre(), p.getPrecio(), p.getExistencia());
+
+        System.out.println("Ordenado por precio:");
+        inventario.sort(Comparator.comparing(Producto::getPrecio));
+        inventario.forEach(imprimir);
+
+        System.out.println("Ordenado por nombre, de Z a A:");
+        inventario.sort(Comparator.comparing(Producto::getNombre).reversed());
+        inventario.forEach(imprimir);
+
+        // Predicate: recibe algo y responde true o false.
+        Predicate&lt;Producto&gt; agotado = p -&gt; p.getExistencia() == 0;
+        inventario.removeIf(agotado);
+        System.out.println("Sin los agotados quedan " + inventario.size() + " productos");
+
+        // Function: recibe algo y devuelve otra cosa.
+        Function&lt;Producto, String&gt; etiqueta = p -&gt; p.getNombre().toUpperCase() + " - Q" + p.getPrecio();
+        System.out.println("Etiqueta: " + etiqueta.apply(inventario.get(0)));
+
+        // Supplier: no recibe nada y entrega algo nuevo cada vez que se le pide.
+        Supplier&lt;Producto&gt; nuevo = () -&gt; new Producto("(sin nombre)", 0, 0);
+        System.out.println("Plantilla: " + nuevo.get().getNombre());
+    }
+}
+
+class Producto {
+    private final String nombre;
+    private final double precio;
+    private final int existencia;
+
+    Producto(String nombre, double precio, int existencia) {
+        this.nombre = nombre;
+        this.precio = precio;
+        this.existencia = existencia;
+    }
+
+    String getNombre() {
+        return nombre;
+    }
+
+    double getPrecio() {
+        return precio;
+    }
+
+    int getExistencia() {
+        return existencia;
+    }
+}</pre>
+<pre class="ps">java Tienda.java</pre>
+<pre class="salida">Ordenado por precio:
+  Arroz 1 lb     Q  6.50  (40)
+  Frijol negro   Q  9.75  (0)
+  Azúcar 5 lb    Q 21.25  (8)
+  Café molido    Q 32.00  (12)
+Ordenado por nombre, de Z a A:
+  Frijol negro   Q  9.75  (0)
+  Café molido    Q 32.00  (12)
+  Azúcar 5 lb    Q 21.25  (8)
+  Arroz 1 lb     Q  6.50  (40)
+Sin los agotados quedan 3 productos
+Etiqueta: CAFÉ MOLIDO - Q32.0
+Plantilla: (sin nombre)</pre>
+<p>La línea clave es <code>Comparator.comparing(Producto::getPrecio)</code>. <code>Producto::getPrecio</code> es la quinta forma de referencia de la tabla: «para cualquier producto <code>p</code>, llama a <code>p.getPrecio()</code>». <code>Comparator.comparing</code> recibe esa «forma de sacar la clave» y fabrica un comparador que ordena por ella. <code>.reversed()</code> le da la vuelta. Compáralo con el <code>Ranking.java</code> del capítulo 24: allí <code>Puntaje</code> tenía <b>un</b> orden fijo, escrito dentro de la clase con <code>Comparable</code>; aquí el orden se elige <b>desde fuera</b>, en el momento, y el mismo inventario se ordena de dos maneras sin tocar <code>Producto</code>.</p>
+<div class="caja cuidado"><b>Puntos y comas en los decimales</b> <code>printf</code> usa la configuración regional de tu Windows. En Guatemala los decimales llevan punto, como arriba; si tu Windows está configurado para un país que usa coma, verás <code>6,50</code>. No es un error del programa.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Una <b>interfaz funcional</b> tiene un solo método abstracto; <code>@FunctionalInterface</code> le pide al compilador que lo vigile. Solo ellas admiten lambdas y referencias.</li>
+<li>Una <b>lambda</b> (<code>(parámetros) -&gt; cuerpo</code>) es un método sin nombre que se convierte en un objeto de la interfaz esperada. No se ejecuta al escribirse, sino cuando alguien llama a su método.</li>
+<li>Los botones del Totito usan lambdas con <code>addActionListener</code>; los iconos son lambdas guardadas en constantes <code>static final</code> (patrón Estrategia).</li>
+<li>Una lambda solo puede capturar variables locales <b>efectivamente finales</b>; por eso <code>JuegoMain</code> copia <code>fila</code> y <code>columna</code> en <code>f</code> y <code>c</code>. Los campos no tienen esa restricción.</li>
+<li>Una <b>referencia a método</b> (<code>::</code>) señala un método existente cuya forma encaja: <code>this::alPulsarCasilla</code>, <code>navegacion::salir</code>, <code>this::cerrar</code>, <code>Iconos::persona</code>, <code>JuegoMain::new</code>.</li>
+<li>Clases dentro de clases: <b>anidadas estáticas</b> (<code>LimiteDeLargo</code>, <code>TarjetaConConfeti</code>), <b>internas</b> (atadas a un objeto exterior), <b>locales</b> y <b>anónimas</b> (el <code>MouseAdapter</code> de <code>PanelTablero</code>).</li>
+<li>Se usa clase anónima y no lambda cuando hay que extender una clase o escribir varios métodos; los <b>adaptadores</b> traen todos los métodos vacíos.</li>
+<li><code>java.util.function</code> trae <code>Consumer</code>, <code>Function</code>, <code>Predicate</code> y <code>Supplier</code>; con <code>Comparator.comparing</code> ordenas listas por cualquier campo.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Cualquier aplicación con botones</b> (una calculadora neón, capítulo 68): cada tecla con <code>boton.addActionListener(e -&gt; agregarDigito("7"))</code> y las operaciones guardadas como lambdas en un mapa, <code>"+" -&gt; (a, b) -&gt; a + b</code>, en lugar de un <code>switch</code> enorme.</li>
+<li><b>Tienda o inventario:</b> <code>removeIf(p -&gt; p.getExistencia() == 0)</code> para quitar agotados, <code>sort(Comparator.comparing(Producto::getPrecio))</code> para ordenar, un <code>Predicate</code> por cada filtro que elija el usuario (por categoría, por precio máximo).</li>
+<li><b>Sistema escolar:</b> una clase <code>Boleta</code> con una clase anidada <code>private static class Renglon</code> para cada curso, y un <code>Comparator</code> para listar alumnos por promedio o por apellido según el botón que se pulse.</li>
+<li><b>Banco:</b> reglas de comisión como lambdas (<code>Function&lt;Double, Double&gt;</code>) que se eligen según el tipo de cuenta, y oyentes (<code>Consumer&lt;Movimiento&gt;</code>) que se avisan cada vez que hay un retiro, por ejemplo para mandar una alerta.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>En <code>TresFormas.java</code> agrega una operación <code>division</code> como lambda y otra <code>menor</code> como referencia a método. Pista: <code>Math</code> tiene un método <code>min</code> con la forma adecuada.</li>
+<li>En <code>BotonesDeMentira.java</code> agrega un botón «Reiniciar» con un oyente de varias líneas (entre llaves) que imprima dos mensajes, y otro que use una referencia <code>this::reiniciar</code>. ¿En qué orden se imprimen?</li>
+<li>En <code>IconosDeTexto.java</code> agrega un icono <code>CRUZ</code> (una línea vertical y otra horizontal por el centro) como lambda, y un icono <code>DOS_EQUIS</code> que dibuje dos X pequeñas una al lado de otra reutilizando <code>EQUIS</code>. Pista: dentro de la lambda puedes llamar a <code>EQUIS.dibujar(l, x, y, t / 2, c)</code>.</li>
+<li>Escribe un <code>Contador</code> con un método <code>void alLlegarA(int meta, Runnable accion)</code> y otro <code>void sumar()</code>; cuando la cuenta llegue a la meta, ejecuta la acción. Prueba registrando la acción con lambda y luego con clase anónima, y compara cuánto escribiste.</li>
+<li>Reto: en <code>Tienda.java</code> ordena por existencia de mayor a menor y, en caso de empate, por nombre. Pista: <code>Comparator.comparing(Producto::getExistencia).reversed().thenComparing(Producto::getNombre)</code>. Después escribe un <code>Predicate&lt;Producto&gt;</code> llamado <code>caro</code> (precio mayor que Q20) y combínalo con <code>agotado</code> usando <code>agotado.or(caro)</code>.</li>
+</ol></div>
+</section>

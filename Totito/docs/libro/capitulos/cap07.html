@@ -1,0 +1,296 @@
+<section class="capitulo" id="cap07">
+<h1><span class="num">Capítulo 7</span>Configurar Git y GitHub</h1>
+<p class="entrada">En este capítulo creas tu cuenta de GitHub, la proteges con verificación en dos pasos, le dices a Git quién eres y cómo debe comportarse en Windows, y conectas tu computadora con GitHub usando <code>gh</code>. Se hace una sola vez por computadora, y si queda bien hecho no vuelves a pensar en ello.</p>
+
+<h2>Antes de empezar: comprueba las herramientas</h2>
+<p>En el capítulo 4 instalaste Git y GitHub CLI con winget. Abre PowerShell (si lo tenías abierto desde antes de instalar, ciérralo y ábrelo de nuevo para que se actualice el PATH) y comprueba que los dos responden:</p>
+<pre class="ps">git --version
+gh --version</pre>
+<p>Deberías ver algo parecido a esto (los números de versión pueden ser más altos; no importa):</p>
+<pre class="salida">git version 2.55.0.windows.5
+gh version 2.102.0 (2026-09-30)
+https://github.com/cli/cli/releases/tag/v2.102.0</pre>
+<p>El final <code>.windows.5</code> indica que es <b>Git for Windows</b>, la versión de Git preparada para Windows. Si en lugar de eso PowerShell dice que <code>git</code> «no se reconoce como nombre de un cmdlet, función, archivo de script o programa ejecutable», vuelve al capítulo 4: casi siempre se arregla cerrando y abriendo PowerShell o reinstalando con winget.</p>
+
+<h2>Paso 1: crear tu cuenta de GitHub</h2>
+<p>GitHub es gratis para lo que harás en este libro (y para la mayoría de proyectos personales): repositorios públicos y privados ilimitados, pull requests, issues y releases.</p>
+<ol>
+<li>Abre el navegador y entra a <code>https://github.com/signup</code>.</li>
+<li>Escribe tu <b>correo electrónico</b>. Usa uno que revises y que vayas a conservar muchos años: ahí llegan los avisos de seguridad y es tu forma de recuperar la cuenta.</li>
+<li>Elige una <b>contraseña</b> larga. GitHub pide al menos 15 caracteres, o al menos 8 si incluye un número y una letra minúscula; cuanto más larga, mejor. No reutilices la de tu correo ni la de otra página.</li>
+<li>Elige tu <b>nombre de usuario</b> (en inglés, <i>username</i>). Piensa bien este: será la dirección de tu perfil (<code>https://github.com/tu-usuario</code>) y aparecerá en la dirección de todos tus repositorios, por ejemplo <code>https://github.com/tu-usuario/totito</code>. Consejos más abajo.</li>
+<li>Decide si quieres recibir correos de novedades (no hace falta).</li>
+<li>Resuelve la verificación de que eres una persona (un pequeño rompecabezas).</li>
+<li>GitHub te manda un <b>código</b> a tu correo. Cópialo en la página para confirmar la dirección.</li>
+<li>Si te pregunta por un plan, elige el gratuito (<b>Free</b>). Las preguntas sobre «para qué usarás GitHub» son opcionales; puedes saltarlas.</li>
+</ol>
+
+<div class="caja consejo"><b>Cómo elegir tu nombre de usuario</b> Piensa que algún día se lo vas a dar a una empresa como parte de tu currículum. Funciona bien tu nombre y apellido unidos con guion (<code>ana-lopez</code>), o una variante corta si ya está tomado (<code>analopez-gt</code>, <code>alopezdev</code>). Evita apodos que dentro de cinco años te den vergüenza, números al azar (<code>xX_ana_99_Xx</code>) y mayúsculas mezcladas. Se puede cambiar después, pero los enlaces viejos dejan de funcionar. En este libro usaremos <code>ana-lopez</code> como ejemplo: donde lo veas, pon el tuyo.</div>
+
+<h2>Paso 2: la verificación en dos pasos</h2>
+<p>La <b>verificación en dos pasos</b> (en inglés <i>two-factor authentication</i>, 2FA) significa que para entrar a tu cuenta no basta con la contraseña: además hace falta un código que solo tú tienes, normalmente en tu teléfono. Así, aunque alguien robe o adivine tu contraseña, no puede entrar.</p>
+<p>¿Por qué tanta seguridad para un juego de totito? Porque tu cuenta de GitHub, con el tiempo, guardará todo tu código, quizás proyectos de trabajo, y la usarás para entrar a otros servicios. Además, <b>GitHub exige la verificación en dos pasos</b> a quienes suben código: si no la activas al crear la cuenta, en algún momento te lo pedirá y no podrás seguir hasta hacerlo. Mejor dejarla lista desde el principio.</p>
+<p>Lo más cómodo es usar una <b>aplicación autenticadora</b> en el teléfono, como Google Authenticator o Microsoft Authenticator (gratis en la tienda de tu teléfono). Estas aplicaciones generan un código de 6 dígitos que cambia cada 30 segundos.</p>
+<ol>
+<li>En GitHub, haz clic en tu foto (arriba a la derecha) → <b>Settings</b> (Configuración).</li>
+<li>En el menú de la izquierda, entra a <b>Password and authentication</b>.</li>
+<li>Pulsa <b>Enable two-factor authentication</b>.</li>
+<li>GitHub muestra un <b>código QR</b>. En la aplicación autenticadora del teléfono pulsa «+» o «Agregar cuenta» → «Escanear código QR» y apunta la cámara a la pantalla.</li>
+<li>La aplicación muestra una entrada «GitHub» con un número de 6 dígitos. Escríbelo en la página de GitHub para comprobar que funciona.</li>
+<li>GitHub te muestra los <b>códigos de recuperación</b> (<i>recovery codes</i>): una lista de códigos de un solo uso para entrar si pierdes el teléfono. <b>Descárgalos</b> y guárdalos en un lugar seguro fuera de la computadora (impresos en un cajón, o en un gestor de contraseñas). Sin el teléfono y sin estos códigos, puedes perder tu cuenta para siempre.</li>
+<li>Confirma que los guardaste y termina.</li>
+</ol>
+<p>Desde ahora, cuando inicies sesión en GitHub en un navegador nuevo, te pedirá la contraseña y luego el código del teléfono. GitHub también ofrece otras opciones (llaves de acceso o <i>passkeys</i>, la aplicación GitHub Mobile, mensajes de texto en algunos países); puedes agregarlas como respaldo desde la misma página.</p>
+
+<div class="caja cuidado"><b>Los códigos de recuperación son tan valiosos como tu contraseña</b> No los guardes en la carpeta del proyecto, no los subas a ningún repositorio, no se los mandes a nadie. Quien los tenga puede entrar a tu cuenta sin tu teléfono.</div>
+
+<h2>Paso 3: tu correo privado de GitHub</h2>
+<p>Cada commit que hagas llevará grabado un nombre y un correo (lo configuras en el paso 4). Si el repositorio es público, cualquiera puede ver ese correo, y hay robots que recorren GitHub recolectando direcciones para mandar spam. GitHub te da una dirección especial que no recibe correo pero que identifica tus commits como tuyos:</p>
+<ol>
+<li>En <b>Settings</b> entra a <b>Emails</b>.</li>
+<li>Activa <b>Keep my email addresses private</b> («mantener privadas mis direcciones de correo»).</li>
+<li>Justo debajo aparece tu dirección privada, con esta forma: <code>12345678+ana-lopez@users.noreply.github.com</code> (el número es el identificador de tu cuenta). Cópiala: la usarás en el siguiente paso.</li>
+<li>Opcional pero recomendable: activa también <b>Block command line pushes that expose my email</b>. Si por error configuras tu correo real, GitHub rechazará el <code>push</code> y te avisará, en lugar de publicarlo.</li>
+</ol>
+<p>Si prefieres usar tu correo real (por ejemplo, para que una empresa te encuentre), también está bien; solo tenlo en cuenta al hacer públicos tus repositorios.</p>
+
+<h2>Paso 4: decirle a Git quién eres (git config)</h2>
+<p>Git guarda su configuración en archivos de texto, y el comando para leerla y cambiarla es <code>git config</code>. Hay tres niveles, del más general al más particular:</p>
+<table class="tabla">
+<tr><th>Nivel</th><th>Opción</th><th>Dónde se guarda (Windows)</th><th>A qué afecta</th></tr>
+<tr><td>Sistema</td><td><code>--system</code></td><td><code>C:\Program Files\Git\etc\gitconfig</code></td><td>A todos los usuarios de la PC. Lo escribe el instalador; no lo toques.</td></tr>
+<tr><td>Global</td><td><code>--global</code></td><td><code>C:\Users\&lt;tu-usuario&gt;\.gitconfig</code></td><td>A todos <b>tus</b> repositorios. Aquí va casi todo.</td></tr>
+<tr><td>Local</td><td><code>--local</code> (o nada)</td><td><code>.git\config</code> dentro de cada proyecto</td><td>Solo a ese repositorio.</td></tr>
+</table>
+<p>Si un ajuste aparece en varios niveles, gana el más particular: local antes que global, global antes que sistema. Así puedes, por ejemplo, usar tu correo personal en todos tus proyectos (global) y el del trabajo en un repositorio concreto (local).</p>
+
+<h3>Tu nombre y tu correo</h3>
+<p>Escribe estos dos comandos con tus datos (las comillas son necesarias porque el nombre lleva espacio):</p>
+<pre class="ps">git config --global user.name "Ana López"
+git config --global user.email "12345678+ana-lopez@users.noreply.github.com"</pre>
+<p>Pieza por pieza:</p>
+<ul>
+<li><code>git config</code>: el subcomando de Git para la configuración.</li>
+<li><code>--global</code>: guárdalo en tu archivo personal, para todos tus proyectos.</li>
+<li><code>user.name</code>: el nombre del ajuste. Los ajustes de Git tienen la forma <code>sección.nombre</code>; aquí la sección es <code>user</code> (usuario) y el ajuste es <code>name</code> (nombre).</li>
+<li><code>"Ana López"</code>: el valor. Usa tu nombre real, como quieres que aparezca como autora o autor de tus commits. No es tu nombre de usuario de GitHub (aunque puede coincidir).</li>
+<li><code>user.email</code>: el correo que irá en cada commit. GitHub lo usa para asociar tus commits a tu cuenta y mostrar tu foto junto a ellos; por eso debe ser un correo registrado en tu cuenta o tu dirección <code>noreply</code>.</li>
+</ul>
+<p>Los comandos no muestran nada si salen bien. Así es Git: el silencio significa «hecho».</p>
+
+<div class="caja concepto"><b>El nombre y el correo no son una contraseña</b> <code>user.name</code> y <code>user.email</code> son solo una firma que Git escribe en cada commit; no te dan acceso a nada. Quien sube los cambios a GitHub se identifica de otra forma (con <code>gh auth login</code>, en el paso 5). Por eso también puedes hacer commits sin internet y sin cuenta.</div>
+
+<p>Si te saltas este paso, el primer <code>git commit</code> fallará con un mensaje como este, que ahora ya sabes leer: «por favor, dime quién eres», y te sugiere los dos comandos de arriba.</p>
+<pre class="salida">Author identity unknown
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+to set your account's default identity.
+Omit --global to set the identity only in this repository.
+
+fatal: unable to auto-detect email address (got 'ana@LAPTOP-ANA.(none)')</pre>
+
+<h3>La rama principal se llama main</h3>
+<pre class="ps">git config --global init.defaultBranch main</pre>
+<p>Cuando creas un repositorio nuevo (<code>git init</code>, capítulo 8), Git crea la primera rama. Durante años se llamó <code>master</code>; hoy GitHub y la mayoría de proyectos usan <code>main</code>, y es el nombre que usa este libro. Este ajuste (<code>init.defaultBranch</code>, «rama por defecto al iniciar») hace que tus repositorios nuevos empiecen directamente con <code>main</code>. Sin él, según cómo se instaló Git, podrías terminar con una rama <code>master</code> en tu PC y una <code>main</code> en GitHub, que es un lío innecesario. (En el capítulo 8 verás además <code>git init -b main</code>, que pide <code>main</code> de forma explícita para un repositorio concreto; con los dos, no hay forma de equivocarse).</p>
+
+<h3>Los finales de línea en Windows: core.autocrlf</h3>
+<pre class="ps">git config --global core.autocrlf true</pre>
+<p>Para entender este ajuste hay que saber algo que casi nadie te cuenta: <b>al final de cada línea de un archivo de texto hay caracteres invisibles</b> que indican «aquí termina la línea». Y no todos los sistemas usan los mismos:</p>
+<table class="tabla">
+<tr><th>Sistema</th><th>Final de línea</th><th>Nombre</th><th>Código</th></tr>
+<tr><td>Windows</td><td>Dos caracteres: retorno de carro + salto de línea</td><td><b>CRLF</b> (<i>Carriage Return + Line Feed</i>)</td><td><code>\r\n</code></td></tr>
+<tr><td>Linux y macOS</td><td>Un carácter: salto de línea</td><td><b>LF</b> (<i>Line Feed</i>)</td><td><code>\n</code></td></tr>
+</table>
+<p>Los nombres vienen de las máquinas de escribir: «retorno de carro» era devolver el carro a la izquierda y «salto de línea» era bajar el papel un renglón. Windows heredó los dos; Linux y macOS se quedaron con uno.</p>
+<p>¿Por qué importa? Si tú guardas <code>Tablero.java</code> con CRLF y un compañero en Linux lo guarda con LF, Git vería que <b>todas las líneas</b> del archivo cambiaron, aunque nadie tocó el código. El historial se llenaría de cambios falsos y aparecerían conflictos absurdos.</p>
+<p>Con <code>core.autocrlf true</code> Git hace de traductor automático:</p>
+<ul>
+<li><b>Al guardar en el repositorio</b> (<code>git add</code> / <code>git commit</code>): convierte CRLF en LF. En el repositorio todo queda con LF, el estándar del mundo Git.</li>
+<li><b>Al sacar archivos a tu carpeta</b> (cuando cambias de rama, haces <code>pull</code> o clonas): convierte LF en CRLF, para que el Bloc de notas y los programas de Windows los vean bien.</li>
+</ul>
+<p>Tú nunca notas nada, y tu repositorio funciona igual en Windows, Linux o macOS. El instalador de Git for Windows normalmente ya deja este ajuste activado a nivel de sistema; escribirlo en tu configuración global garantiza que esté, por si acaso.</p>
+<p>A veces, al hacer <code>git add</code>, verás un aviso como este:</p>
+<pre class="salida">warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it</pre>
+<p>Traducción: «en tu copia de trabajo, el archivo <code>README.md</code> tiene finales LF; la próxima vez que Git lo toque, los cambiará por CRLF». Aparece cuando un archivo fue creado con finales de Linux (por ejemplo, por una herramienta o copiado de internet). <b>No es un error</b> y no tienes que hacer nada: es Git avisando de la traducción que va a hacer.</p>
+
+<div class="caja consejo"><b>Para equipos mixtos: .gitattributes</b> En proyectos donde colaboran personas con Windows, Linux y macOS, se suele agregar al repositorio un archivo <code>.gitattributes</code> con la línea <code>* text=auto</code>. Hace lo mismo que <code>core.autocrlf</code>, pero viaja con el repositorio, así que funciona aunque alguien no haya configurado su Git. Para el Totito no hace falta.</div>
+
+<h3>El editor de Git</h3>
+<p>Algunos comandos de Git necesitan que escribas un texto largo; por ejemplo, <code>git commit</code> sin la opción <code>-m</code>, o un <code>git merge</code> que crea un commit de fusión. En esos casos Git abre un <b>editor de texto</b>, espera a que escribas, guardes y cierres, y luego continúa.</p>
+<p>El problema: el editor que Git for Windows trae configurado por defecto es <b>Vim</b>, un editor de terminal muy potente pero desconcertante si nunca lo usaste (no se sale con la X ni con Ctrl+C). Elige uno que conozcas:</p>
+<pre class="ps"># Opción A: el Bloc de notas de Windows
+git config --global core.editor notepad
+# Opción B: Visual Studio Code, si lo instalaste (capítulo 4)
+git config --global core.editor "code --wait"</pre>
+<ul>
+<li>Con el <b>Bloc de notas</b>, cuando Git lo abra, escribe el mensaje, guarda con Ctrl+S y <b>cierra la ventana</b>: hasta que no la cierres, Git espera.</li>
+<li>Con <b>Visual Studio Code</b>, la opción <code>--wait</code> («espera») es imprescindible: le dice a VS Code que no devuelva el control hasta que cierres la pestaña del mensaje. Sin ella, Git creería que ya terminaste y encontraría el mensaje vacío.</li>
+</ul>
+
+<div class="caja cuidado"><b>Bloc de notas con pestañas (Windows 11)</b> El Bloc de notas nuevo de Windows 11 abre los archivos en pestañas. Si ya tenías otra ventana del Bloc de notas abierta, a veces el mensaje se abre como una pestaña más y Git no se entera de cuándo terminas; el síntoma es que Git dice <i>Aborting commit due to empty commit message</i> («cancelando el commit porque el mensaje está vacío») sin darte tiempo de escribir. Soluciones: cierra todas las ventanas del Bloc de notas antes de hacer el commit; o en el Bloc de notas ve a Configuración → «Apertura de archivos» y elige abrirlos en una ventana nueva; o usa VS Code. En el libro casi siempre escribiremos el mensaje con <code>-m</code>, así que el editor aparecerá poco.</div>
+
+<div class="caja consejo"><b>Si ya te atrapó Vim</b> Si alguna vez la terminal se llena de líneas que empiezan con <code>~</code> y no sabes salir, estás en Vim. Para guardar y salir: pulsa <b>Esc</b>, escribe <code>:wq</code> y Enter. Para salir sin guardar (y cancelar la operación): <b>Esc</b>, <code>:q!</code> y Enter.</div>
+
+<h3>Cómo se comporta git pull</h3>
+<pre class="ps">git config --global pull.rebase false</pre>
+<p>Cuando traes cambios de GitHub con <code>git pull</code> y tú también tenías commits nuevos, Git tiene que juntar las dos historias. Hay varias formas de hacerlo, y las versiones recientes de Git, si no le dijiste cuál prefieres, se niegan a elegir y te muestran un aviso largo (<i>You have divergent branches and need to specify how to reconcile them</i>). Con <code>pull.rebase false</code> le dices: «júntalas con un merge normal», que es lo que verás en el capítulo 9 y lo más fácil de entender cuando empiezas.</p>
+
+<h3>Comprobar la configuración</h3>
+<pre class="ps">git config --global --list</pre>
+<pre class="salida">user.name=Ana López
+user.email=12345678+ana-lopez@users.noreply.github.com
+init.defaultbranch=main
+core.autocrlf=true
+core.editor=notepad
+pull.rebase=false</pre>
+<p>Git muestra los nombres de los ajustes en minúsculas (<code>init.defaultbranch</code>): no te preocupes, Git no distingue mayúsculas en los nombres de ajustes. Si algo quedó mal escrito, vuelve a ejecutar el comando con el valor correcto y se sobrescribe. También puedes preguntar por un solo ajuste:</p>
+<pre class="ps">git config user.email</pre>
+<p>Y si quieres ver el archivo tal cual (es texto normal), ábrelo con el Bloc de notas:</p>
+<pre class="ps">notepad $HOME\.gitconfig</pre>
+<pre class="texto">[user]
+	name = Ana López
+	email = 12345678+ana-lopez@users.noreply.github.com
+[init]
+	defaultBranch = main
+[core]
+	autocrlf = true
+	editor = notepad
+[pull]
+	rebase = false</pre>
+<p>Cada sección va entre corchetes y debajo están sus ajustes. Puedes editarlo a mano, pero es más seguro usar <code>git config</code>, que no comete errores de formato.</p>
+
+<h2>Paso 5: conectar tu PC con GitHub (gh auth login)</h2>
+<p>Hasta ahora Git sabe tu nombre, pero GitHub no sabe que esta computadora es tuya. Cuando hagas <code>git push</code>, GitHub preguntará «¿y tú quién eres?». Desde 2021 GitHub <b>ya no acepta tu contraseña</b> para esto: exige un <b>token</b> (una especie de contraseña larga, generada para un uso concreto, que se puede revocar sin cambiar tu contraseña real). Crear y guardar tokens a mano es engorroso; GitHub CLI lo hace por ti.</p>
+<pre class="ps">gh auth login</pre>
+<p>El comando hace varias preguntas. Se responde con las flechas del teclado y Enter. Vamos una por una.</p>
+
+<h3>Pregunta 1: dónde usas GitHub</h3>
+<pre class="salida">? Where do you use GitHub?  [Use arrows to move, type to filter]
+&gt; GitHub.com
+  Other</pre>
+<p>«¿Dónde usas GitHub?». Elige <b>GitHub.com</b>, la página pública. <i>Other</i> es para empresas que tienen su propio servidor de GitHub (GitHub Enterprise). En versiones antiguas de <code>gh</code> la pregunta dice <i>What account do you want to log into?</i>, con las opciones <i>GitHub.com</i> y <i>GitHub Enterprise Server</i>: es lo mismo.</p>
+
+<h3>Pregunta 2: el protocolo</h3>
+<pre class="salida">? What is your preferred protocol for Git operations on this host?  [Use arrows to move, type to filter]
+&gt; HTTPS
+  SSH</pre>
+<p>«¿Qué protocolo prefieres para las operaciones de Git?». Un protocolo es el «idioma» con el que tu PC y GitHub se comunican. Elige <b>HTTPS</b>; más abajo te explico la diferencia con SSH y por qué HTTPS es lo más sencillo en Windows.</p>
+
+<h3>Pregunta 3: que Git use tus credenciales</h3>
+<pre class="salida">? Authenticate Git with your GitHub credentials? (Y/n)</pre>
+<p>«¿Autenticar Git con tus credenciales de GitHub?». Responde <b>Y</b> (sí, o simplemente Enter, porque la mayúscula indica la respuesta por defecto). Esto es lo que hace que después <code>git push</code> funcione sin pedirte nada: <code>gh</code> se registra como el «ayudante de credenciales» de Git para github.com. Cada vez que Git necesite identificarse ante GitHub, le preguntará a <code>gh</code>, y <code>gh</code> le dará el token.</p>
+
+<h3>Pregunta 4: cómo iniciar sesión</h3>
+<pre class="salida">? How would you like to authenticate GitHub CLI?  [Use arrows to move, type to filter]
+&gt; Login with a web browser
+  Paste an authentication token</pre>
+<p>«¿Cómo quieres autenticarte?». Elige <b>Login with a web browser</b> (iniciar sesión con el navegador). La otra opción es para pegar un token que hayas creado a mano, algo que no necesitas.</p>
+
+<h3>El código de un solo uso</h3>
+<pre class="salida">! First copy your one-time code: 1A2B-3C4D
+Press Enter to open https://github.com/login/device in your browser...</pre>
+<ol>
+<li><code>gh</code> muestra un <b>código de un solo uso</b> de 8 caracteres (el tuyo será distinto). Anótalo o selecciónalo y cópialo.</li>
+<li>Pulsa <b>Enter</b>. Se abre el navegador en <code>https://github.com/login/device</code>. Si no se abre solo, abre tú esa dirección.</li>
+<li>Si no habías iniciado sesión en GitHub en ese navegador, inicia sesión (contraseña y código del teléfono).</li>
+<li>Escribe el código de 8 caracteres y pulsa <b>Continue</b>.</li>
+<li>GitHub te muestra que la aplicación <b>GitHub CLI</b> pide permiso para acceder a tu cuenta (repositorios, organizaciones, gists). Revisa que diga GitHub CLI y pulsa <b>Authorize github</b> (autorizar). Puede pedirte confirmar con tu contraseña o con el código del teléfono.</li>
+<li>La página dice que el dispositivo quedó conectado. Vuelve a PowerShell.</li>
+</ol>
+<pre class="salida">✓ Authentication complete.
+- gh config set -h github.com git_protocol https
+✓ Configured git protocol
+✓ Logged in as ana-lopez</pre>
+<p>«Autenticación completa», «protocolo de Git configurado (HTTPS)», «sesión iniciada como ana-lopez». Listo.</p>
+
+<div class="caja cuidado"><b>El código es como una llave temporal</b> Nunca escribas en <code>github.com/login/device</code> un código que te haya mandado otra persona («hola, pon este código para ganar un premio»): estarías dándole acceso a tu cuenta desde su computadora. Solo usa códigos que acabas de ver en tu propia terminal.</div>
+
+<h3>Comprobar que quedó bien</h3>
+<pre class="ps">gh auth status</pre>
+<pre class="salida">github.com
+  ✓ Logged in to github.com account ana-lopez (keyring)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: gho_************************************
+  - Token scopes: 'gist', 'read:org', 'repo', 'workflow'</pre>
+<ul>
+<li><i>Logged in to github.com account ana-lopez (keyring)</i>: sesión iniciada; <i>keyring</i> significa que el token se guardó en el <b>Administrador de credenciales de Windows</b>, el almacén cifrado de contraseñas del sistema, y no en un archivo de texto.</li>
+<li><i>Git operations protocol: https</i>: Git usará HTTPS.</li>
+<li><i>Token: gho_****</i>: el token, oculto con asteriscos a propósito. No necesitas verlo nunca.</li>
+<li><i>Token scopes</i>: los permisos del token. <code>repo</code> permite manejar tus repositorios (lo esencial para <code>push</code>); <code>read:org</code> leer tus organizaciones; <code>gist</code> crear gists (fragmentos de código); <code>workflow</code> modificar automatizaciones de GitHub Actions.</li>
+</ul>
+<p>Si miras otra vez <code>git config --global --list</code>, verás unas líneas nuevas que agregó <code>gh</code>, del estilo <code>credential.https://github.com.helper=!'C:\Program Files\GitHub CLI\gh.exe' auth git-credential</code>. Son las que conectan Git con <code>gh</code>: déjalas tal cual.</p>
+
+<h2>HTTPS o SSH: dos formas de hablar con GitHub</h2>
+<p>Git puede comunicarse con GitHub de dos maneras. Cada repositorio de GitHub tiene una dirección para cada una:</p>
+<pre class="salida">HTTPS:  https://github.com/ana-lopez/totito.git
+SSH:    git@github.com:ana-lopez/totito.git</pre>
+<table class="tabla">
+<tr><th></th><th>HTTPS</th><th>SSH</th></tr>
+<tr><td>Cómo te identificas</td><td>Con un token, que guarda y entrega <code>gh</code> (o el Administrador de credenciales de Git)</td><td>Con un par de <b>llaves</b>: una privada que nunca sale de tu PC y una pública que subes a GitHub</td></tr>
+<tr><td>Preparación</td><td>Ninguna extra: <code>gh auth login</code> ya lo dejó listo</td><td>Generar las llaves con <code>ssh-keygen</code> y subir la pública a GitHub</td></tr>
+<tr><td>Puerto de red</td><td>443, el mismo de las páginas web: funciona casi en cualquier red</td><td>22: algunas redes de empresas, colegios o cafés lo bloquean</td></tr>
+<tr><td>Ideal para</td><td>Empezar, Windows, redes restringidas</td><td>Quien usa varias computadoras o servidores Linux y quiere no depender de tokens</td></tr>
+</table>
+<p>Las dos son igual de seguras si se usan bien. En este libro usamos <b>HTTPS con gh</b> porque no requiere ningún paso extra y funciona igual en todas las redes.</p>
+
+<h3>Si algún día quieres usar SSH</h3>
+<p>No hace falta para el Totito, pero así se hace, para que lo reconozcas cuando lo veas. Windows 10 y 11 ya traen el cliente de SSH:</p>
+<pre class="ps"># 1) Crear el par de llaves (Enter para aceptar la ubicación; luego una frase de paso)
+ssh-keygen -t ed25519 -C "12345678+ana-lopez@users.noreply.github.com"
+# 2) Dar a gh permiso para administrar llaves (abre el navegador como antes)
+gh auth refresh -h github.com -s admin:public_key
+# 3) Subir la llave PUBLICA (la que termina en .pub) a tu cuenta
+gh ssh-key add $HOME\.ssh\id_ed25519.pub --title "Laptop de Ana"
+# 4) Probar la conexion
+ssh -T git@github.com</pre>
+<p>La primera vez, el paso 4 pregunta si confías en el servidor (<i>Are you sure you want to continue connecting?</i>): escribe <code>yes</code>. Si todo está bien, responde <i>Hi ana-lopez! You've successfully authenticated, but GitHub does not provide shell access.</i> («¡Hola! Te autenticaste bien, pero GitHub no da acceso a una terminal»), que es exactamente lo esperado.</p>
+<div class="caja cuidado"><b>La llave privada no se comparte jamás</b> El archivo <code>id_ed25519</code> (sin <code>.pub</code>) es tu llave privada: quien lo tenga puede hacerse pasar por ti ante GitHub. Nunca lo copies a un repositorio, ni lo mandes por correo. Solo el <code>.pub</code> se sube a GitHub.</div>
+
+<h2>Problemas típicos y su solución</h2>
+<table class="tabla">
+<tr><th>Síntoma</th><th>Causa</th><th>Solución</th></tr>
+<tr><td><code>gh</code> o <code>git</code> «no se reconoce como nombre de un cmdlet…»</td><td>PowerShell se abrió antes de instalar, o la instalación falló</td><td>Cierra y abre PowerShell; si sigue, reinstala con winget (capítulo 4)</td></tr>
+<tr><td>Al pulsar Enter no se abre el navegador</td><td>No hay navegador predeterminado o la terminal no puede abrirlo</td><td>Abre a mano <code>https://github.com/login/device</code> y escribe el código</td></tr>
+<tr><td>El código «no es válido» o «expiró»</td><td>Los códigos duran pocos minutos</td><td>Pulsa Ctrl+C en PowerShell y repite <code>gh auth login</code></td></tr>
+<tr><td>Tus commits aparecen en GitHub sin tu foto, con un nombre gris</td><td><code>user.email</code> no coincide con ningún correo de tu cuenta</td><td>Corrige <code>git config --global user.email</code>; para el último commit no subido, <code>git commit --amend --reset-author --no-edit</code></td></tr>
+<tr><td><code>git push</code> pide usuario y contraseña, o falla con <i>Authentication failed</i></td><td>Git no está usando a <code>gh</code> como ayudante, o el token se revocó</td><td>Ejecuta <code>gh auth setup-git</code>; si sigue, <code>gh auth login</code> de nuevo</td></tr>
+<tr><td><i>GH007: Your push would publish a private email address</i></td><td>Activaste el bloqueo del paso 3 y tu <code>user.email</code> es tu correo real</td><td>Pon tu dirección <code>noreply</code> y corrige los commits no subidos con <code>--amend --reset-author</code></td></tr>
+<tr><td><i>Permission denied (publickey)</i></td><td>Usas SSH y la llave no está subida o no se cargó</td><td>Repite los pasos de SSH, o vuelve a HTTPS</td></tr>
+</table>
+
+<div class="caja consejo"><b>En una computadora prestada o compartida</b> Si configuras <code>gh</code> en una PC que no es tuya (un laboratorio, la de un amigo), al terminar ejecuta <code>gh auth logout</code>: borra el token de esa máquina. Y desde GitHub, en <b>Settings → Applications → Authorized OAuth Apps</b>, puedes ver y revocar el acceso de GitHub CLI en cualquier momento.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Tu cuenta de GitHub necesita un nombre de usuario pensado para el largo plazo y la <b>verificación en dos pasos</b>, con los códigos de recuperación guardados fuera de la PC.</li>
+<li>La dirección <code>noreply</code> de GitHub protege tu correo real en los commits públicos.</li>
+<li><code>git config --global</code> guarda tus ajustes en <code>C:\Users\&lt;tu-usuario&gt;\.gitconfig</code>; los niveles son sistema, global y local, y gana el más particular.</li>
+<li><code>user.name</code> y <code>user.email</code> firman tus commits; no son una contraseña.</li>
+<li><code>init.defaultBranch main</code> hace que tus repos empiecen con <code>main</code>; <code>core.autocrlf true</code> traduce los finales de línea CRLF (Windows) ↔ LF (repositorio); <code>core.editor</code> evita quedar atrapado en Vim; <code>pull.rebase false</code> define cómo se juntan historias al hacer <code>pull</code>.</li>
+<li><code>gh auth login</code> (GitHub.com → HTTPS → Y → navegador → código) guarda un token en el Administrador de credenciales de Windows y conecta Git con GitHub. <code>gh auth status</code> lo comprueba.</li>
+<li>HTTPS y SSH son igual de seguros; HTTPS con <code>gh</code> es lo más sencillo y es lo que usa el libro.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> Esta configuración es por computadora, no por proyecto: a partir de ahora sirve para todo lo que hagas.
+<ul>
+<li><b>Una segunda computadora</b> (la del trabajo, una laptop nueva): repites los pasos 4 y 5 en ella, con el mismo nombre y correo, y tus commits se verán igual desde las dos.</li>
+<li><b>Correo distinto para el trabajo</b>: dentro del repositorio de la empresa ejecuta <code>git config user.email "ana.lopez@empresa.com"</code> (sin <code>--global</code>); solo ese repositorio usará el correo de la empresa.</li>
+<li><b>Proyectos en GitLab o Bitbucket</b>: <code>git config</code> y los finales de línea funcionan igual; solo cambia la herramienta de inicio de sesión (por ejemplo, GitLab tiene su propia CLI, <code>glab auth login</code>, con el mismo estilo).</li>
+<li><b>Cualquier servicio que ofrezca verificación en dos pasos</b> (tu correo, tu banco, tus redes sociales): actívala con la misma aplicación autenticadora y guarda sus códigos de recuperación igual que los de GitHub.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b><ol>
+<li>Ejecuta <code>git config --global --list</code> y comprueba que aparecen los seis ajustes de este capítulo. Luego ejecuta <code>git config --show-origin user.name</code>: ¿qué archivo te muestra? Pista: debería ser tu <code>.gitconfig</code>.</li>
+<li>Entra a <code>https://github.com/tu-usuario</code> y completa tu perfil: foto, nombre y una línea de biografía («Aprendiendo Java con el Totito»). Así se verá tu portada cuando alguien visite tus repositorios.</li>
+<li>Abre el Administrador de credenciales de Windows (búscalo en el menú Inicio como «Administrador de credenciales» → «Credenciales de Windows») y, en «Credenciales genéricas», busca una entrada cuyo nombre empiece con <code>gh:github.com</code>. No la borres ni la edites: solo comprueba que el token está guardado ahí y no en un archivo.</li>
+<li>Escribe en un papel, con tus palabras, qué hace <code>core.autocrlf true</code> en el <code>git add</code> y qué hace al cambiar de rama. Después explica por qué sin él un compañero con Linux vería «cambiadas» todas las líneas de tus archivos.</li>
+<li>(Reto) Ejecuta <code>gh auth status</code> y <code>gh api user --jq .login</code>. El segundo comando pide a la API de GitHub los datos de tu usuario y muestra solo el campo <code>login</code>. ¿Qué imprime? Pista: tu nombre de usuario; si es así, <code>gh</code> está hablando con GitHub correctamente.</li>
+</ol></div>
+</section>

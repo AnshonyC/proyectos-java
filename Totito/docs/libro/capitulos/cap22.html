@@ -1,0 +1,663 @@
+<section class="capitulo" id="cap22">
+<h1><span class="num">Capítulo 22</span>Herencia</h1>
+<p class="entrada">La herencia permite crear una clase nueva a partir de otra que ya existe: la nueva recibe todo lo que la vieja sabe hacer y solo escribe lo que cambia. Gracias a ella, el <code>BotonNeon</code> del Totito es un botón completo (responde al clic, al teclado y al ratón) aunque su archivo solo tenga 192 líneas. En este capítulo vas a entender cómo funciona, qué pasa por dentro cuando creas un objeto de una clase hija y, sobre todo, cuándo conviene usarla y cuándo no.</p>
+
+<h2>La idea: «es un tipo de»</h2>
+<p>Piensa en un taxi. Un taxi <b>es un</b> carro: tiene volante, motor, frenos, puertas y se maneja igual que cualquier carro. Nadie que fabrica taxis inventa de nuevo el motor; toma un carro y le <b>agrega</b> lo que le falta (el taxímetro, el rótulo del techo) y quizá <b>cambia</b> alguna cosa (la pintura). Si mañana mejoran los frenos de ese modelo de carro, todos los taxis hechos con él salen con los frenos nuevos.</p>
+<p>En Java eso se llama <b>herencia</b>: una clase (la <b>hija</b>, también llamada <b>subclase</b>) se declara como «un tipo de» otra clase (la <b>madre</b>, también llamada <b>superclase</b> o clase padre). La hija recibe automáticamente los atributos y los métodos de la madre, y puede:</p>
+<ul>
+<li><b>agregar</b> atributos y métodos nuevos (el taxímetro);</li>
+<li><b>cambiar</b> el comportamiento de un método heredado escribiendo su propia versión (la pintura). Eso se llama <b>sobrescribir</b> y es el tema central del capítulo 23;</li>
+<li><b>usar</b> lo heredado como si lo hubiera escrito ella (manejar el carro).</li>
+</ul>
+<div class="caja concepto"><b>La prueba del «es un»</b> Antes de heredar, di la frase en voz alta: «un <i>BotonNeon</i> es un <i>JButton</i>». ¿Suena verdadero siempre, en todo lo que un JButton promete? Entonces la herencia tiene sentido. «Una <i>Partida</i> es un <i>Tablero</i>» suena raro: una partida <i>tiene</i> un tablero. Eso es composición (capítulo 21), no herencia.</div>
+
+<h2>Por qué el Totito la necesita</h2>
+<p>Un botón de verdad hace muchísimas cosas que normalmente no vemos: se entera de que el ratón pasó por encima, recuerda si está presionado, se puede activar con la barra espaciadora cuando tiene el foco, avisa a quien le interese que lo pulsaron (<code>addActionListener</code>), se puede deshabilitar, muestra un texto de ayuda (<i>tooltip</i>)… Todo eso ya lo programaron los autores de Swing en la clase <code>JButton</code>, que trae Java.</p>
+<p>Lo único que el diseño del Totito necesitaba distinto era el <b>aspecto</b>: bordes de neón, degradados, un icono dibujado a mano. Entonces <code>BotonNeon</code> hereda de <code>JButton</code> todo el comportamiento y solo escribe de nuevo la parte que dibuja. Mira cómo lo dice el comentario del propio archivo (lo escribirás en el capítulo 44):</p>
+<pre class="java">/**
+ * Boton con borde de neon. Es un JButton normal (se usa con
+ * addActionListener), solo que se dibuja a mano.
+ ...
+ */
+public class BotonNeon extends JButton {</pre>
+<p>Sin herencia habría que programar desde cero un componente que reaccione al ratón y al teclado, que lleve una lista de oyentes y que se integre con el resto de Swing. Serían miles de líneas, llenas de detalles fáciles de olvidar (¿te acordarías de que un botón también se pulsa con la barra espaciadora?).</p>
+
+<h2>Cómo se escribe: <code>extends</code></h2>
+<p>Desarmemos la primera línea de <code>BotonNeon</code>, pieza por pieza:</p>
+<pre class="java">public class BotonNeon extends JButton {</pre>
+<table class="tabla">
+<tr><th>Pieza</th><th>Qué significa</th></tr>
+<tr><td><code>public</code></td><td>Cualquier otra clase puede usar <code>BotonNeon</code> (capítulo 19).</td></tr>
+<tr><td><code>class</code></td><td>Aquí empieza la definición de una clase, es decir, de un molde (capítulo 18).</td></tr>
+<tr><td><code>BotonNeon</code></td><td>El nombre de la clase nueva. Por convención empieza con mayúscula y el archivo se llama igual: <code>BotonNeon.java</code>.</td></tr>
+<tr><td><code>extends</code></td><td>Palabra reservada que significa «extiende a», «es un tipo de». Es la que crea la herencia.</td></tr>
+<tr><td><code>JButton</code></td><td>La clase madre. Tiene que existir y ser visible; por eso arriba del archivo está <code>import javax.swing.JButton;</code>.</td></tr>
+<tr><td><code>{</code></td><td>Abre el cuerpo de la clase: aquí va <b>solo lo nuevo o lo que cambia</b>. Lo heredado no se vuelve a escribir.</td></tr>
+</table>
+<p>Fíjate en lo que <b>no</b> hay en <code>BotonNeon.java</code>: no existe un método <code>addActionListener</code>, ni <code>setEnabled</code>, ni <code>setToolTipText</code>. Y sin embargo en el Totito se escribe sin problema:</p>
+<pre class="java">BotonNeon jugar = BotonNeon.menu("Jugar", Iconos.JUGAR, Tema.ROSA);
+jugar.addActionListener(e -&gt; navegacion.irAConfiguracion());</pre>
+<p>Ese <code>addActionListener</code> lo escribieron los autores de Swing en una clase llamada <code>AbstractButton</code>, que es la madre de <code>JButton</code>. <code>BotonNeon</code> lo recibió por herencia, de «abuela» a «nieta».</p>
+
+<h3>Un ejemplo completo que puedes correr</h3>
+<p>Dejemos Swing un momento y veamos la herencia en un programa de consola. Una tienda vende productos; algunos, además, se vencen. Un producto perecedero <b>es un</b> producto, con un dato extra. Guarda esto como <code>Herencia.java</code> en tu carpeta de prácticas:</p>
+<pre class="java">public class Herencia {
+    public static void main(String[] args) {
+        Producto pan = new Producto("Pan francés", 1.50);
+        ProductoPerecedero leche = new ProductoPerecedero("Leche", 12.75, "2026-10-20");
+
+        System.out.println(pan.describir());
+        System.out.println(leche.describir());
+
+        // Métodos que ProductoPerecedero NO escribió: los heredó de Producto.
+        System.out.println("Nombre heredado: " + leche.getNombre());
+        System.out.println("Precio con IVA: " + leche.precioConIva());
+    }
+}
+
+class Producto {
+    private final String nombre;
+    private final double precio;
+
+    Producto(String nombre, double precio) {
+        this.nombre = nombre;
+        this.precio = precio;
+    }
+
+    String getNombre() {
+        return nombre;
+    }
+
+    double precioConIva() {
+        return Math.round(precio * 1.12 * 100) / 100.0;
+    }
+
+    String describir() {
+        return nombre + " - Q" + precio;
+    }
+}
+
+class ProductoPerecedero extends Producto {
+    private final String vence;
+
+    ProductoPerecedero(String nombre, double precio, String vence) {
+        super(nombre, precio);   // primero se arma la parte de Producto
+        this.vence = vence;      // luego lo que solo tiene el hijo
+    }
+
+    @Override
+    String describir() {
+        return super.describir() + " (vence " + vence + ")";
+    }
+}</pre>
+<pre class="ps">cd $HOME\Proyectos\Practicas
+java Herencia.java</pre>
+<pre class="salida">Pan francés - Q1.5
+Leche - Q12.75 (vence 2026-10-20)
+Nombre heredado: Leche
+Precio con IVA: 14.28</pre>
+<p>Recorre lo que pasó:</p>
+<ul>
+<li><code>ProductoPerecedero</code> solo declara <b>un</b> atributo (<code>vence</code>), un constructor y un método. Aun así, <code>leche.getNombre()</code> y <code>leche.precioConIva()</code> funcionan: los heredó.</li>
+<li><code>leche.describir()</code> no usó la versión de <code>Producto</code> sino la del hijo, que agrega la fecha. Eso es sobrescribir; la anotación <code>@Override</code> se explica a fondo en el capítulo 23.</li>
+<li>Dentro de esa versión, <code>super.describir()</code> llama a la versión de la madre para no repetir su trabajo. Lo vemos en un momento.</li>
+<li>El cálculo del IVA (12 % en Guatemala) existe <b>una sola vez</b>. Si cambia la tasa, se corrige en un único lugar y lo reciben todos los tipos de producto.</li>
+</ul>
+
+<h3>Qué se hereda y qué no</h3>
+<table class="tabla">
+<tr><th>Elemento de la madre</th><th>¿Lo recibe la hija?</th><th>Detalle</th></tr>
+<tr><td>Métodos <code>public</code> y <code>protected</code></td><td>Sí</td><td>Los puede llamar como si fueran suyos y también sobrescribirlos.</td></tr>
+<tr><td>Métodos sin modificador (de paquete)</td><td>Sí, si está en el mismo paquete</td><td>En el Totito todo está en el mismo paquete (el «default package»), así que sí.</td></tr>
+<tr><td>Atributos <code>private</code></td><td>Existen dentro del objeto, pero la hija <b>no los puede tocar por su nombre</b></td><td>Tiene que usar los métodos públicos de la madre (getters).</td></tr>
+<tr><td>Métodos <code>private</code></td><td>No los ve</td><td>Son detalles internos de la madre.</td></tr>
+<tr><td>Constructores</td><td><b>No se heredan</b></td><td>Cada clase escribe los suyos y llama al de la madre con <code>super(...)</code>.</td></tr>
+<tr><td>Miembros <code>static</code></td><td>Se pueden usar a través de la hija</td><td>Pero no participan del polimorfismo (capítulo 23).</td></tr>
+</table>
+<p>La fila de los atributos privados tiene un caso real en el Totito. <code>Tarjeta</code> guarda su color en un atributo privado:</p>
+<pre class="java">public class Tarjeta extends JPanel {
+    ...
+    private final Color color;
+    private final int arco;</pre>
+<p>Su hija <code>TarjetaJugador</code> también necesita ese color para pintar el icono y la rayita bajo el título. Como no puede leer el <code>color</code> privado de su madre, guarda su propia copia:</p>
+<pre class="java">public class TarjetaJugador extends Tarjeta {
+    ...
+    private final String titulo;
+    private final Color color;
+    ...
+    public TarjetaJugador(String titulo, Color color) {
+        super(color, 26);
+        this.titulo = titulo;
+        this.color = color;</pre>
+<p>El mismo color se entrega dos veces: una a la madre (<code>super(color, 26)</code>) y otra al atributo propio (<code>this.color = color</code>). ¿Qué pasaría si <code>TarjetaJugador</code> intentara usar el de la madre sin guardarlo? El compilador respondería <code>color has private access in Tarjeta</code>. Esta pequeña repetición es el precio de que <code>Tarjeta</code> mantenga sus datos encerrados (encapsulamiento, capítulo 19). Otra solución habría sido darle a <code>Tarjeta</code> un método <code>protected Color getColor()</code>; las dos son válidas.</p>
+<h2><code>super</code>: hablar con la madre</h2>
+<p><code>this</code> (capítulo 20) significa «este objeto». <code>super</code> significa «la parte de este objeto que viene de la madre». Se usa de dos formas que conviene no confundir:</p>
+<table class="tabla">
+<tr><th>Forma</th><th>Dónde se usa</th><th>Para qué</th></tr>
+<tr><td><code>super(argumentos);</code></td><td>Solo en la <b>primera línea de un constructor</b></td><td>Ejecutar un constructor de la madre para que arme su parte del objeto.</td></tr>
+<tr><td><code>super.metodo(argumentos)</code></td><td>Dentro de cualquier método de la hija</td><td>Llamar a la versión de la madre de un método, aunque la hija lo haya sobrescrito.</td></tr>
+</table>
+
+<h3><code>super(...)</code> en los constructores</h3>
+<p>Un objeto de una clase hija es como una casa con dos pisos: el primer piso lo construye la madre y el segundo la hija. No se puede levantar el segundo piso en el aire, así que Java exige que <b>lo primero</b> que haga el constructor de la hija sea pedirle a la madre que construya el primero. Esa petición es <code>super(...)</code>.</p>
+<p>Símbolo por símbolo, en <code>super(color, 26);</code> de <code>TarjetaJugador</code>:</p>
+<ul>
+<li><code>super</code> — «el constructor de mi madre» (aquí, de <code>Tarjeta</code>).</li>
+<li><code>(color, 26)</code> — los argumentos. Java busca en <code>Tarjeta</code> un constructor que reciba un <code>Color</code> y un <code>int</code>, y encuentra <code>public Tarjeta(Color color, int arco)</code>. Con eso la tarjeta del jugador tiene esquinas de 26 píxeles en vez de las 30 de las demás tarjetas.</li>
+<li><code>;</code> — fin de la instrucción, como siempre.</li>
+</ul>
+<p>Todas las llamadas a <code>super(...)</code> del Totito, y lo que consigue cada una:</p>
+<table class="tabla">
+<tr><th>Clase (constructor)</th><th>Llamada</th><th>Qué arma la madre</th></tr>
+<tr><td><code>TotitoApp</code></td><td><code>super("Juego del Totito");</code></td><td><code>JFrame</code> crea la ventana con ese texto en la barra de título.</td></tr>
+<tr><td><code>JuegoMain</code></td><td><code>super("Totito - Minimax AI");</code></td><td>Lo mismo, para la ventana de la versión 0.1.</td></tr>
+<tr><td><code>BotonNeon</code></td><td><code>super(texto);</code></td><td><code>JButton</code> guarda el texto; luego <code>getText()</code> lo devuelve al dibujarlo.</td></tr>
+<tr><td><code>PantallaBase</code></td><td><code>super(new BorderLayout());</code></td><td><code>JPanel</code> nace ya con un <code>BorderLayout</code>: encabezado arriba, contenido en el centro.</td></tr>
+<tr><td><code>Encabezado</code>, <code>PasoInstruccion</code></td><td><code>super(null);</code></td><td><code>JPanel</code> sin administrador de diseño: los hijos se colocan a mano (en <code>doLayout</code>, capítulo 23).</td></tr>
+<tr><td><code>TarjetaJugador</code></td><td><code>super(color, 26);</code></td><td><code>Tarjeta</code> guarda color y arco, y se vuelve transparente y centrada.</td></tr>
+<tr><td><code>TarjetaConConfeti</code></td><td><code>super(Tema.MORADO);</code></td><td><code>Tarjeta</code> morada, con el arco por defecto.</td></tr>
+<tr><td>Las cinco pantallas</td><td><code>super(navegacion);</code></td><td><code>PantallaBase</code> pinta el fondo, pone el encabezado y prepara la columna de contenido.</td></tr>
+</table>
+<p>¿Y las clases que no escriben <code>super(...)</code>, como <code>Tarjeta</code>, <code>CampoTexto</code> o <code>PanelTablero</code>? Java pone <b>por su cuenta</b> una llamada invisible a <code>super();</code> (sin argumentos) como primera línea. Por eso <code>CampoTexto</code> funciona: <code>JTextField</code> tiene un constructor sin parámetros y Java lo llama solo.</p>
+<p>Esa ayuda automática tiene una trampa. Si la madre <b>no</b> tiene un constructor sin parámetros, el <code>super();</code> invisible no encuentra a quién llamar y el programa no compila. Pruébalo con <code>SinSuper.java</code>:</p>
+<pre class="java">public class SinSuper {
+    public static void main(String[] args) {
+        new Hija();
+    }
+}
+
+class Madre {
+    Madre(String color) {
+        System.out.println("Madre con color " + color);
+    }
+}
+
+class Hija extends Madre {
+    Hija() {
+        System.out.println("Hija");
+    }
+}</pre>
+<pre class="salida">SinSuper.java:14: error: constructor Madre in class Madre cannot be applied to given types;
+    Hija() {
+           ^
+  required: String
+  found:    no arguments
+  reason: actual and formal argument lists differ in length
+1 error
+error: compilation failed</pre>
+<p>Léelo despacio: «el constructor <code>Madre</code> no se puede aplicar a los tipos dados; se requiere un <code>String</code>, se encontraron cero argumentos». El compilador señala la línea del constructor de <code>Hija</code>, porque ahí está el <code>super();</code> que tú no escribiste. La solución es escribirlo tú, con su argumento: <code>super("rosa");</code>. Exactamente por esto <code>TarjetaJugador</code> no puede omitir su <code>super(color, 26)</code>: <code>Tarjeta</code> no tiene constructor vacío, porque una tarjeta sin color no tendría sentido.</p>
+<div class="caja cuidado"><b>«call to super must be first statement in constructor»</b> Si escribes cualquier instrucción antes de <code>super(...)</code>, por ejemplo <code>this.titulo = titulo;</code>, Java 21 se niega a compilar con ese mensaje («la llamada a super debe ser la primera instrucción del constructor»). La madre siempre se construye primero. (Versiones muy recientes de Java empiezan a relajar esta regla, pero con Java 21, que es la que usas, se cumple al pie de la letra.)</div>
+
+<h3>El orden de construcción, visto en vivo</h3>
+<p>Con tres generaciones se ve clarísimo que el constructor de más arriba termina primero. Guarda <code>OrdenConstruccion.java</code>:</p>
+<pre class="java">public class OrdenConstruccion {
+    public static void main(String[] args) {
+        System.out.println("Creando una TarjetaDemo...");
+        new TarjetaDemo("Jugador 1");
+    }
+}
+
+class ComponenteDemo {
+    ComponenteDemo() {
+        System.out.println("1) Constructor de ComponenteDemo (el abuelo)");
+    }
+}
+
+class PanelDemo extends ComponenteDemo {
+    PanelDemo(String color) {
+        super();   // se puede omitir: Java lo pone solo
+        System.out.println("2) Constructor de PanelDemo con color " + color);
+    }
+}
+
+class TarjetaDemo extends PanelDemo {
+    TarjetaDemo(String titulo) {
+        super("rosa");
+        System.out.println("3) Constructor de TarjetaDemo: " + titulo);
+    }
+}</pre>
+<pre class="salida">Creando una TarjetaDemo...
+1) Constructor de ComponenteDemo (el abuelo)
+2) Constructor de PanelDemo con color rosa
+3) Constructor de TarjetaDemo: Jugador 1</pre>
+<p>Aunque escribiste <code>new TarjetaDemo(...)</code>, el primer mensaje es el del abuelo. Lo que ocurre es una cadena: <code>TarjetaDemo</code> empieza, su primera línea llama a <code>PanelDemo</code>; este empieza, su primera línea llama a <code>ComponenteDemo</code>; ese termina su trabajo, devuelve el control a <code>PanelDemo</code>, que termina, y por último termina <code>TarjetaDemo</code>. Es la misma pila de llamadas del capítulo 16.</p>
+<p>En el Totito eso significa algo práctico: cuando el constructor de <code>TarjetaJugador</code> llega a la línea <code>setLayout(null);</code>, la parte de <code>Tarjeta</code> ya hizo <code>setOpaque(false)</code> y <code>setAlignmentX(CENTER_ALIGNMENT)</code>, y la parte de <code>JPanel</code> (y de todos los de más arriba) ya está lista. La hija trabaja siempre sobre una madre terminada.</p>
+
+<h3><code>super.metodo()</code>: «haz lo tuyo y luego yo agrego»</h3>
+<p>El segundo uso de <code>super</code> aparece cuando la hija sobrescribe un método pero no quiere <b>reemplazar</b> todo lo que hacía la madre, sino <b>añadir</b> algo. Es como cuando una panadería toma la receta base del pastel y solo le pone una decoración encima: primero hornea el pastel de siempre y luego decora.</p>
+<p>En el Totito, <code>Tarjeta</code> sabe pintar la «caja de cristal» (rectángulo redondeado, semitransparente, con borde de neón). <code>TarjetaJugador</code> necesita esa misma caja <b>y además</b> el icono, el título y la palabra «Nombre». Su método de pintar empieza así:</p>
+<pre class="java">    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);   // la caja de cristal
+        Graphics2D g2 = Dibujo.preparar(g);
+
+        Iconos.Icono icono = esComputadora ? Iconos.COMPUTADORA : Iconos.PERSONA;
+        icono.dibujar(g2, MARGEN + 22, MARGEN + 10, 42, color);</pre>
+<ul>
+<li><code>super</code> — la versión de la madre (<code>Tarjeta</code>).</li>
+<li><code>.</code> — «de ella, quiero el miembro…».</li>
+<li><code>paintComponent</code> — el método que pinta.</li>
+<li><code>(g)</code> — le pasa el mismo pincel (<code>Graphics</code>) que Swing le dio a la hija.</li>
+</ul>
+<p>¿Qué pasaría si se borra esa línea? La tarjeta del jugador se vería sin caja: el icono y el título flotando sobre el fondo, sin el rectángulo de cristal ni el borde rosa o azul. ¿Y si se llamara a <code>paintComponent(g)</code> sin el <code>super.</code>? Entonces el método se llamaría a sí mismo una y otra vez, sin fin, hasta que Java se quede sin pila y lance un <code>StackOverflowError</code> (recuerda la recursión del capítulo 16). El <code>super.</code> es lo que dice «la otra versión, la de mi madre».</p>
+<p>El <b>lugar</b> de la llamada importa. <code>CampoTexto</code> también sobrescribe <code>paintComponent</code>, pero llama a <code>super.paintComponent(g)</code> al <b>final</b>:</p>
+<pre class="java">        g2.dispose();
+        super.paintComponent(g);   // el texto y el cursor los pinta Swing
+    }</pre>
+<p>Primero pinta su fondo redondeado de neón y el texto de ayuda gris; luego deja que <code>JTextField</code> pinte encima lo que escribe el usuario y el cursor parpadeante. Si lo llamara al principio, su propio fondo taparía las letras. Regla práctica: lo que va <b>debajo</b> se pinta primero.</p>
+<div class="caja consejo"><b>¿Y por qué <code>Tarjeta</code> no llama a <code>super.paintComponent</code>?</b> Porque es transparente (<code>setOpaque(false)</code>) y dibuja ella misma todo su aspecto. La versión de <code>JPanel</code> solo rellenaría el fondo con un color liso cuando el panel es opaco; aquí no aportaría nada. Llamar o no a la madre es una decisión: llámala cuando lo que hace te sirve.</div>
+
+<h2>Las jerarquías reales del Totito</h2>
+<p>Cuando una clase hereda de otra que a su vez hereda de otra, se forma una <b>jerarquía</b>: un árbol genealógico de clases. El del Totito mezcla clases de Swing (que ya vienen con Java) y clases tuyas. Este es el árbol completo, comprobado con la herramienta <code>javap</code> del JDK:</p>
+<figure>
+<svg viewBox="0 0 1000 676" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="1000" height="676" fill="#0E0B24"/>
+<line x1="500" y1="44" x2="500" y2="80" stroke="#A05CFF" stroke-width="2"/>
+<line x1="500" y1="114" x2="500" y2="150" stroke="#A05CFF" stroke-width="2"/>
+<line x1="500" y1="184" x2="400" y2="220" stroke="#A05CFF" stroke-width="2"/>
+<line x1="500" y1="184" x2="860" y2="220" stroke="#A05CFF" stroke-width="2"/>
+<line x1="560" y1="27" x2="690" y2="40" stroke="#2F84FF" stroke-width="2"/>
+<line x1="860" y1="254" x2="860" y2="290" stroke="#A05CFF" stroke-width="2"/>
+<line x1="860" y1="324" x2="860" y2="360" stroke="#A05CFF" stroke-width="2"/>
+<line x1="860" y1="394" x2="800" y2="440" stroke="#A05CFF" stroke-width="2"/>
+<line x1="860" y1="394" x2="935" y2="440" stroke="#A05CFF" stroke-width="2"/>
+<line x1="400" y1="254" x2="85" y2="290" stroke="#A05CFF" stroke-width="2"/>
+<line x1="400" y1="254" x2="320" y2="290" stroke="#A05CFF" stroke-width="2"/>
+<line x1="400" y1="254" x2="490" y2="290" stroke="#A05CFF" stroke-width="2"/>
+<line x1="400" y1="254" x2="685" y2="290" stroke="#A05CFF" stroke-width="2"/>
+<line x1="320" y1="324" x2="320" y2="360" stroke="#A05CFF" stroke-width="2"/>
+<line x1="320" y1="394" x2="320" y2="430" stroke="#A05CFF" stroke-width="2"/>
+<line x1="490" y1="324" x2="490" y2="360" stroke="#A05CFF" stroke-width="2"/>
+<line x1="490" y1="394" x2="490" y2="430" stroke="#A05CFF" stroke-width="2"/>
+<line x1="40" y1="324" x2="40" y2="577" stroke="#A05CFF" stroke-width="2"/>
+<line x1="40" y1="357" x2="55" y2="357" stroke="#A05CFF" stroke-width="2"/>
+<line x1="40" y1="402" x2="55" y2="402" stroke="#A05CFF" stroke-width="2"/>
+<line x1="40" y1="447" x2="55" y2="447" stroke="#A05CFF" stroke-width="2"/>
+<line x1="40" y1="577" x2="55" y2="577" stroke="#A05CFF" stroke-width="2"/>
+<line x1="110" y1="464" x2="125" y2="495" stroke="#A05CFF" stroke-width="2"/>
+<line x1="110" y1="464" x2="292" y2="495" stroke="#A05CFF" stroke-width="2"/>
+<line x1="125" y1="594" x2="102" y2="630" stroke="#A05CFF" stroke-width="2"/>
+<line x1="125" y1="594" x2="297" y2="630" stroke="#A05CFF" stroke-width="2"/>
+<line x1="125" y1="594" x2="492" y2="630" stroke="#A05CFF" stroke-width="2"/>
+<line x1="125" y1="594" x2="687" y2="630" stroke="#A05CFF" stroke-width="2"/>
+<line x1="125" y1="594" x2="882" y2="630" stroke="#A05CFF" stroke-width="2"/>
+<rect x="10" y="10" width="26" height="16" rx="4" fill="#1C1740" stroke="#C8BCF6" stroke-width="2"/>
+<text x="44" y="23" font-family="sans-serif" font-size="13" fill="#C8BCF6">Clase de Java (viene con el JDK)</text>
+<rect x="10" y="34" width="26" height="16" rx="4" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="44" y="47" font-family="sans-serif" font-size="13" fill="#C8BCF6">Clase del Totito</text>
+<rect x="10" y="58" width="26" height="16" rx="4" fill="#1C1740" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="44" y="71" font-family="sans-serif" font-size="13" fill="#C8BCF6">Borde punteado: clase abstracta</text>
+<rect x="440" y="10" width="120" height="34" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2"/>
+<text x="500.0" y="32" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#C8BCF6">Object</text>
+<rect x="690" y="8" width="300" height="64" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="840" y="27" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#C8BCF6">Heredan solo de Object:</text>
+<text x="840" y="45" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#FFFFFF">Tablero · Jugador · Partida · IA_Minimax</text>
+<text x="840" y="63" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#FFFFFF">Tema · Dibujo · Iconos</text>
+<rect x="440" y="80" width="120" height="34" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2"/>
+<text x="500.0" y="102" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#C8BCF6">Component</text>
+<rect x="440" y="150" width="120" height="34" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2"/>
+<text x="500.0" y="172" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#C8BCF6">Container</text>
+<rect x="330" y="220" width="140" height="34" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="400.0" y="242" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#C8BCF6">JComponent</text>
+<rect x="800" y="220" width="120" height="34" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2"/>
+<text x="860.0" y="242" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#C8BCF6">Window</text>
+<rect x="800" y="290" width="120" height="34" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2"/>
+<text x="860.0" y="312" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#C8BCF6">Frame</text>
+<rect x="800" y="360" width="120" height="34" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2"/>
+<text x="860.0" y="382" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#C8BCF6">JFrame</text>
+<rect x="740" y="440" width="120" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="800.0" y="462" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">TotitoApp</text>
+<rect x="880" y="440" width="110" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="935.0" y="462" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">JuegoMain</text>
+<rect x="30" y="290" width="110" height="34" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2"/>
+<text x="85.0" y="312" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#C8BCF6">JPanel</text>
+<rect x="250" y="290" width="140" height="34" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="320.0" y="312" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#C8BCF6">AbstractButton</text>
+<rect x="415" y="290" width="150" height="34" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="490.0" y="312" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#C8BCF6">JTextComponent</text>
+<rect x="250" y="360" width="140" height="34" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2"/>
+<text x="320.0" y="382" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#C8BCF6">JButton</text>
+<rect x="250" y="430" width="140" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="320.0" y="452" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">BotonNeon</text>
+<rect x="415" y="360" width="150" height="34" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2"/>
+<text x="490.0" y="382" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#C8BCF6">JTextField</text>
+<rect x="415" y="430" width="150" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="490.0" y="452" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">CampoTexto</text>
+<rect x="600" y="290" width="170" height="140" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="685" y="308" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#C8BCF6">Hijas directas de JComponent:</text>
+<text x="685" y="328" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#FFFFFF">PanelTablero</text>
+<text x="685" y="345" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#FFFFFF">Rotulo</text>
+<text x="685" y="362" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#FFFFFF">SelectorSimbolo</text>
+<text x="685" y="379" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#FFFFFF">OpcionModo</text>
+<text x="685" y="396" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#FFFFFF">PanelMarcador</text>
+<text x="685" y="413" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#FFFFFF">IconoResultado</text>
+<rect x="55" y="340" width="130" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="120.0" y="362" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">Encabezado</text>
+<rect x="55" y="385" width="150" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="130.0" y="407" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">PasoInstruccion</text>
+<rect x="55" y="430" width="110" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="110.0" y="452" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">Tarjeta</text>
+<rect x="55" y="495" width="140" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="125.0" y="517" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">TarjetaJugador</text>
+<rect x="210" y="495" width="165" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="292.5" y="517" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">TarjetaConConfeti</text>
+<rect x="55" y="560" width="140" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="125.0" y="582" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">PantallaBase</text>
+<rect x="10" y="630" width="185" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="102.5" y="652" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">PantallaMenu</text>
+<rect x="205" y="630" width="185" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="297.5" y="652" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">PantallaInstrucciones</text>
+<rect x="400" y="630" width="185" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="492.5" y="652" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">PantallaConfiguracion</text>
+<rect x="595" y="630" width="185" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="687.5" y="652" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">PantallaJuego</text>
+<rect x="790" y="630" width="185" height="34" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="882.5" y="652" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#FFFFFF">PantallaResultado</text>
+</svg>
+<figcaption>Jerarquía de herencia del Totito. Cada línea une a una hija con su madre (la madre está arriba). Las clases de lógica no heredan de nada de Swing: solo de <code>Object</code>.</figcaption>
+</figure>
+<p>Lee el árbol de arriba hacia abajo:</p>
+<ul>
+<li><b><code>Object</code></b> es la raíz de todo (enseguida la vemos).</li>
+<li><b><code>Component</code></b> (de AWT, la biblioteca gráfica más antigua de Java) es «cualquier cosa que ocupa un rectángulo en la pantalla»: tiene posición, tamaño, se puede pintar y recibe eventos del ratón y del teclado.</li>
+<li><b><code>Container</code></b> es un componente que puede <b>contener</b> otros: tiene <code>add(...)</code> y un administrador de diseño (<i>layout</i>).</li>
+<li><b><code>JComponent</code></b> es la base de casi todo Swing: agrega bordes, transparencia (<code>setOpaque</code>), texto de ayuda y el método <code>paintComponent</code> que el Totito usa en todas partes. Es abstracta: no puedes hacer <code>new JComponent()</code> (capítulo 24).</li>
+<li>Por la rama de la derecha, <b><code>Window</code> → <code>Frame</code> → <code>JFrame</code></b> son ventanas de verdad, con barra de título. De ahí cuelgan <code>TotitoApp</code> y <code>JuegoMain</code>.</li>
+</ul>
+<p>Puedes pedirle a Java que te recite la cadena de cualquier clase. <code>getSuperclass()</code> devuelve la madre de una clase; repitiéndolo hasta llegar a <code>null</code> se recorre el árbol hacia arriba. Guarda <code>CadenaDeHerencia.java</code>:</p>
+<pre class="java">public class CadenaDeHerencia {
+    public static void main(String[] args) {
+        mostrarCadena(javax.swing.JButton.class);
+        mostrarCadena(javax.swing.JPanel.class);
+        mostrarCadena(Ficha.class);
+
+        Ficha f = new Ficha();
+        System.out.println("toString heredado de Object: " + f);
+        System.out.println("getClass heredado de Object: " + f.getClass().getName());
+        System.out.println("equals heredado de Object: " + f.equals(new Ficha()));
+    }
+
+    static void mostrarCadena(Class&lt;?&gt; clase) {
+        String cadena = clase.getSimpleName();
+        Class&lt;?&gt; padre = clase.getSuperclass();
+        while (padre != null) {
+            cadena = cadena + " -&gt; " + padre.getSimpleName();
+            padre = padre.getSuperclass();
+        }
+        System.out.println(cadena);
+    }
+}
+
+class Ficha {
+}</pre>
+<pre class="salida">JButton -&gt; AbstractButton -&gt; JComponent -&gt; Container -&gt; Component -&gt; Object
+JPanel -&gt; JComponent -&gt; Container -&gt; Component -&gt; Object
+Ficha -&gt; Object
+toString heredado de Object: Ficha@20d3d15a
+getClass heredado de Object: Ficha
+equals heredado de Object: false</pre>
+<p>Dos detalles de sintaxis nuevos: <code>JButton.class</code> es un objeto que <b>describe</b> a la clase <code>JButton</code> (su nombre, su madre, sus métodos), y <code>Class&lt;?&gt;</code> es el tipo de ese objeto; el <code>&lt;?&gt;</code> quiere decir «de cualquier clase». No necesitas dominarlos ahora; aquí sirven para mirar el árbol.</p>
+<p>Ahora la tabla de las clases del Totito que heredan de Swing: qué le piden prestado a su madre y qué ponen ellas.</p>
+<table class="tabla">
+<tr><th>Clase del Totito</th><th>Madre</th><th>Lo que aprovecha de la madre</th><th>Lo que agrega o cambia</th><th>Cap.</th></tr>
+<tr><td><code>TotitoApp</code></td><td><code>JFrame</code></td><td>Ventana del sistema, barra de título, cerrar, icono, <code>pack()</code></td><td>Arma el <code>PanelPrincipal</code> y el icono</td><td>61</td></tr>
+<tr><td><code>JuegoMain</code></td><td><code>JFrame</code></td><td>Lo mismo</td><td>La ventana sencilla de la versión 0.1</td><td>33</td></tr>
+<tr><td><code>BotonNeon</code></td><td><code>JButton</code></td><td>Clic, teclado, oyentes, rollover, habilitado</td><td>Se dibuja con neón en 4 estilos</td><td>44</td></tr>
+<tr><td><code>CampoTexto</code></td><td><code>JTextField</code></td><td>Escribir, borrar, seleccionar, cursor, copiar y pegar</td><td>Borde de neón, texto de ayuda, límite de 14 letras</td><td>47</td></tr>
+<tr><td><code>Tarjeta</code></td><td><code>JPanel</code></td><td>Contener componentes con un layout</td><td>Caja de cristal con borde de neón</td><td>43</td></tr>
+<tr><td><code>TarjetaJugador</code></td><td><code>Tarjeta</code></td><td>Toda la caja de cristal</td><td>Icono, título, campo del nombre, modo computadora</td><td>49</td></tr>
+<tr><td><code>PantallaBase</code></td><td><code>JPanel</code></td><td>Contener, <code>BorderLayout</code></td><td>Fondo con degradado, encabezado, columna de contenido</td><td>55</td></tr>
+<tr><td><code>PantallaMenu</code> y las otras 4</td><td><code>PantallaBase</code></td><td>Fondo, encabezado, <code>agregar</code>, <code>espacio</code>, <code>relleno</code>, <code>fila</code></td><td>Solo sus botones y tarjetas</td><td>56–60</td></tr>
+<tr><td><code>PanelTablero</code>, <code>Rotulo</code>, <code>SelectorSimbolo</code>, <code>OpcionModo</code>, <code>PanelMarcador</code>, <code>IconoResultado</code></td><td><code>JComponent</code></td><td>Ocupar un lugar, pintarse, recibir el ratón</td><td>Todo su dibujo</td><td>46–54</td></tr>
+</table>
+<p>Fíjate en la familia de las pantallas. <code>PantallaMenu.java</code> tiene apenas 34 líneas, porque el fondo morado con X y O gigantes, los puntitos decorativos, el encabezado con el título y el botón de cerrar los recibe de <code>PantallaBase</code>. Sin herencia, esas cuarenta y tantas líneas de dibujo del fondo se copiarían en las cinco pantallas, y cambiar el color del fondo obligaría a editar cinco archivos (y olvidar uno).</p>
+<div class="caja concepto"><b>Herencia = reutilizar y especializar</b> La madre reúne lo común; cada hija solo describe su diferencia. Por eso las clases de abajo del árbol suelen ser cortas y fáciles de leer.</div>
+
+<h2><code>Object</code>: la madre de todas las clases</h2>
+<p>Si una clase no escribe <code>extends</code>, Java le pone en silencio <code>extends Object</code>. <code>Tablero</code>, <code>Jugador</code>, <code>Partida</code> e <code>IA_Minimax</code> heredan de <code>Object</code> sin decirlo, igual que la <code>Ficha</code> vacía del ejemplo. Por eso <b>toda</b> clase de Java, incluso una vacía, ya sabe hacer algunas cosas:</p>
+<table class="tabla">
+<tr><th>Método de <code>Object</code></th><th>Qué hace por defecto</th></tr>
+<tr><td><code>toString()</code></td><td>Devuelve un texto que representa al objeto. Por defecto: nombre de la clase, <code>@</code> y un número en hexadecimal (<code>Ficha@20d3d15a</code>). Ese número cambia cada vez que corres el programa; no te preocupes si ves otro.</td></tr>
+<tr><td><code>equals(otro)</code></td><td>Dice si dos objetos son «iguales». Por defecto solo es <code>true</code> si son <b>el mismo</b> objeto (igual que <code>==</code>, capítulo 18). Por eso dos <code>Ficha</code> distintas dan <code>false</code>.</td></tr>
+<tr><td><code>hashCode()</code></td><td>Un número que resume al objeto; lo usan colecciones como <code>HashSet</code>. Debe ir de la mano con <code>equals</code>.</td></tr>
+<tr><td><code>getClass()</code></td><td>Devuelve la clase real del objeto. No se puede cambiar.</td></tr>
+</table>
+<p>Cuando concatenas un objeto con un texto (<code>"..." + f</code>), Java llama solo a <code>toString()</code>. En el capítulo 23 vas a sobrescribir <code>toString</code> y <code>equals</code> para que digan algo útil, como <code>Ana (X)</code>.</p>
+<p>¿Para qué sirve tener una raíz común? Para poder escribir código que acepte <b>cualquier</b> objeto. <code>System.out.println(Object x)</code> imprime cualquier cosa porque sabe que todo objeto tiene <code>toString()</code>. Un <code>ArrayList</code> puede guardar productos, alumnos o jugadores porque todos son, en el fondo, <code>Object</code>.</p>
+
+<h2><code>protected</code>: solo para la familia</h2>
+<p>En el capítulo 19 viste <code>private</code> (solo la clase) y <code>public</code> (todo el mundo). <code>protected</code> está en medio: lo pueden usar la clase, <b>sus hijas</b> (aunque estén en otro paquete) y las clases de su mismo paquete. Es como la receta secreta de una panadería familiar: no se le da a cualquier cliente, pero los hijos que abren su propia sucursal sí la reciben.</p>
+<p>En el Totito, <code>protected</code> marca justo las piezas que las hijas necesitan y que no le importan al resto del programa:</p>
+<table class="tabla">
+<tr><th>Miembro</th><th>Clase</th><th>Para qué lo usan las hijas</th></tr>
+<tr><td><code>protected RoundRectangle2D forma()</code></td><td><code>Tarjeta</code></td><td>Saber dónde está la caja redondeada (ya descontado el margen del halo).</td></tr>
+<tr><td><code>protected void pintarDecoracion(...)</code></td><td><code>Tarjeta</code></td><td>«Gancho» vacío que <code>TarjetaConConfeti</code> rellena con papelitos de colores.</td></tr>
+<tr><td><code>protected PantallaBase(Navegacion navegacion)</code></td><td><code>PantallaBase</code></td><td>El constructor solo lo llaman las hijas, con <code>super(navegacion)</code>.</td></tr>
+<tr><td><code>agregar</code>, <code>espacio</code>, <code>relleno</code>, <code>fila</code></td><td><code>PantallaBase</code></td><td>Acomodar sus componentes en la columna de contenido.</td></tr>
+<tr><td><code>protected void paintComponent(Graphics g)</code></td><td><code>JComponent</code> (Swing)</td><td>Lo sobrescriben todos los componentes dibujados a mano.</td></tr>
+</table>
+<p>El gancho <code>pintarDecoracion</code> es un caso muy bonito. <code>Tarjeta.paintComponent</code> pinta el fondo, luego llama a <code>pintarDecoracion(g2, forma)</code> y al final el borde de neón. En <code>Tarjeta</code> ese método está vacío:</p>
+<pre class="java">    /** Gancho para las subclases. Por defecto no dibuja nada. */
+    protected void pintarDecoracion(Graphics2D g2, RoundRectangle2D forma) {
+    }</pre>
+<p>Una tarjeta normal no dibuja nada extra. Pero <code>TarjetaConConfeti</code> (una clase pequeña dentro de <code>PantallaResultado</code>, capítulo 60) lo sobrescribe y dibuja 22 papelitos <b>entre</b> el fondo y el borde, sin tocar el resto de la lógica de su madre. Veámoslo en pequeño con texto. Guarda <code>Protegido.java</code>:</p>
+<pre class="java">public class Protegido {
+    public static void main(String[] args) {
+        TarjetaTexto normal = new TarjetaTexto("Menú");
+        TarjetaTexto fiesta = new TarjetaConConfeti("¡Ganó Ana!");
+        normal.pintar();
+        System.out.println();
+        fiesta.pintar();
+    }
+}
+
+class TarjetaTexto {
+    private final String titulo;   // solo TarjetaTexto lo toca
+
+    TarjetaTexto(String titulo) {
+        this.titulo = titulo;
+    }
+
+    /** Los hijos pueden usarlo; el resto del programa no debería. */
+    protected String marco() {
+        return "+" + "-".repeat(titulo.length() + 2) + "+";
+    }
+
+    void pintar() {
+        System.out.println(marco());
+        pintarDecoracion();
+        System.out.println("| " + titulo + " |");
+        System.out.println(marco());
+    }
+
+    /** Gancho para las subclases: por defecto no dibuja nada. */
+    protected void pintarDecoracion() {
+    }
+}
+
+class TarjetaConConfeti extends TarjetaTexto {
+    TarjetaConConfeti(String titulo) {
+        super(titulo);
+    }
+
+    @Override
+    protected void pintarDecoracion() {
+        // Usa marco(), que es protected: el hijo sí puede.
+        int ancho = marco().length();
+        System.out.println(" " + "*".repeat(ancho - 2));
+    }
+}</pre>
+<pre class="salida">+------+
+| Menú |
++------+
+
++------------+
+ ************
+| ¡Ganó Ana! |
++------------+</pre>
+<p>La hija no puede leer <code>titulo</code> (es <code>private</code>), pero sí puede llamar a <code>marco()</code> (es <code>protected</code>) para saber el ancho. Y la madre, sin saber que existe una hija con confeti, la deja meter su decoración justo en el lugar previsto. Este truco tiene nombre, <b>Template Method</b>, y lo estudiarás en el capítulo 27.</p>
+<div class="caja cuidado"><b><code>protected</code> en el Totito es casi público</b> Como todas las clases del Totito están en el mismo paquete (el paquete por defecto), cualquier clase del juego podría llamar a <code>tarjeta.forma()</code>. El <code>protected</code> funciona aquí más como un <b>aviso para las personas</b> («esto es para las subclases») que como un candado. En proyectos con paquetes (capítulo 69) el candado sí se nota.</div>
+
+<h2>Una sola madre por clase</h2>
+<p>En Java cada clase tiene <b>exactamente una</b> madre directa (salvo <code>Object</code>, que no tiene ninguna). Esto se llama <b>herencia simple</b>. No puedes escribir <code>class BotonPanel extends Boton, Panel</code>; el compilador ni siquiera entiende la coma:</p>
+<pre class="salida">DosPadres.java:12: error: '{' expected
+class BotonPanel extends Boton, Panel {
+                              ^
+1 error
+error: compilation failed</pre>
+<p>¿Por qué esa restricción? Si las dos madres tuvieran un método con el mismo nombre (por ejemplo <code>pintar()</code>), ¿cuál heredaría la hija? Otros lenguajes, como C++, lo permiten y tienen reglas complicadas para resolverlo. Java eligió la sencillez: una sola madre, y para «parecerse a varias cosas a la vez» usa <b>interfaces</b>. <code>PanelPrincipal</code> lo hace: <code>extends JPanel implements Navegacion</code>, es decir, «es un panel y además cumple el contrato de navegación». Las interfaces son el tema del capítulo 24.</p>
+
+<h2><code>final</code>: clases que no se pueden heredar</h2>
+<p>A veces quieres prohibir que alguien haga hijas de una clase. Se marca con <code>final</code> (capítulo 20). En el Totito son <code>final</code> las tres clases de utilidades: <code>Tema</code>, <code>Dibujo</code> e <code>Iconos</code>.</p>
+<pre class="java">public final class Tema {</pre>
+<p>¿Por qué? Porque son cajas de herramientas con métodos y constantes <code>static</code>; no tiene sentido crear «un tipo especial de Tema». Hacerlas <code>final</code> deja clara la intención y evita que alguien herede de ellas por error. Si lo intentas, Java no compila. Ejemplo con una clase <code>Paleta</code> marcada como <code>final</code>:</p>
+<pre class="java">final class Paleta {
+}
+
+class MiPaleta extends Paleta {
+}</pre>
+<pre class="salida">NoSePuede.java:10: error: cannot inherit from final Paleta
+class MiPaleta extends Paleta {
+                       ^
+1 error
+error: compilation failed</pre>
+<p>Java usa esto con clases muy importantes: <code>String</code> es <code>final</code>. Si alguien pudiera crear una hija de <code>String</code> que cambiara su comportamiento, ningún programa podría confiar en que un texto se comporta como texto. También se puede poner <code>final</code> a un <b>método</b> (<code>public final void pintar()</code>): la clase se puede heredar, pero ese método no se puede sobrescribir.</p>
+
+<h2>Cuándo NO heredar</h2>
+<p>La herencia es poderosa y por eso se abusa de ella. Es la relación más fuerte que puede haber entre dos clases: la hija depende de <b>todos</b> los detalles de la madre, y la madre ya no se puede cambiar sin pensar en sus hijas. Antes de escribir <code>extends</code>, hazte dos preguntas:</p>
+<ol>
+<li><b>¿Es un tipo de, o tiene un?</b> Si es «tiene un», usa composición (capítulo 21).</li>
+<li><b>¿La hija puede cumplir TODO lo que promete la madre, sin excepciones?</b> Si alguien recibe a la hija creyendo que es la madre, ¿todo sigue funcionando? Si la respuesta es «casi», no heredes.</li>
+</ol>
+<p>Dos ejemplos clásicos donde la herencia sale mal. Guarda <code>CuandoNoHeredar.java</code>:</p>
+<pre class="java">import java.util.ArrayList;
+
+public class CuandoNoHeredar {
+    public static void main(String[] args) {
+        // 1) Una pila que HEREDA de ArrayList
+        PilaMala platos = new PilaMala();
+        platos.apilar("plato azul");
+        platos.apilar("plato rosa");
+        platos.add(0, "plato colado");   // heredado: ¡mete uno por abajo!
+        System.out.println("Pila heredada: " + platos);
+
+        // 2) Una pila que TIENE un ArrayList (composición)
+        PilaBuena buena = new PilaBuena();
+        buena.apilar("plato azul");
+        buena.apilar("plato rosa");
+        // buena.add(0, "plato colado");  &lt;- no compila: PilaBuena no tiene add
+        System.out.println("Pila con composición, arriba está: " + buena.verArriba());
+
+        // 3) El cuadrado que "es un" rectángulo
+        Rectangulo r = new Cuadrado(5);
+        r.setAncho(10);   // a un rectángulo se le puede cambiar solo el ancho...
+        System.out.println("¿Sigue siendo cuadrado? ancho=" + r.getAncho() + " alto=" + r.getAlto());
+    }
+}
+
+class PilaMala extends ArrayList&lt;String&gt; {
+    void apilar(String cosa) {
+        add(cosa);
+    }
+}
+
+class PilaBuena {
+    private final ArrayList&lt;String&gt; cosas = new ArrayList&lt;&gt;();
+
+    void apilar(String cosa) {
+        cosas.add(cosa);
+    }
+
+    String verArriba() {
+        return cosas.get(cosas.size() - 1);
+    }
+}
+
+class Rectangulo {
+    protected int ancho;
+    protected int alto;
+
+    Rectangulo(int ancho, int alto) {
+        this.ancho = ancho;
+        this.alto = alto;
+    }
+
+    void setAncho(int ancho) {
+        this.ancho = ancho;
+    }
+
+    int getAncho() {
+        return ancho;
+    }
+
+    int getAlto() {
+        return alto;
+    }
+}
+
+class Cuadrado extends Rectangulo {
+    Cuadrado(int lado) {
+        super(lado, lado);
+    }
+}</pre>
+<pre class="salida">Pila heredada: [plato colado, plato azul, plato rosa]
+Pila con composición, arriba está: plato rosa
+¿Sigue siendo cuadrado? ancho=10 alto=5</pre>
+<p><b>La pila de platos.</b> Una pila solo deja poner y quitar por arriba; esa es su regla (su invariante, capítulo 19). <code>PilaMala</code> hereda de <code>ArrayList</code>, y con ello hereda <b>todos</b> sus métodos públicos, incluido <code>add(0, ...)</code>, que mete un plato por abajo. La regla se rompió y la clase no puede impedirlo. <code>PilaBuena</code> <b>tiene</b> una lista privada y solo ofrece lo que una pila debe ofrecer. (Esto no es un invento: la clase <code>Stack</code> de Java hereda de <code>Vector</code> y arrastra exactamente este problema; la documentación oficial recomienda usar otras clases en su lugar.)</p>
+<p><b>El cuadrado.</b> En matemáticas «un cuadrado es un rectángulo». Pero un <code>Rectangulo</code> de este programa promete algo más: «puedes cambiarme el ancho sin tocar el alto». Un cuadrado no puede cumplir esa promesa. Quien recibió un <code>Rectangulo</code> y le cambió el ancho terminó con un «cuadrado» de 10 por 5. La frase «es un» sonaba bien, pero la segunda pregunta (¿cumple todo lo que promete la madre?) falla. Esta idea tiene nombre formal, el <b>principio de sustitución de Liskov</b>, y la verás resumida en el capítulo 27.</p>
+
+<h3>Decisiones de este tipo en el Totito</h3>
+<ul>
+<li><b><code>Partida</code> no hereda de <code>Tablero</code>.</b> Si lo hiciera, cualquiera podría llamar a <code>partida.marcarCasilla(...)</code> (heredado) y poner una ficha saltándose los turnos y el marcador. Al <b>tener</b> un <code>Tablero</code> privado, <code>Partida</code> decide qué se puede hacer: solo <code>jugar(fila, columna)</code>, que respeta los turnos.</li>
+<li><b><code>PantallaJuego</code> no hereda de <code>PanelTablero</code>.</b> La pantalla tiene un tablero, un marcador, un letrero y dos botones. Es una pantalla (<code>extends PantallaBase</code>) que <b>contiene</b> un tablero.</li>
+<li><b><code>PanelPrincipal</code> hereda de <code>JPanel</code>, no de <code>JFrame</code>.</b> Su comentario explica por qué: «Es un JPanel y no la ventana, asi se puede probar o dibujar en una imagen sin abrir una ventana real». <code>TotitoApp</code> (la ventana) solo lo coloca dentro. Comparado con <code>JuegoMain</code>, que es ventana y juego a la vez, esta separación hace que el juego se pueda mostrar en cualquier ventana o incluso dentro de otra aplicación.</li>
+<li><b>Los componentes dibujados heredan de <code>JComponent</code> y no de <code>JButton</code>.</b> <code>OpcionModo</code> se comporta como un botón de radio, pero no es un <code>JButton</code>: solo necesitaba pintarse y escuchar el clic. Heredar de <code>JButton</code> le habría traído texto, iconos, teclas y estados que no usa.</li>
+</ul>
+<div class="caja consejo"><b>Regla práctica</b> Hereda cuando quieras <b>ser</b> algo que ya existe y solo vayas a especializar (un botón que se dibuja distinto, una pantalla con el fondo común). Usa composición cuando quieras <b>usar</b> algo (una partida que usa un tablero). En caso de duda, empieza con composición: pasar de composición a herencia más adelante es fácil; deshacer una herencia que ya usan muchas clases, no.</div>
+
+<h2>Qué pasaría sin herencia en el Totito</h2>
+<ul>
+<li><code>BotonNeon</code>, <code>CampoTexto</code> y las ventanas tendrían que reimplementar lo que ya hacen <code>JButton</code>, <code>JTextField</code> y <code>JFrame</code>: eventos, teclado, foco, copiar y pegar, la ventana del sistema operativo.</li>
+<li>Las cinco pantallas repetirían el fondo y el encabezado. Un cambio de color sería cinco cambios.</li>
+<li>Swing no podría dibujar tus componentes, porque Swing solo sabe tratar con objetos que <b>son</b> <code>Component</code>. <code>add(tarjeta)</code> funciona porque una <code>Tarjeta</code> es un <code>JPanel</code>, que es un <code>Component</code>. Esa idea, usar a la hija donde se espera a la madre, es el polimorfismo del capítulo 23.</li>
+</ul>
+
+<h2>Cómo aplicarlo en otros sistemas</h2>
+<table class="tabla">
+<tr><th>Sistema</th><th>Madre</th><th>Hijas razonables</th><th>Lo que va en la madre</th></tr>
+<tr><td>Tienda</td><td><code>Producto</code></td><td><code>ProductoPerecedero</code>, <code>ProductoDigital</code></td><td>Nombre, precio, cálculo del IVA</td></tr>
+<tr><td>Banco</td><td><code>Cuenta</code></td><td><code>CuentaMonetaria</code>, <code>CuentaDeAhorro</code></td><td>Número, saldo, depositar; cada hija decide intereses y límites</td></tr>
+<tr><td>Escuela</td><td><code>Evaluacion</code></td><td><code>Examen</code>, <code>Tarea</code>, <code>Proyecto</code></td><td>Fecha, punteo máximo, nota obtenida</td></tr>
+<tr><td>Otro juego</td><td><code>Personaje</code></td><td><code>Guerrero</code>, <code>Mago</code></td><td>Vida, posición, moverse; cada uno ataca distinto</td></tr>
+<tr><td>Cualquier app Swing</td><td><code>JPanel</code> / <code>JButton</code></td><td>Tus paneles y botones con diseño propio</td><td>Lo que ya trae Swing</td></tr>
+</table>
+<div class="caja cuidado"><b>Un error frecuente en sistemas escolares</b> «<code>Estudiante extends Persona</code> y <code>Docente extends Persona</code>» parece perfecto… hasta que un docente se inscribe en un curso y también es estudiante. Un objeto no puede cambiar de clase ni tener dos. Cuando algo es un <b>papel</b> que se gana o se pierde (estudiante, docente, administrador), suele modelarse mejor como composición: la <code>Persona</code> <b>tiene</b> una lista de roles.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>La herencia (<code>class Hija extends Madre</code>) crea una clase que <b>es un tipo de</b> otra: recibe sus métodos y atributos y solo escribe lo que agrega o cambia.</li>
+<li>Los constructores no se heredan: la hija llama al de la madre con <code>super(...)</code> en la primera línea; si no lo escribe, Java pone <code>super();</code> y falla si la madre no tiene constructor vacío.</li>
+<li>El objeto se construye de arriba hacia abajo: primero la parte de la madre, luego la de la hija.</li>
+<li><code>super.metodo()</code> llama a la versión de la madre; en el Totito, <code>TarjetaJugador</code> pinta primero la caja de cristal con <code>super.paintComponent(g)</code>.</li>
+<li>Todas las clases heredan de <code>Object</code> (<code>toString</code>, <code>equals</code>, <code>hashCode</code>, <code>getClass</code>). Java tiene herencia simple: una sola madre.</li>
+<li><code>protected</code> abre un miembro a las hijas; <code>final</code> en una clase prohíbe heredarla (<code>Tema</code>, <code>Dibujo</code>, <code>Iconos</code>).</li>
+<li>Hereda solo si la hija cumple todo lo que promete la madre; si la relación es «tiene un», usa composición (<code>Partida</code> tiene un <code>Tablero</code>).</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Punto de venta:</b> una clase <code>Producto</code> con el cálculo del IVA y del descuento, y hijas <code>ProductoPorPeso</code> (precio por libra) y <code>Servicio</code> (sin inventario). La factura trata a todos como <code>Producto</code>.</li>
+<li><b>Interfaz de cualquier programa de escritorio:</b> el mismo truco del Totito, <code>class BotonRedondo extends JButton</code> que solo sobrescribe <code>paintComponent</code>, te da botones con el estilo de tu marca sin perder nada del comportamiento de un botón normal.</li>
+<li><b>Pantallas con una base común:</b> en un sistema de inventario, una <code>PantallaBase</code> con el logotipo, el menú lateral y el pie de página, y pantallas hijas (<code>PantallaProductos</code>, <code>PantallaVentas</code>) que solo agregan su contenido.</li>
+<li><b>Juego de rol:</b> <code>Personaje</code> con vida y movimiento; <code>Guerrero</code> y <code>Mago</code> sobrescriben <code>atacar()</code>. Las armas, en cambio, mejor como composición: un personaje <b>tiene</b> un arma y puede cambiarla.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b><ol>
+<li>En <code>Herencia.java</code>, crea una tercera clase <code>ProductoDigital extends Producto</code> con un atributo <code>String enlace</code>, su constructor con <code>super(...)</code> y su propio <code>describir()</code> que agregue «(descarga: …)». Crea uno en <code>main</code> e imprímelo.</li>
+<li>En <code>OrdenConstruccion.java</code>, borra la línea <code>super("rosa");</code> de <code>TarjetaDemo</code>. Antes de correrlo, escribe en un papel qué crees que va a pasar; luego compruébalo y explica el mensaje del compilador. Pista: ¿tiene <code>PanelDemo</code> un constructor sin parámetros?</li>
+<li>Agrega a <code>Protegido.java</code> una clase <code>TarjetaConEstrellas</code> que herede de <code>TarjetaTexto</code> y dibuje una fila de <code>o</code> en <code>pintarDecoracion</code>. Comprueba que <code>TarjetaTexto</code> no necesitó ningún cambio.</li>
+<li>Abre <code>CadenaDeHerencia.java</code> y agrega <code>mostrarCadena(javax.swing.JFrame.class);</code> y <code>mostrarCadena(javax.swing.JTextField.class);</code>. Compara la salida con el diagrama de este capítulo.</li>
+<li>Diseña (en papel o como código) un pequeño sistema de banco con <code>Cuenta</code>, <code>CuentaMonetaria</code> y <code>CuentaDeAhorro</code>. Decide qué va en la madre, qué en cada hija y, para cada relación, aplica las dos preguntas de «Cuándo NO heredar». Pista: ¿un <code>Cliente</code> es una cuenta o tiene cuentas?</li>
+</ol></div>
+</section>

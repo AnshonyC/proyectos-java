@@ -1,0 +1,521 @@
+<section class="capitulo" id="cap18">
+<h1><span class="num">Capítulo 18</span>Clases y objetos</h1>
+<p class="entrada">Aquí empieza la programación orientada a objetos (POO): vas a aprender qué es una clase, qué es un objeto, qué hace exactamente la palabra <code>new</code>, qué guarda de verdad una variable cuando «tiene» un objeto y por qué aparece el famoso <code>NullPointerException</code>. Todo lo que construyas en el Totito, desde el tablero hasta el último botón de neón, son clases y objetos, así que este capítulo es la base de todo lo que sigue.</p>
+
+<h2>El problema: muchas variables sueltas</h2>
+<p>En la Parte III guardaste datos en variables (capítulo 12), los recorriste con ciclos (capítulo 14) y los agrupaste en arreglos (capítulo 15). Con eso ya podrías hacer un totito… pero imagina cómo se vería guardar dos jugadores con lo que sabes hasta ahora:</p>
+<pre class="java">String nombreJugador1 = "Ana";
+char fichaJugador1 = 'X';
+int victoriasJugador1 = 0;
+
+String nombreJugador2 = "Luis";
+char fichaJugador2 = 'O';
+int victoriasJugador2 = 0;</pre>
+<p>Seis variables para dos personas. Si mañana agregas «color favorito», son ocho. Si quieres un torneo de diez jugadores, son treinta. Y nada en el lenguaje dice que <code>nombreJugador1</code> y <code>fichaJugador1</code> van juntas: es solo una costumbre tuya al ponerles nombre. Si te equivocas y le sumas la victoria a <code>victoriasJugador2</code> cuando ganó el 1, Java no tiene forma de darse cuenta.</p>
+<p>Lo que de verdad quieres decir es: «existe una cosa llamada <i>jugador</i>, que tiene un nombre, una ficha y unas victorias; y en esta partida hay dos jugadores». Eso es exactamente lo que permite una <b>clase</b>.</p>
+
+<h2>La idea: el molde y las galletas</h2>
+<p>Piensa en un molde de galletas con forma de estrella. El molde <b>no es</b> una galleta: no te lo puedes comer. Es la <i>descripción</i> de cómo será cada galleta: su forma, su tamaño. Con un solo molde haces cincuenta galletas; cada una es una galleta de verdad, separada de las demás: a una le pones chispas de chocolate, a otra azúcar glas, y si te comes una las otras siguen ahí.</p>
+<ul>
+<li>La <b>clase</b> es el molde: describe qué datos tendrá cada objeto y qué sabrá hacer.</li>
+<li>El <b>objeto</b> (también llamado <b>instancia</b>) es la galleta: una cosa concreta, creada a partir del molde, con sus propios datos.</li>
+</ul>
+<p>Otras analogías que dicen lo mismo: el <b>plano</b> de una casa (clase) y las casas construidas con ese plano (objetos); un <b>formulario en blanco</b> de inscripción (clase) y cada formulario ya llenado por un alumno (objetos). El formulario en blanco dice «aquí va el nombre, aquí la edad»; cada formulario lleno tiene <i>un</i> nombre y <i>una</i> edad.</p>
+<div class="caja concepto"><b>Clase y objeto, en una frase</b> Una <b>clase</b> es la definición de un tipo de cosa: qué datos guarda (sus <b>atributos</b> o <b>campos</b>) y qué sabe hacer (sus <b>métodos</b>). Un <b>objeto</b> es una cosa concreta de ese tipo, que vive en la memoria mientras el programa corre y tiene sus propios valores en cada atributo.</div>
+<p>Hay algo que ya usaste sin saberlo: <code>String</code> es una clase (capítulo 17). Cada texto <code>"Ana"</code> es un objeto de la clase <code>String</code>, y por eso puedes escribir <code>"Ana".length()</code>: le pides algo a ese objeto. <code>Scanner</code> también es una clase; <code>new Scanner(System.in)</code> crea un objeto escáner. Ahora vas a escribir tus propias clases.</p>
+
+<h2>Cómo se escribe una clase, símbolo por símbolo</h2>
+<p>Esta es la clase <code>Jugador</code> más sencilla posible, con tres atributos y dos métodos:</p>
+<pre class="java">class Jugador {
+    String nombre;
+    char ficha;
+    int victorias;
+
+    void ganarPartida() {
+        victorias = victorias + 1;
+    }
+
+    void presentarse() {
+        System.out.println("Soy " + nombre + ", juego con " + ficha
+                + " y llevo " + victorias + " victorias.");
+    }
+}</pre>
+<ul>
+<li><code>class</code> — palabra reservada que anuncia: «voy a definir un tipo nuevo». Va en minúscula.</li>
+<li><code>Jugador</code> — el nombre del tipo nuevo. Por convención los nombres de clase empiezan con <b>mayúscula</b> y son sustantivos en singular: <code>Jugador</code>, no <code>jugadores</code> ni <code>jugar</code>. Así, al leer <code>Jugador ana</code> sabes al instante que <code>Jugador</code> es un tipo y <code>ana</code> una variable.</li>
+<li><code>{</code> … <code>}</code> — las llaves marcan el <b>cuerpo</b> de la clase: todo lo que está entre ellas le pertenece. La llave de cierre final es la que termina la clase; si falta, el compilador dirá <code>reached end of file while parsing</code>.</li>
+<li><code>String nombre;</code> — un <b>atributo</b> (también se dice <b>campo</b> o <b>variable de instancia</b>). Se declara igual que una variable: tipo, nombre y <code>;</code>. La diferencia es <i>dónde</i> está: dentro de la clase pero fuera de cualquier método. Eso significa «cada objeto <code>Jugador</code> tendrá su propio <code>nombre</code>».</li>
+<li><code>char ficha;</code> e <code>int victorias;</code> — dos atributos más. El <code>;</code> termina cada declaración, como en cualquier instrucción.</li>
+<li><code>void ganarPartida() { … }</code> — un <b>método de instancia</b>: una acción que sabe hacer cada jugador. <code>void</code> indica que no devuelve nada (capítulo 16), los paréntesis vacíos que no recibe parámetros. Fíjate en que <b>no lleva <code>static</code></b>: eso es lo que lo hace «de instancia», es decir, que se ejecuta sobre un objeto concreto.</li>
+<li><code>victorias = victorias + 1;</code> — dentro del método se usa el atributo <code>victorias</code> sin declararlo: es el de <i>este</i> jugador, el objeto sobre el que se llamó el método.</li>
+</ul>
+<p>Los atributos son el <b>estado</b> del objeto (lo que «es» o «tiene» en un momento dado); los métodos son su <b>comportamiento</b> (lo que «hace»). Una buena clase junta los datos con las acciones que trabajan con esos datos.</p>
+
+<h2>Crear objetos con <code>new</code></h2>
+<p>La clase sola no hace nada, igual que el molde guardado en la gaveta. Para tener un jugador hay que <b>fabricarlo</b>:</p>
+<pre class="java">Jugador ana = new Jugador();</pre>
+<ul>
+<li><code>Jugador</code> (a la izquierda) — el <b>tipo</b> de la variable. Igual que <code>int edad</code> dice «edad guarda enteros», <code>Jugador ana</code> dice «ana sirve para referirse a jugadores».</li>
+<li><code>ana</code> — el nombre de la variable, en minúscula como toda variable.</li>
+<li><code>=</code> — asignación: lo de la derecha se guarda en la variable de la izquierda.</li>
+<li><code>new</code> — la palabra que <b>crea un objeto nuevo</b>. Es la máquina que toma el molde y produce una galleta.</li>
+<li><code>Jugador()</code> — qué clase fabricar. Los paréntesis son una llamada al <b>constructor</b>, el código que prepara el objeto recién nacido (en esta clase no escribimos ninguno, así que Java usa uno vacío; lo verás a fondo en el capítulo 20).</li>
+<li><code>;</code> — fin de la instrucción.</li>
+</ul>
+<p>Para usar un objeto se escribe la variable, un <b>punto</b> y el atributo o método: <code>ana.nombre</code> es «el nombre de Ana» y <code>ana.ganarPartida()</code> es «Ana, gana una partida». El punto es el <b>operador de acceso</b>: se lee «de» o «le pido a». Los paréntesis después de <code>ganarPartida</code> son los que distinguen una llamada a método de un atributo: <code>ana.victorias</code> lee un dato; <code>ana.ganarPartida()</code> ejecuta código.</p>
+
+<h3>Programa completo: dos jugadores</h3>
+<p>Guarda este programa como <code>DosJugadores.java</code> en tu carpeta de prácticas. Fíjate en que tiene dos clases en un mismo archivo: la primera, <code>DosJugadores</code>, contiene el <code>main</code>; la segunda, <code>Jugador</code>, va debajo sin la palabra <code>public</code>. Así puedes probar clases pequeñas sin crear un proyecto.</p>
+<pre class="java">public class DosJugadores {
+
+    public static void main(String[] args) {
+        Jugador ana = new Jugador();
+        ana.nombre = "Ana";
+        ana.ficha = 'X';
+
+        Jugador luis = new Jugador();
+        luis.nombre = "Luis";
+        luis.ficha = 'O';
+
+        ana.ganarPartida();
+        ana.ganarPartida();
+        luis.ganarPartida();
+
+        ana.presentarse();
+        luis.presentarse();
+    }
+}
+
+class Jugador {
+    String nombre;
+    char ficha;
+    int victorias;
+
+    void ganarPartida() {
+        victorias = victorias + 1;
+    }
+
+    void presentarse() {
+        System.out.println("Soy " + nombre + ", juego con " + ficha
+                + " y llevo " + victorias + " victorias.");
+    }
+}</pre>
+<pre class="ps">cd $HOME\Proyectos\Practicas
+java DosJugadores.java</pre>
+<pre class="salida">Soy Ana, juego con X y llevo 2 victorias.
+Soy Luis, juego con O y llevo 1 victorias.</pre>
+<div class="caja consejo"><b>Ejecutar un archivo de un solo paso</b> Desde Java 11, <code>java Nombre.java</code> compila el archivo en memoria y lo ejecuta en un solo paso, sin dejar archivos <code>.class</code>. La clase que tiene el <code>main</code> debe ser la <b>primera</b> del archivo, y el archivo debe llamarse como ella. Las demás clases van debajo, sin <code>public</code>. Es la forma en que probarás todos los ejemplos de la Parte IV. Si prefieres NetBeans, crea la clase en un proyecto de prácticas y usa <i>Run File</i> (Shift+F6).</div>
+<p>Lee la salida con calma, porque ahí está la idea entera de la POO. Hay <b>una</b> clase <code>Jugador</code> pero <b>dos</b> objetos. Cuando llamaste <code>ana.ganarPartida()</code> dos veces, solo crecieron las victorias de Ana; las de Luis no se enteraron. Y el mismo método <code>presentarse()</code> escribió «Ana» una vez y «Luis» la otra: el código es el mismo, pero cada llamada trabaja con los datos del objeto que está a la izquierda del punto.</p>
+
+<h2>Qué pasa en la memoria cuando escribes <code>new</code></h2>
+<p>No necesitas saber cómo funciona la memoria por dentro para programar, pero un modelo sencillo te ahorrará muchos errores. Imagina que la memoria del programa tiene dos zonas:</p>
+<ul>
+<li>La <b>pila</b> (en inglés <i>stack</i>): una libreta pequeña y ordenada donde cada método que se está ejecutando anota sus variables locales. Cuando el método termina, arranca su hoja y esas variables desaparecen. Es la misma pila de llamadas que viste en el capítulo 16.</li>
+<li>El <b>montón</b> (en inglés <i>heap</i>): una bodega grande donde viven los objetos. Los objetos no tienen nombre; tienen una <b>dirección</b>, como los estantes numerados de una bodega.</li>
+</ul>
+<p>Cuando Java ejecuta <code>Jugador ana = new Jugador();</code> ocurren cuatro cosas, en este orden:</p>
+<ol>
+<li><code>new</code> busca espacio en el montón suficiente para un <code>Jugador</code>: un <code>String</code> (su referencia), un <code>char</code> y un <code>int</code>.</li>
+<li>Llena cada atributo con su <b>valor por defecto</b>: <code>null</code> para objetos, <code>0</code> para números, el carácter número 0 para <code>char</code> y <code>false</code> para <code>boolean</code>.</li>
+<li>Ejecuta el constructor (aquí, uno vacío).</li>
+<li>Devuelve la <b>dirección</b> del objeto nuevo, y esa dirección es lo que se guarda en la variable <code>ana</code>, que vive en la pila.</li>
+</ol>
+<p>Puedes comprobar los valores por defecto con este programa (<code>ValoresIniciales.java</code>):</p>
+<pre class="java">public class ValoresIniciales {
+
+    public static void main(String[] args) {
+        Jugador nuevo = new Jugador();
+        System.out.println("nombre    = " + nuevo.nombre);
+        System.out.println("ficha     = " + (int) nuevo.ficha + " (el caracter numero 0)");
+        System.out.println("victorias = " + nuevo.victorias);
+        System.out.println("activo    = " + nuevo.activo);
+    }
+}
+
+class Jugador {
+    String nombre;
+    char ficha;
+    int victorias;
+    boolean activo;
+}</pre>
+<pre class="salida">nombre    = null
+ficha     = 0 (el caracter numero 0)
+victorias = 0
+activo    = false</pre>
+<p>Por eso en <code>DosJugadores</code> el método <code>ganarPartida()</code> pudo sumar sin que nadie pusiera <code>victorias = 0</code>: el atributo nació en cero. Ojo: esto vale para <b>atributos</b>. Las variables <b>locales</b> (las de dentro de un método) no tienen valor por defecto, y si las usas sin asignarlas el compilador se queja con <code>variable might not have been initialized</code>.</p>
+<p>¿Y cuándo se borra un objeto? En Java nunca lo borras tú. Cuando ninguna variable apunta ya a un objeto, nadie puede volver a usarlo, y el <b>recolector de basura</b> (<i>garbage collector</i>), una parte de la máquina virtual, recupera ese espacio por su cuenta cuando le conviene. Esto es muy importante en el Totito: la IA crea miles de copias del tablero para pensar su jugada, y ni una sola línea del juego se ocupa de liberarlas.</p>
+
+<h2>Métodos de instancia: cada objeto con sus datos</h2>
+<p>Un método de instancia es como una instrucción dirigida a una persona concreta. Si en clase la maestra dice «Sofía, lee tu cuaderno», Sofía lee <i>su</i> cuaderno, no el de su compañero. Igual, <code>luis.presentarse()</code> lee <i>sus</i> atributos.</p>
+<p>¿Cómo sabe el método de qué objeto se trata? Cada vez que llamas a un método de instancia, Java le pasa de forma invisible una referencia al objeto que está antes del punto. Dentro del método esa referencia se llama <code>this</code> («este objeto»). Cuando en <code>ganarPartida()</code> escribes <code>victorias</code>, Java entiende <code>this.victorias</code>. Casi siempre puedes omitir el <code>this.</code>; lo verás a fondo, con los casos en que es obligatorio, en el capítulo 20.</p>
+<p>La consecuencia práctica: <b>un método de instancia necesita un objeto</b>. Si intentas llamarlo sobre la clase, como si el molde pudiera presentarse, el compilador te detiene:</p>
+<pre class="java">public class ErrorEstatico {
+
+    public static void main(String[] args) {
+        Jugador.presentarse();
+    }
+}
+
+class Jugador {
+    String nombre;
+
+    void presentarse() {
+        System.out.println("Soy " + nombre);
+    }
+}</pre>
+<pre class="salida">ErrorEstatico.java:4: error: non-static method presentarse() cannot be referenced from a static context
+        Jugador.presentarse();
+               ^
+1 error</pre>
+<p>El mensaje dice: «el método no estático <code>presentarse()</code> no se puede usar desde un contexto estático». En cristiano: «¿cuál jugador? No me diste ninguno». La solución no es ponerle <code>static</code> al método (ese es el error más común de quien empieza), sino crear un objeto y llamar <code>ana.presentarse()</code>. Los métodos <code>static</code>, que pertenecen a la clase y no a un objeto, son el tema del capítulo 20; por ahora basta saber que <code>main</code> es uno de ellos y que por eso, dentro de <code>main</code>, siempre necesitas un objeto para llamar a los métodos de instancia.</p>
+
+<h2>El constructor, solo lo mínimo</h2>
+<p>En <code>DosJugadores</code> cada jugador nacía «vacío» y después le llenábamos el nombre y la ficha con tres líneas. Es incómodo y peligroso: si se te olvida la línea de la ficha, tienes un jugador sin ficha. Un <b>constructor</b> es un método especial que se ejecuta justo cuando el objeto nace y que obliga a dar los datos necesarios:</p>
+<pre class="java">class Jugador {
+    String nombre;
+    char ficha;
+
+    Jugador(String nombre, char ficha) {
+        this.nombre = nombre;
+        this.ficha = ficha;
+    }
+}</pre>
+<p>Se reconoce porque se llama <b>exactamente igual que la clase</b> y no tiene tipo de retorno (ni siquiera <code>void</code>). Ahora se crea así: <code>new Jugador("Ana", 'X')</code>, y lo que pongas entre paréntesis llega a los parámetros. La línea <code>this.nombre = nombre;</code> significa «el atributo <code>nombre</code> de este objeto recibe el parámetro <code>nombre</code>». Con eso te alcanza por ahora; el capítulo 20 está dedicado a los constructores.</p>
+
+<h2>Dónde están las clases y los objetos en el Totito</h2>
+<p>Todo el Totito está hecho de clases: 29 archivos en <code>src</code>, cada uno con una clase pública del mismo nombre (salvo <code>Navegacion</code>, que es una interfaz, un pariente de las clases que verás en el capítulo 24). Las tres primeras que escribirás, en la Parte V, son las de la lógica:</p>
+<table class="tabla">
+<tr><th>Clase</th><th>Qué molde describe</th><th>Atributos (estado)</th><th>Métodos (comportamiento)</th></tr>
+<tr><td><code>Tablero</code> (cap. 29)</td><td>Una cuadrícula de 3×3</td><td><code>casillas</code></td><td><code>reiniciar</code>, <code>marcarCasilla</code>, <code>obtenerCasilla</code>, <code>tableroLleno</code>, <code>verificarGanador</code>, <code>obtenerCopia</code></td></tr>
+<tr><td><code>Jugador</code> (cap. 30)</td><td>Un participante</td><td><code>nombre</code>, <code>ficha</code></td><td><code>getNombre</code>, <code>getFicha</code></td></tr>
+<tr><td><code>IA_Minimax</code> (cap. 31)</td><td>La computadora que piensa</td><td><code>fichaIA</code>, <code>fichaJugador</code></td><td><code>calcularMejorJugada</code></td></tr>
+</table>
+<p>Así es la clase <code>Jugador</code> real, en <code>src/Jugador.java</code>. Ya reconoces casi todo: dos atributos, un constructor y dos métodos.</p>
+<pre class="java">public class Jugador {
+
+    private final String nombre;
+    private final char ficha;
+
+    public Jugador(String nombre, char ficha) {
+        this.nombre = nombre;
+        this.ficha = ficha;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public char getFicha() {
+        return ficha;
+    }
+}</pre>
+<p>Las palabras <code>private</code>, <code>public</code> y <code>final</code> son la protección de esos datos, y son exactamente el tema del capítulo 19. Lo importante ahora: es un molde, y en el juego se fabrican objetos con él. ¿Dónde? Mira <code>herramientas/PruebaConsola.java</code>, el programa del capítulo 32 que prueba la lógica en la consola; su <code>main</code> empieza fabricando tres objetos:</p>
+<pre class="java">        Tablero tablero = new Tablero();
+        Jugador humano = new Jugador("Tu", 'X');
+        IA_Minimax ia = new IA_Minimax('O', 'X');</pre>
+<p>Y en la versión con interfaz neón, cuando pulsas <i>Comenzar partida</i>, el método <code>comenzar()</code> de <code>PantallaConfiguracion</code> (capítulo 58) fabrica los dos jugadores con lo que escribiste en las tarjetas:</p>
+<pre class="java">        navegacion.iniciarPartida(
+                new Jugador(jugador1.getNombre(), fichaJugador1),
+                new Jugador(jugador2.getNombre(), fichaJugador2),
+                modo);</pre>
+<p>Aquí ves una costumbre muy común: los objetos se crean con <code>new</code> directamente dentro de la llamada, sin guardarlos antes en una variable propia. Cada <code>new Jugador(...)</code> produce un objeto y su dirección viaja como argumento.</p>
+<p>Un detalle que muestra la fuerza de los objetos: <code>Tablero</code> tiene un método que fabrica <b>otro</b> tablero. Es <code>obtenerCopia()</code>, en <code>src/Tablero.java</code>:</p>
+<pre class="java">    public Tablero obtenerCopia() {
+        Tablero copia = new Tablero();
+        for (int fila = 0; fila &lt; 3; fila++) {
+            for (int columna = 0; columna &lt; 3; columna++) {
+                copia.casillas[fila][columna] = this.casillas[fila][columna];
+            }
+        }
+        return copia;
+    }</pre>
+<p>Dentro de un objeto se crea un objeto nuevo de su misma clase, se le copian las casillas una por una (<code>this.casillas</code> son las del original, <code>copia.casillas</code> las del nuevo) y se devuelve. La IA del capítulo 31 llama a este método miles de veces para «imaginar» jugadas en tableros de prueba sin tocar el de verdad. Si no existieran objetos separados, cada jugada imaginada se pintaría en el tablero real y la partida quedaría destrozada.</p>
+
+<h3>Programa completo: dos jugadores y un tablero</h3>
+<p>Este programa (<code>PrimeraPartida.java</code>) usa versiones mini de <code>Jugador</code> y <code>Tablero</code> para que veas varios objetos colaborando. Fíjate en el método <code>jugar</code>: recibe un <code>Tablero</code> como parámetro y le pide algo con el punto.</p>
+<pre class="java">public class PrimeraPartida {
+
+    public static void main(String[] args) {
+        Tablero tablero = new Tablero();
+        Jugador ana = new Jugador("Ana", 'X');
+        Jugador luis = new Jugador("Luis", 'O');
+
+        ana.jugar(tablero, 1, 1);
+        luis.jugar(tablero, 0, 0);
+        ana.jugar(tablero, 0, 2);
+
+        tablero.imprimir();
+    }
+}
+
+class Jugador {
+    String nombre;
+    char ficha;
+
+    Jugador(String nombre, char ficha) {
+        this.nombre = nombre;
+        this.ficha = ficha;
+    }
+
+    void jugar(Tablero tablero, int fila, int columna) {
+        tablero.marcar(fila, columna, ficha);
+        System.out.println(nombre + " pone " + ficha + " en " + fila + "," + columna);
+    }
+}
+
+class Tablero {
+    char[][] casillas = new char[3][3];
+
+    Tablero() {
+        for (int fila = 0; fila &lt; 3; fila++) {
+            for (int columna = 0; columna &lt; 3; columna++) {
+                casillas[fila][columna] = ' ';
+            }
+        }
+    }
+
+    void marcar(int fila, int columna, char ficha) {
+        casillas[fila][columna] = ficha;
+    }
+
+    void imprimir() {
+        for (int fila = 0; fila &lt; 3; fila++) {
+            System.out.println(" " + casillas[fila][0] + " | " + casillas[fila][1] + " | " + casillas[fila][2]);
+        }
+    }
+}</pre>
+<pre class="salida">Ana pone X en 1,1
+Luis pone O en 0,0
+Ana pone X en 0,2
+ O |   | X
+   | X |  
+   |   |  </pre>
+<p>Una línea como <code>ana.jugar(tablero, 1, 1)</code> se lee de izquierda a derecha: «Ana, juega en este tablero, en la fila 1, columna 1». Dentro, Ana le dice al tablero <code>tablero.marcar(fila, columna, ficha)</code>: «tablero, marca esta casilla con mi ficha». Los objetos se piden cosas unos a otros: eso es, en el fondo, un programa orientado a objetos.</p>
+
+<h2>El diagrama de objetos</h2>
+<p>Un <b>diagrama de objetos</b> es un dibujo de la memoria en un instante: qué variables hay, qué objetos existen y quién apunta a quién. Este es el de <code>PrimeraPartida</code> justo antes de <code>tablero.imprimir()</code>. A la izquierda, las tres variables locales de <code>main</code> en la pila; a la derecha, los tres objetos en el montón. Cada flecha es una <b>referencia</b>.</p>
+<svg viewBox="0 0 640 330" width="100%">
+<defs><marker id="flecha18" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#C8BCF6"/></marker></defs>
+<rect x="0" y="0" width="640" height="330" rx="16" fill="#1C1740"/>
+<text x="90" y="30" fill="#C8BCF6" font-size="15" font-family="sans-serif" text-anchor="middle">Pila (main)</text>
+<text x="450" y="30" fill="#C8BCF6" font-size="15" font-family="sans-serif" text-anchor="middle">Montón (objetos)</text>
+<rect x="30" y="55" width="120" height="40" rx="6" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="90" y="80" fill="#FFFFFF" font-size="14" font-family="monospace" text-anchor="middle">tablero</text>
+<rect x="30" y="155" width="120" height="40" rx="6" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="90" y="180" fill="#FFFFFF" font-size="14" font-family="monospace" text-anchor="middle">ana</text>
+<rect x="30" y="250" width="120" height="40" rx="6" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="90" y="275" fill="#FFFFFF" font-size="14" font-family="monospace" text-anchor="middle">luis</text>
+<rect x="330" y="45" width="250" height="80" rx="10" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="345" y="68" fill="#A05CFF" font-size="14" font-family="sans-serif" font-weight="bold">: Tablero</text>
+<text x="345" y="92" fill="#FFFFFF" font-size="13" font-family="monospace">casillas = [O, ,X][ ,X, ][ , , ]</text>
+<rect x="330" y="145" width="250" height="75" rx="10" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="345" y="168" fill="#FF3BD4" font-size="14" font-family="sans-serif" font-weight="bold">: Jugador</text>
+<text x="345" y="190" fill="#FFFFFF" font-size="13" font-family="monospace">nombre = "Ana"</text>
+<text x="345" y="210" fill="#FFFFFF" font-size="13" font-family="monospace">ficha = 'X'</text>
+<rect x="330" y="240" width="250" height="75" rx="10" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="345" y="263" fill="#2F84FF" font-size="14" font-family="sans-serif" font-weight="bold">: Jugador</text>
+<text x="345" y="285" fill="#FFFFFF" font-size="13" font-family="monospace">nombre = "Luis"</text>
+<text x="345" y="305" fill="#FFFFFF" font-size="13" font-family="monospace">ficha = 'O'</text>
+<line x1="150" y1="75" x2="326" y2="80" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha18)"/>
+<line x1="150" y1="175" x2="326" y2="180" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha18)"/>
+<line x1="150" y1="270" x2="326" y2="275" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha18)"/>
+</svg>
+<p><i>Diagrama de objetos de PrimeraPartida: tres variables en la pila, tres objetos en el montón, unidos por referencias.</i></p>
+<p>En los diagramas de objetos se escribe <code>: Jugador</code> (dos puntos y el nombre de la clase) para decir «un objeto de la clase Jugador»: los objetos no tienen nombre propio, solo las variables que apuntan a ellos. Hay dos cajas <code>: Jugador</code> separadas, cada una con sus valores, y una sola <code>: Tablero</code> que ambos jugadores modificaron. Dibujar esto en papel cuando un programa te confunda es una de las mejores costumbres que puedes adquirir.</p>
+
+<h2>Referencias: la variable no es el objeto</h2>
+<p>Ahora la idea más importante (y la que más confunde) de este capítulo. Una variable de tipo <code>int</code> guarda un número directamente: es una caja con el 7 adentro. Pero una variable de tipo <code>Jugador</code> <b>no guarda el jugador</b>: guarda una <b>referencia</b>, es decir, la dirección donde vive el objeto en el montón.</p>
+<p>Piensa en la libreta de contactos de tu teléfono. El contacto «Mamá» no es tu mamá: es una forma de llegar a ella. Puedes tener a la misma persona guardada como «Mamá» y como «Doña Rosa»; si por cualquiera de los dos le avisas que llegas tarde, la que se entera es la misma señora. Y si borras el contacto, tu mamá sigue existiendo.</p>
+<p>Los tipos que guardan el valor directamente se llaman <b>primitivos</b> (los ocho del capítulo 12: <code>int</code>, <code>double</code>, <code>char</code>, <code>boolean</code>, <code>long</code>, <code>float</code>, <code>short</code>, <code>byte</code>). Todo lo demás, incluidos <code>String</code>, los arreglos y todas tus clases, son <b>tipos de referencia</b>. Mira lo que eso provoca (<code>Referencias.java</code>):</p>
+<pre class="java">public class Referencias {
+
+    public static void main(String[] args) {
+        Jugador a = new Jugador("Ana", 'X');
+        Jugador b = a;                        // b apunta al MISMO objeto que a
+        Jugador c = new Jugador("Ana", 'X');  // otro objeto, con los mismos datos
+
+        b.victorias = 5;
+        System.out.println("Victorias de a: " + a.victorias);
+        System.out.println("Victorias de c: " + c.victorias);
+
+        System.out.println("a == b ? " + (a == b));
+        System.out.println("a == c ? " + (a == c));
+
+        felicitar(c);
+        System.out.println("Victorias de c tras felicitar: " + c.victorias);
+
+        c = null;                             // c ya no apunta a nada
+        System.out.println("c ahora vale: " + c);
+    }
+
+    static void felicitar(Jugador quien) {
+        quien.victorias++;                    // cambia el objeto original
+        quien = new Jugador("Otro", 'O');     // solo cambia la copia de la flecha
+        quien.victorias = 100;
+    }
+}
+
+class Jugador {
+    String nombre;
+    char ficha;
+    int victorias;
+
+    Jugador(String nombre, char ficha) {
+        this.nombre = nombre;
+        this.ficha = ficha;
+    }
+}</pre>
+<pre class="salida">Victorias de a: 5
+Victorias de c: 0
+a == b ? true
+a == c ? false
+Victorias de c tras felicitar: 1
+c ahora vale: null</pre>
+<p>Vamos línea por línea, porque cada resultado enseña algo:</p>
+<ul>
+<li><code>Jugador b = a;</code> <b>no copia</b> al jugador. Copia la flecha. Ahora hay dos variables y <b>un solo</b> objeto. A esto se le llama <b>alias</b>: dos nombres para lo mismo. Por eso al escribir <code>b.victorias = 5</code>, <code>a.victorias</code> también vale 5: es el mismo objeto visto por otro contacto.</li>
+<li><code>c</code> se creó con otro <code>new</code>, así que es otro objeto, aunque tenga los mismos datos. Sus victorias siguen en 0.</li>
+<li><code>a == b</code> da <code>true</code> y <code>a == c</code> da <code>false</code>. Con referencias, <code>==</code> <b>no compara el contenido</b>: pregunta «¿estas dos flechas apuntan al mismo objeto?». Dos galletas idénticas siguen siendo dos galletas. Para comparar contenido existe el método <code>equals</code>, que ya usaste con <code>String</code> en el capítulo 17 y que aprenderás a escribir para tus clases en los capítulos 22 y 23.</li>
+<li>Al llamar <code>felicitar(c)</code>, Java le pasa al parámetro <code>quien</code> una <b>copia de la flecha</b> (Java siempre pasa copias; con objetos, lo copiado es la dirección). Con esa copia, <code>quien.victorias++</code> modifica el objeto original: por eso <code>c</code> pasa a tener 1. Pero <code>quien = new Jugador(...)</code> solo redirige la copia local hacia otro objeto; la <code>c</code> de <code>main</code> no se entera, y el «Otro» con sus 100 victorias se pierde cuando el método termina.</li>
+<li><code>c = null;</code> deja la variable sin apuntar a nada. El objeto que tenía queda sin nadie que lo mire y el recolector de basura se lo llevará.</li>
+</ul>
+<div class="caja cuidado"><b><code>=</code> entre objetos no copia</b> Si escribes <code>Tablero copia = tablero;</code> creyendo que tienes una copia para hacer pruebas, cada «prueba» quedará marcada en el tablero real. Para tener otro objeto hace falta otro <code>new</code>: por eso <code>Tablero</code> tiene su método <code>obtenerCopia()</code>, que crea un tablero nuevo y copia las casillas una por una.</div>
+<h3>Comparar con <code>==</code> a propósito: el Totito lo hace</h3>
+<p>Que <code>==</code> compare identidad no es un defecto: a veces es justo lo que quieres. En <code>src/Partida.java</code> (capítulo 38) hay este método:</p>
+<pre class="java">    public boolean esComputadora(Jugador jugador) {
+        return ia != null &amp;&amp; jugador == jugadores[1];
+    }</pre>
+<p>La pregunta no es «¿se llama igual que el segundo jugador?» (dos personas podrían llamarse «Ana») sino «¿es <b>exactamente ese</b> objeto?». Como la partida guarda las mismas referencias que recibió, comparar flechas es lo más rápido y lo más exacto. Lo mismo hace <code>PanelMarcador</code> (capítulo 52) para saber qué tarjeta del marcador debe brillar: <code>partida.getJugadorEnTurno() == jugador</code>.</p>
+<p>Y el paso de referencias a métodos es lo que hace funcionar la pantalla de juego: <code>PanelTablero.mostrar(Tablero tablero)</code> (capítulo 48) recibe una referencia al tablero de la partida y lee sus casillas con <code>tablero.obtenerCasilla(fila, columna)</code>. No se copia el tablero entero cada vez que se llama a un método: viaja la flecha, que es barata.</p>
+
+<h2><code>null</code>: la referencia que no apunta a nada</h2>
+<p><code>null</code> es un valor especial que puede tener cualquier variable de referencia y que significa «ningún objeto». Es un contacto guardado sin número de teléfono: el nombre existe, pero si intentas llamar, no hay a quién.</p>
+<p>¿Qué pasa si le pides algo a <code>null</code>? Este programa (<code>SinGanador.java</code>) imita una partida que terminó en empate y por eso no tiene ganador:</p>
+<pre class="java">public class SinGanador {
+
+    public static void main(String[] args) {
+        MiniPartida partida = new MiniPartida();
+        System.out.println("Termino en empate. Veamos quien gano...");
+        Jugador ganador = partida.getGanador();
+        System.out.println("El ganador es " + ganador.getNombre());
+    }
+}
+
+class MiniPartida {
+    private Jugador ganador;   // nadie ha ganado: vale null
+
+    Jugador getGanador() {
+        return ganador;
+    }
+}
+
+class Jugador {
+    private String nombre;
+
+    String getNombre() {
+        return nombre;
+    }
+}</pre>
+<pre class="salida">Termino en empate. Veamos quien gano...
+Exception in thread "main" java.lang.NullPointerException: Cannot invoke "Jugador.getNombre()" because "&lt;local2&gt;" is null
+	at SinGanador.main(SinGanador.java:7)</pre>
+<p>El programa se cae con una <b>excepción</b> (un error en tiempo de ejecución; las estudiarás en el capítulo 26) llamada <code>NullPointerException</code>, «excepción de puntero nulo». El mensaje es muy claro si lo traduces: «No se puede invocar <code>Jugador.getNombre()</code> porque <code>&lt;local2&gt;</code> es null», y la línea siguiente dice dónde: <code>SinGanador.java:7</code>, la línea 7 del archivo. <code>&lt;local2&gt;</code> significa «la variable local número 2»; aparece así porque <code>java Archivo.java</code> compila sin guardar los nombres de las variables. Si compilas con información de depuración, como hace NetBeans (o con <code>javac -g</code>), el mismo error dice el nombre real:</p>
+<pre class="salida">Exception in thread "main" java.lang.NullPointerException: Cannot invoke "Jugador.getNombre()" because "ganador" is null
+	at SinGanador.main(SinGanador.java:7)</pre>
+<p>Fíjate en que <b>compiló sin problemas</b>: el compilador no puede saber que <code>ganador</code> será <code>null</code> cuando el programa corra. El error aparece hasta ejecutar. La cura es preguntar antes de usar:</p>
+<pre class="java">        Jugador ganador = partida.getGanador();
+        if (ganador == null) {
+            System.out.println("Nadie gano: fue empate.");
+        } else {
+            System.out.println("El ganador es " + ganador.getNombre());
+        }</pre>
+<pre class="salida">Nadie gano: fue empate.</pre>
+<p>Para comparar con <code>null</code> se usa <code>==</code> o <code>!=</code> (nunca <code>equals</code>: llamar <code>ganador.equals(null)</code> sobre un <code>ganador</code> nulo también revienta).</p>
+<h3><code>null</code> en el Totito: un valor con significado</h3>
+<p>En el Totito, <code>null</code> se usa a propósito para decir «todavía no» o «no aplica», y siempre va acompañado de su comprobación. Algunos casos reales:</p>
+<ul>
+<li><code>Partida</code> (cap. 38): en <code>reiniciar()</code> se hace <code>ganador = null;</code> y el comentario de <code>getGanador()</code> lo avisa: «El ganador de la ultima partida, o null si no hay (en curso o empate)». Por eso <code>PantallaResultado.mostrar</code> (cap. 60) primero revisa si hubo empate y hace <code>return</code> antes de llegar a <code>partida.getGanador()</code>.</li>
+<li><code>Partida</code> también guarda la IA así: <code>this.ia = modo == Modo.CONTRA_IA ? new IA_Minimax(...) : null;</code>. En el modo de dos jugadores no hay computadora, y <code>esTurnoDeIA()</code> empieza con <code>ia != null &amp;&amp; …</code>. Gracias al «cortocircuito» de <code>&amp;&amp;</code> (capítulo 13), si <code>ia</code> es <code>null</code> lo demás ni se evalúa.</li>
+<li><code>PanelTablero</code> (cap. 48) guarda <code>lineaGanadora</code>, que es <code>null</code> mientras nadie gane, y solo dibuja la raya <code>if (lineaGanadora != null)</code>. También avisa de un clic solo si <code>oyente != null</code>.</li>
+<li><code>PanelMarcador</code> (cap. 52) empieza su dibujo con <code>if (partida == null) { return; }</code>: Swing puede pedirle que se pinte antes de que exista ninguna partida.</li>
+<li><code>PantallaJuego</code> (cap. 59) usa <code>pendiente == null</code> para saber que no hay ningún temporizador esperando.</li>
+</ul>
+<p>¿Qué pasaría si se quitara cualquiera de esas comprobaciones? El juego se cerraría de golpe en el peor momento: al empatar, al jugar en modo de dos jugadores o al abrir la ventana. Cuando un método pueda devolver <code>null</code>, escríbelo en su comentario y comprueba siempre antes de usar el resultado.</p>
+<div class="caja consejo"><b>Cómo leer un NullPointerException</b> 1) Mira la línea que dice <code>at …(Archivo.java:N)</code> más arriba que sea de tu código. 2) En esa línea, busca qué está a la izquierda de un punto. 3) El mensaje te dice cuál de esas cosas era <code>null</code>. 4) Pregúntate: ¿se me olvidó un <code>new</code>?, ¿un método me devolvió <code>null</code>? Nueve de cada diez veces es un atributo que nunca se inicializó.</div>
+
+<h2>Aplícalo: una tienda con objetos</h2>
+<p>La misma forma de pensar sirve para cualquier sistema. En una tienda, la «cosa» que se repite es el producto: cada uno tiene nombre, precio y existencias, y sabe venderse. Este programa (<code>Tienda.java</code>) hace con productos lo que hicimos con jugadores:</p>
+<pre class="java">public class Tienda {
+
+    public static void main(String[] args) {
+        Producto pan = new Producto("Pan dulce", 1.50, 20);
+        Producto cafe = new Producto("Cafe molido", 35.00, 4);
+
+        pan.vender(6);
+        cafe.vender(5);
+        cafe.vender(3);
+
+        pan.mostrar();
+        cafe.mostrar();
+    }
+}
+
+class Producto {
+    String nombre;
+    double precio;
+    int existencias;
+
+    Producto(String nombre, double precio, int existencias) {
+        this.nombre = nombre;
+        this.precio = precio;
+        this.existencias = existencias;
+    }
+
+    void vender(int cantidad) {
+        if (cantidad &gt; existencias) {
+            System.out.println("No alcanza: solo hay " + existencias + " de " + nombre);
+            return;
+        }
+        existencias = existencias - cantidad;
+        System.out.println("Vendidos " + cantidad + " de " + nombre + ": Q" + (cantidad * precio));
+    }
+
+    void mostrar() {
+        System.out.println(nombre + " -&gt; quedan " + existencias);
+    }
+}</pre>
+<pre class="salida">Vendidos 6 de Pan dulce: Q9.0
+No alcanza: solo hay 4 de Cafe molido
+Vendidos 3 de Cafe molido: Q105.0
+Pan dulce -&gt; quedan 14
+Cafe molido -&gt; quedan 1</pre>
+<p>Observa que la regla «no vendas más de lo que hay» vive <b>dentro</b> de <code>Producto</code>, en su método <code>vender</code>. Quien usa el producto no tiene que acordarse de revisar las existencias: se lo pide al producto y el producto se cuida solo. Pero todavía hay una puerta trasera: cualquiera podría escribir <code>cafe.existencias = -10;</code> y saltarse la regla. Cerrar esa puerta es el tema del próximo capítulo.</p>
+<p>Para encontrar las clases de cualquier sistema hay un truco sencillo: describe el problema en una frase y subraya los <b>sustantivos</b> (candidatos a clase) y los <b>verbos</b> (candidatos a método). «Un <b>alumno</b> se <i>inscribe</i> en un <b>curso</b> y recibe una <b>nota</b>»: clases <code>Alumno</code>, <code>Curso</code>, <code>Nota</code>; método <code>inscribir</code>. «Dos <b>jugadores</b> <i>marcan</i> <b>casillas</b> en un <b>tablero</b>»: así nacieron <code>Jugador</code>, <code>Tablero</code> y <code>marcarCasilla</code>.</p>
+
+<h2>Resumen</h2>
+<ul>
+<li>Una <b>clase</b> es un molde: define atributos (estado) y métodos (comportamiento). Un <b>objeto</b> es una instancia concreta, con sus propios valores.</li>
+<li><code>new Clase(...)</code> reserva espacio en el montón, pone los atributos en su valor por defecto, ejecuta el constructor y devuelve la dirección del objeto.</li>
+<li>Con el punto (<code>objeto.metodo()</code>, <code>objeto.atributo</code>) le pides algo a un objeto; un método de instancia trabaja con los datos del objeto sobre el que se llamó (<code>this</code>).</li>
+<li>Las variables de clase guardan <b>referencias</b>, no objetos: <code>b = a</code> crea un alias, y <code>==</code> compara si dos referencias apuntan al mismo objeto.</li>
+<li>Al pasar un objeto a un método viaja una copia de la referencia: el método puede modificar el objeto, pero no redirigir tu variable.</li>
+<li><code>null</code> significa «ningún objeto»; usarlo con un punto provoca <code>NullPointerException</code>. Compruébalo con <code>== null</code> antes de usar.</li>
+<li>En el Totito, <code>Tablero</code>, <code>Jugador</code> e <code>IA_Minimax</code> son moldes; <code>PruebaConsola</code> y <code>PantallaConfiguracion</code> fabrican los objetos, y la IA crea miles de copias del tablero con <code>obtenerCopia()</code>.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> Cada vez que en un problema aparezca «una cosa que se repite con sus propios datos», piensa en una clase:
+<ul>
+<li><b>Tienda:</b> <code>Producto</code> (nombre, precio, existencias; <code>vender</code>), <code>Cliente</code>, <code>Factura</code>. Cada producto del inventario es un objeto.</li>
+<li><b>Escuela:</b> <code>Alumno</code> (nombre, carné, notas; <code>promedio()</code>) y <code>Curso</code>. Treinta alumnos son treinta objetos del mismo molde.</li>
+<li><b>Banco:</b> <code>Cuenta</code> (titular, saldo; <code>depositar</code>, <code>retirar</code>). Dos variables que apuntan a la misma cuenta ven el mismo saldo, igual que <code>a</code> y <code>b</code> en <code>Referencias</code>.</li>
+<li><b>Otro juego:</b> en Conecta 4 tendrías <code>Tablero</code> de 6×7 y dos <code>Jugador</code>; en un juego de naves, cada enemigo en pantalla es un objeto <code>Nave</code> con su posición y su vida, y cuando muere basta con soltar su referencia.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b><ol>
+<li>En <code>DosJugadores</code>, crea un tercer jugador, «Carla», con la ficha <code>'X'</code>, dale tres victorias y que se presente. ¿Cuántas clases hay ahora? ¿Cuántos objetos?</li>
+<li>Agrega a la clase <code>Jugador</code> de <code>DosJugadores</code> un método <code>perderPartida()</code> que lleve la cuenta en un nuevo atributo <code>derrotas</code>, y cambia <code>presentarse()</code> para que también las muestre. Pista: el atributo nace en 0, no necesitas inicializarlo.</li>
+<li>Dibuja en papel el diagrama de objetos de <code>Referencias</code> justo después de la línea <code>b.victorias = 5;</code>: ¿cuántas variables hay en la pila?, ¿cuántos objetos en el montón?, ¿a dónde apunta cada flecha?</li>
+<li>Escribe una clase <code>Libro</code> (título, autor, páginas, <code>prestado</code>) con los métodos <code>prestar()</code> y <code>devolver()</code>, y un <code>main</code> que cree dos libros, preste uno e imprima el estado de ambos. Pista: <code>prestar()</code> debería avisar si el libro ya estaba prestado.</li>
+<li>Provoca a propósito un <code>NullPointerException</code>: declara en una clase un atributo <code>Libro favorito;</code> y llama a <code>favorito.prestar()</code> sin haber hecho <code>new</code>. Lee el mensaje siguiendo los cuatro pasos de la caja «Cómo leer un NullPointerException» y luego corrígelo de dos formas distintas.</li>
+</ol></div>
+</section>

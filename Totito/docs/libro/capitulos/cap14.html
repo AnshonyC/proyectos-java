@@ -1,0 +1,486 @@
+<section class="capitulo" id="cap14">
+<h1><span class="num">Capítulo 14</span>Repeticiones</h1>
+<p class="entrada">El tablero tiene nueve casillas, hay ocho líneas posibles de victoria y la IA prueba cientos de miles de jugadas antes de mover. Nadie escribe eso instrucción por instrucción: se escribe una vez y se <i>repite</i>. En este capítulo aprendes los bucles de Java (<code>for</code>, <code>while</code>, <code>do-while</code> y for-each), a recorrer el tablero 3×3 con dos bucles anidados siguiendo cada paso, y a controlar cuándo parar.</p>
+
+<h2>Por qué repetir</h2>
+<p>Para dejar el tablero vacío hay que poner un espacio en las nueve casillas. Sin bucles serían nueve líneas casi iguales:</p>
+<pre class="java">casillas[0][0] = VACIA;
+casillas[0][1] = VACIA;
+casillas[0][2] = VACIA;
+casillas[1][0] = VACIA;
+// ... y cinco mas</pre>
+<p>Funciona, pero es aburrido, fácil de equivocarse (¿te saltaste alguna?) y no escala: un tablero de Conecta 4 tiene 42 casillas y uno de ajedrez, 64. Un <b>bucle</b> (en inglés <i>loop</i>) es una estructura que repite un bloque de código mientras se cumpla una condición. Cada repetición se llama <b>iteración</b> o «vuelta».</p>
+<div class="caja concepto"><b>Analogía: lavar los platos.</b> No piensas «lavo el plato 1, lavo el plato 2…». Piensas: «mientras quede un plato sucio, toma uno y lávalo». Hay una <b>condición</b> (quedan platos), un <b>cuerpo</b> (lavar uno) y algo que <b>avanza</b> hacia el final (cada vez queda uno menos). Si lo que avanza no avanzara (por ejemplo, si alguien te trae un plato sucio cada vez que lavas uno), no terminarías nunca. Todos los bucles tienen estas tres piezas.</div>
+
+<h2>El bucle <code>for</code></h2>
+<p>Es el más usado cuando sabes cuántas vueltas quieres dar. Su forma:</p>
+<pre class="java">for (inicializacion; condicion; actualizacion) {
+    // cuerpo: lo que se repite
+}</pre>
+<p>Un ejemplo mínimo que recorre las tres filas del tablero:</p>
+<pre class="java">public class ForBasico {
+    public static void main(String[] args) {
+        for (int fila = 0; fila &lt; 3; fila++) {
+            System.out.println("Revisando la fila " + fila);
+        }
+        System.out.println("Listo");
+    }
+}</pre>
+<pre class="salida">Revisando la fila 0
+Revisando la fila 1
+Revisando la fila 2
+Listo</pre>
+<h3>Las tres partes, una por una</h3>
+<ul>
+<li><b><code>int fila = 0</code> (inicialización)</b>: se ejecuta <b>una sola vez</b>, antes de la primera vuelta. Crea la variable de control, el «contador», y le da su valor inicial. Empieza en 0 porque las filas del tablero se numeran 0, 1 y 2 (capítulo 15 explica por qué Java cuenta desde cero).</li>
+<li><b><code>fila &lt; 3</code> (condición)</b>: se evalúa <b>antes de cada vuelta</b>. Si es true, se ejecuta el cuerpo; si es false, el bucle termina y el programa sigue después de la llave de cierre. Con <code>&lt; 3</code> las vueltas son para 0, 1 y 2: exactamente tres.</li>
+<li><b><code>fila++</code> (actualización)</b>: se ejecuta <b>después de cada vuelta</b>, justo antes de volver a evaluar la condición. Es lo que hace avanzar al bucle hacia su final.</li>
+</ul>
+<p>Los <code>;</code> dentro del paréntesis separan las tres partes. Fíjate en que no hay <code>;</code> después del paréntesis: igual que con el <code>if</code>, un <code>;</code> ahí dejaría el bucle vacío.</p>
+<h3>Traza: qué hace Java exactamente</h3>
+<table class="tabla">
+<tr><th>Paso</th><th>Qué se ejecuta</th><th><code>fila</code></th><th>Resultado</th></tr>
+<tr><td>1</td><td>Inicialización <code>int fila = 0</code></td><td>0</td><td></td></tr>
+<tr><td>2</td><td>Condición <code>0 &lt; 3</code></td><td>0</td><td>true → entra</td></tr>
+<tr><td>3</td><td>Cuerpo</td><td>0</td><td>imprime «Revisando la fila 0»</td></tr>
+<tr><td>4</td><td>Actualización <code>fila++</code></td><td>1</td><td></td></tr>
+<tr><td>5</td><td>Condición <code>1 &lt; 3</code></td><td>1</td><td>true → entra</td></tr>
+<tr><td>6</td><td>Cuerpo</td><td>1</td><td>imprime «Revisando la fila 1»</td></tr>
+<tr><td>7</td><td>Actualización</td><td>2</td><td></td></tr>
+<tr><td>8</td><td>Condición <code>2 &lt; 3</code></td><td>2</td><td>true → entra</td></tr>
+<tr><td>9</td><td>Cuerpo</td><td>2</td><td>imprime «Revisando la fila 2»</td></tr>
+<tr><td>10</td><td>Actualización</td><td>3</td><td></td></tr>
+<tr><td>11</td><td>Condición <code>3 &lt; 3</code></td><td>3</td><td><b>false → sale</b></td></tr>
+<tr><td>12</td><td>Siguiente instrucción tras el bucle</td><td>—</td><td>imprime «Listo»</td></tr>
+</table>
+<p>Observa dos cosas. La condición se evaluó cuatro veces (tres true y una false), el cuerpo tres. Y en el paso 12 la variable <code>fila</code> ya no existe: al declararse dentro del <code>for</code>, solo vive dentro de él (eso se llama <b>alcance</b>, capítulo 16). Por eso el Totito puede usar el nombre <code>fila</code> en un bucle tras otro sin conflicto.</p>
+<div class="caja cuidado"><b>El error «uno de más» o «uno de menos».</b> <code>for (int fila = 0; fila &lt;= 3; fila++)</code> da <b>cuatro</b> vueltas (0, 1, 2, 3), y la cuarta intentará leer la fila 3, que no existe. <code>for (int fila = 1; fila &lt; 3; fila++)</code> da solo dos y se salta la fila 0. La forma segura y estándar para recorrer N elementos es siempre <code>for (int i = 0; i &lt; N; i++)</code>: empieza en 0 y usa <code>&lt;</code>, no <code>&lt;=</code>.</div>
+
+<h3>Contar de otras formas</h3>
+<p>Ni el inicio tiene que ser 0, ni el paso 1, ni el sentido hacia arriba. Dos bucles reales de <code>Dibujo</code>:</p>
+<pre class="java">public class Pasos {
+    public static void main(String[] args) {
+        // Como Dibujo.textoNeon: de 45 en 45 grados
+        for (int angulo = 0; angulo &lt; 360; angulo += 45) {
+            System.out.print(angulo + " ");
+        }
+        System.out.println();
+
+        // Como Dibujo.trazoNeon: de la capa 6 a la 1, hacia atras
+        final int capas = 6;
+        for (int i = capas; i &gt;= 1; i--) {
+            float grosor = 2f + i * 2.4f;
+            int alfa = 6 + (capas - i) * 5;
+            System.out.println("capa " + i + ": grosor " + grosor + ", alfa " + alfa);
+        }
+    }
+}</pre>
+<pre class="salida">0 45 90 135 180 225 270 315
+capa 6: grosor 16.400002, alfa 6
+capa 5: grosor 14.0, alfa 11
+capa 4: grosor 11.6, alfa 16
+capa 3: grosor 9.200001, alfa 21
+capa 2: grosor 6.8, alfa 26
+capa 1: grosor 4.4, alfa 31</pre>
+<p>El primero da ocho vueltas, una cada 45 grados: <code>textoNeon</code> dibuja el texto ocho veces desplazado un poco en cada dirección, como una rosa de los vientos, y así crea el halo alrededor de las letras de los títulos.</p>
+<p>El segundo es el corazón del efecto neón. Cuenta <b>hacia atrás</b> (<code>i--</code>, condición <code>i &gt;= 1</code>) por una razón de pintura: en una pantalla, lo que se dibuja después queda encima. Hay que pintar primero la capa más ancha y transparente (grosor 16.4, alfa 6) y terminar con la más fina y opaca (4.4, alfa 31), igual que un pintor pone primero el fondo y al final los detalles. Si el bucle fuera hacia arriba, la capa ancha taparía a las finas y el brillo se vería como un borrón. (Y sí: <code>16.400002</code> es la imprecisión de los decimales del capítulo 12, que en un dibujo no importa.)</p>
+
+<h2>Bucles anidados: recorrer el tablero 3×3</h2>
+<p>El tablero tiene filas <i>y</i> columnas. Para visitar las nueve casillas se pone un <code>for</code> dentro de otro: el de fuera recorre las filas y, por cada fila, el de dentro recorre sus tres columnas. Es la estructura que más se repite en todo el Totito: está en <code>reiniciar</code>, <code>tableroLleno</code>, <code>obtenerCopia</code>, <code>calcularMejorJugada</code>, <code>minimax</code> (dos veces), <code>PanelTablero.mostrar</code> y <code>paintComponent</code>.</p>
+<pre class="java">public class RecorrerTablero {
+    public static void main(String[] args) {
+        int vueltas = 0;
+        for (int fila = 0; fila &lt; 3; fila++) {
+            for (int columna = 0; columna &lt; 3; columna++) {
+                vueltas++;
+                System.out.println("vuelta " + vueltas + ": fila " + fila + ", columna " + columna);
+            }
+            System.out.println("-- termino la fila " + fila);
+        }
+    }
+}</pre>
+<pre class="salida">vuelta 1: fila 0, columna 0
+vuelta 2: fila 0, columna 1
+vuelta 3: fila 0, columna 2
+-- termino la fila 0
+vuelta 4: fila 1, columna 0
+vuelta 5: fila 1, columna 1
+vuelta 6: fila 1, columna 2
+-- termino la fila 1
+vuelta 7: fila 2, columna 0
+vuelta 8: fila 2, columna 1
+vuelta 9: fila 2, columna 2
+-- termino la fila 2</pre>
+<h3>Traza paso a paso</h3>
+<ol>
+<li>El bucle de fuera arranca: <code>fila = 0</code>; <code>0 &lt; 3</code>, entra.</li>
+<li>El bucle de dentro arranca <b>desde cero</b>: <code>columna = 0</code>. Da sus tres vueltas completas: (0,0), (0,1), (0,2). Cuando <code>columna</code> llega a 3, el bucle interior termina.</li>
+<li>Se ejecuta lo que hay después del bucle interior, dentro del exterior: «-- termino la fila 0».</li>
+<li>El de fuera actualiza: <code>fila = 1</code>; <code>1 &lt; 3</code>, entra otra vez.</li>
+<li>El de dentro <b>vuelve a empezar</b> con <code>columna = 0</code> (su inicialización se ejecuta de nuevo cada vez que se llega a él): (1,0), (1,1), (1,2).</li>
+<li>Lo mismo para <code>fila = 2</code>. Después, <code>fila = 3</code>, la condición exterior es false y todo termina.</li>
+</ol>
+<p>En total: 3 vueltas de fuera × 3 de dentro = <b>9</b> ejecuciones del cuerpo interior, una por casilla, en el orden en que lees un libro: de izquierda a derecha y de arriba abajo.</p>
+<svg viewBox="0 0 700 250" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="700" height="250" rx="14" fill="#1C1740"/>
+<text x="40" y="35" fill="#C8BCF6" font-size="14">columna →</text>
+<text x="20" y="150" fill="#C8BCF6" font-size="14" transform="rotate(-90 20 150)">fila ↓</text>
+<rect x="40" y="50" width="60" height="60" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<rect x="110" y="50" width="60" height="60" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<rect x="180" y="50" width="60" height="60" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<rect x="40" y="115" width="60" height="60" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<rect x="110" y="115" width="60" height="60" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<rect x="180" y="115" width="60" height="60" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<rect x="40" y="180" width="60" height="60" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<rect x="110" y="180" width="60" height="60" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<rect x="180" y="180" width="60" height="60" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="70" y="86" fill="#FFFFFF" font-size="18" text-anchor="middle">1</text>
+<text x="140" y="86" fill="#FFFFFF" font-size="18" text-anchor="middle">2</text>
+<text x="210" y="86" fill="#FFFFFF" font-size="18" text-anchor="middle">3</text>
+<text x="70" y="151" fill="#FFFFFF" font-size="18" text-anchor="middle">4</text>
+<text x="140" y="151" fill="#FFFFFF" font-size="18" text-anchor="middle">5</text>
+<text x="210" y="151" fill="#FFFFFF" font-size="18" text-anchor="middle">6</text>
+<text x="70" y="216" fill="#FFFFFF" font-size="18" text-anchor="middle">7</text>
+<text x="140" y="216" fill="#FFFFFF" font-size="18" text-anchor="middle">8</text>
+<text x="210" y="216" fill="#FFFFFF" font-size="18" text-anchor="middle">9</text>
+<line x1="80" y1="100" x2="200" y2="100" stroke="#FF3BD4" stroke-width="2"/>
+<polygon points="200,95 210,100 200,105" fill="#FF3BD4"/>
+<line x1="80" y1="165" x2="200" y2="165" stroke="#FF3BD4" stroke-width="2"/>
+<polygon points="200,160 210,165 200,170" fill="#FF3BD4"/>
+<line x1="80" y1="230" x2="200" y2="230" stroke="#FF3BD4" stroke-width="2"/>
+<polygon points="200,225 210,230 200,235" fill="#FF3BD4"/>
+<text x="280" y="80" fill="#FFFFFF" font-size="15">Bucle de fuera: elige la fila (0, 1, 2).</text>
+<text x="280" y="110" fill="#FFFFFF" font-size="15">Bucle de dentro: recorre esa fila entera</text>
+<text x="280" y="132" fill="#FFFFFF" font-size="15">(flechas rosas), columna 0, 1 y 2.</text>
+<text x="280" y="170" fill="#C8BCF6" font-size="15">Los números indican el orden de visita:</text>
+<text x="280" y="192" fill="#C8BCF6" font-size="15">9 casillas = 3 filas × 3 columnas.</text>
+</svg>
+<div class="caja concepto"><b>Analogía: el reloj.</b> Los bucles anidados funcionan como las manecillas de un reloj: el minutero (bucle de dentro) da la vuelta completa de 60 por cada paso del horario (bucle de fuera). O como un cine: el acomodador recorre la fila A butaca por butaca, luego la fila B desde la butaca 1, y así.</div>
+
+<h3>Lo que el Totito hace con esos dos bucles</h3>
+<p>Un tablero de verdad se guarda en una <b>matriz</b> de caracteres, <code>char[][] casillas</code>: una tabla de 3×3 donde <code>casillas[fila][columna]</code> es la casilla de esa fila y columna. Los arreglos y matrices son el tema del capítulo 15; para este capítulo te basta esa idea. Este programa reproduce tres métodos del Totito: <code>Tablero.reiniciar</code>, <code>PruebaConsola.imprimir</code> y un conteo parecido a <code>tableroLleno</code>.</p>
+<pre class="java">public class TableroConBucles {
+    public static void main(String[] args) {
+        final char VACIA = ' ';
+        char[][] casillas = new char[3][3];
+
+        // Tablero.reiniciar(): poner VACIA en las 9 casillas
+        for (int fila = 0; fila &lt; 3; fila++) {
+            for (int columna = 0; columna &lt; 3; columna++) {
+                casillas[fila][columna] = VACIA;
+            }
+        }
+
+        casillas[0][0] = 'X';
+        casillas[1][1] = 'O';
+        casillas[2][1] = 'X';
+
+        // PruebaConsola.imprimir(): dibujar el tablero con caracteres
+        for (int fila = 0; fila &lt; 3; fila++) {
+            System.out.println(" " + casillas[fila][0] + " | " + casillas[fila][1] + " | " + casillas[fila][2]);
+            if (fila &lt; 2) {
+                System.out.println("---+---+---");
+            }
+        }
+
+        // Contar casillas vacias
+        int vacias = 0;
+        for (int fila = 0; fila &lt; 3; fila++) {
+            for (int columna = 0; columna &lt; 3; columna++) {
+                if (casillas[fila][columna] == VACIA) {
+                    vacias++;
+                }
+            }
+        }
+        System.out.println("Quedan " + vacias + " casillas vacias");
+    }
+}</pre>
+<pre class="salida"> X |   |
+---+---+---
+   | O |
+---+---+---
+   | X |
+Quedan 6 casillas vacias</pre>
+<ul>
+<li><b>Reiniciar</b>: el cuerpo interior, <code>casillas[fila][columna] = VACIA;</code>, se ejecuta nueve veces, cada vez con una pareja (fila, columna) distinta. Las nueve líneas del principio del capítulo, en tres.</li>
+<li><b>Imprimir</b>: aquí basta un solo bucle, porque cada vuelta escribe una fila entera nombrando sus tres columnas a mano. El <code>if (fila &lt; 2)</code> pone la raya separadora después de las filas 0 y 1, pero no después de la última. Es un patrón muy común: «separador entre elementos, pero no al final».</li>
+<li><b>Contar</b>: un <b>acumulador</b> (<code>vacias</code>) empieza en 0 <i>fuera</i> de los bucles y crece dentro. Si lo declararas dentro, se reiniciaría a 0 en cada vuelta y nunca contaría más de 1.</li>
+</ul>
+<p><code>Tablero.tableroLleno</code> es casi igual que el conteo, pero más listo: en cuanto encuentra <b>una</b> casilla vacía, ya sabe la respuesta y sale con <code>return false;</code>, sin mirar el resto. Solo si los dos bucles terminan sin encontrar ninguna llega al <code>return true;</code> del final.</p>
+<pre class="java">public boolean tableroLleno() {
+    for (int fila = 0; fila &lt; 3; fila++) {
+        for (int columna = 0; columna &lt; 3; columna++) {
+            if (casillas[fila][columna] == VACIA) {
+                return false;
+            }
+        }
+    }
+    return true;
+}</pre>
+
+<h3>Un solo bucle que revisa dos cosas: <code>verificarGanador</code></h3>
+<p><code>Tablero.verificarGanador</code> usa un truco elegante: un solo <code>for</code> de <code>i = 0</code> a <code>2</code> revisa, en cada vuelta, la <b>fila</b> <code>i</code> (<code>casillas[i][0]</code>, <code>[i][1]</code>, <code>[i][2]</code>) <i>y</i> la <b>columna</b> <code>i</code> (<code>casillas[0][i]</code>, <code>[1][i]</code>, <code>[2][i]</code>). Tres vueltas cubren las seis líneas rectas; las dos diagonales se revisan después, fuera del bucle, porque son solo dos y no siguen ese patrón. Este programa lo reproduce imprimiendo qué mira en cada vuelta (usa <code>break</code>, que verás enseguida, donde el método real usa <code>return</code>):</p>
+<pre class="java">public class BuscarGanador {
+    public static void main(String[] args) {
+        final char VACIA = ' ';
+        char[][] casillas = {
+            {'X', 'O', ' '},
+            {'X', 'O', ' '},
+            {' ', 'O', 'X'}
+        };
+        char ganador = VACIA;
+        // Como Tablero.verificarGanador: en la vuelta i se revisan la fila i y la columna i
+        for (int i = 0; i &lt; 3; i++) {
+            System.out.println("vuelta " + i + ": fila " + i + " = [" + casillas[i][0] + casillas[i][1] + casillas[i][2]
+                    + "], columna " + i + " = [" + casillas[0][i] + casillas[1][i] + casillas[2][i] + "]");
+            if (casillas[i][0] != VACIA &amp;&amp; casillas[i][0] == casillas[i][1] &amp;&amp; casillas[i][1] == casillas[i][2]) {
+                ganador = casillas[i][0];
+                break;
+            }
+            if (casillas[0][i] != VACIA &amp;&amp; casillas[0][i] == casillas[1][i] &amp;&amp; casillas[1][i] == casillas[2][i]) {
+                ganador = casillas[0][i];
+                break;
+            }
+        }
+        System.out.println("Ganador: [" + ganador + "]");
+    }
+}</pre>
+<pre class="salida">vuelta 0: fila 0 = [XO ], columna 0 = [XX ]
+vuelta 1: fila 1 = [XO ], columna 1 = [OOO]
+Ganador: [O]</pre>
+<p>En la vuelta 0 ni la fila ni la columna 0 están completas. En la vuelta 1, la columna central tiene tres O: se encontró al ganador y el bucle se corta; la vuelta 2 nunca ocurre. (Nota: al sumar <code>char</code> después de un texto, se pegan; por eso <code>"[" + 'O' + 'O' + 'O' + "]"</code> da <code>[OOO]</code>.)</p>
+
+<h3>Tres niveles: cuántas vueltas da la IA</h3>
+<p>En <code>IA_Minimax</code>, dentro de los dos bucles que recorren el tablero, se llama a <code>minimax</code>, que a su vez tiene otros dos bucles que vuelven a llamar a <code>minimax</code>… Cada nivel multiplica: con el tablero vacío hay 9 primeras jugadas, por cada una 8 respuestas, por cada una 7… Por eso la IA revisa cientos de miles de posiciones antes de su primera jugada. Ese «bucle que se llama a sí mismo» es la recursión del capítulo 16, y el algoritmo completo está en el capítulo 31.</p>
+<div class="caja consejo">Cuando anides bucles, multiplica las vueltas mentalmente antes de ejecutar. Dos bucles de 3 son 9 vueltas, pero dos bucles de 10 000 son cien millones. Es la primera pregunta que se hace un programador cuando un programa «va lento».</div>
+
+<h2>El bucle <code>while</code></h2>
+<p><code>for</code> es ideal cuando conoces el número de vueltas. Cuando no lo conoces («sigue mientras…»), se usa <code>while</code> («mientras»):</p>
+<pre class="java">while (condicion) {
+    // cuerpo
+}</pre>
+<p>Solo tiene la condición: la inicialización va antes y la actualización dentro del cuerpo, a tu cargo. Un <code>for</code> es, de hecho, un <code>while</code> con las tres partes ordenadas en una línea; <code>for (int i = 0; i &lt; 3; i++) { … }</code> equivale a <code>int i = 0; while (i &lt; 3) { …; i++; }</code>.</p>
+<p>Ejemplo real: <code>Dibujo.recortar</code>, que acorta un nombre demasiado largo para su tarjeta y le pone «…». No sabe de antemano cuántas letras sobran, así que quita una por una <i>mientras</i> no quepa. El original mide en píxeles con la fuente; esta versión mide en caracteres para poder probarla en consola:</p>
+<pre class="java">public class Recortar {
+    public static void main(String[] args) {
+        String texto = "Maria Fernanda";
+        int maximo = 10;   // caben 10 caracteres
+
+        // Como Dibujo.recortar: quitar letras del final hasta que quepa con "…"
+        String recortado = texto;
+        while (recortado.length() &gt; 1 &amp;&amp; (recortado + "…").length() &gt; maximo) {
+            recortado = recortado.substring(0, recortado.length() - 1);
+            System.out.println("  probando: " + recortado + "…");
+        }
+        System.out.println("Resultado: " + recortado + "…");
+    }
+}</pre>
+<pre class="salida">  probando: Maria Fernand…
+  probando: Maria Fernan…
+  probando: Maria Ferna…
+  probando: Maria Fern…
+  probando: Maria Fer…
+Resultado: Maria Fer…</pre>
+<p><code>substring(0, largo - 1)</code> devuelve el texto sin su última letra (capítulo 17). Cada vuelta quita una; cuando «Maria Fer…» ya mide 10, la condición es false y el bucle para. La primera parte de la condición, <code>recortado.length() &gt; 1</code>, es un seguro: si el espacio fuera ridículamente pequeño, el bucle se detiene con una letra en vez de seguir hasta dejar el texto vacío y fallar.</p>
+
+<h3><code>while (true)</code>: el bucle de un juego</h3>
+<p>Un juego en consola no sabe cuántas jugadas habrá: se repite «pide jugada, juega, revisa» hasta que alguien gane. <code>PruebaConsola</code> (capítulo 32) lo escribe así:</p>
+<pre class="java">while (true) {
+    System.out.print("Tu jugada: ");
+    // ... leer fila y columna, jugar, imprimir ...
+    if (terminoLaPartida(tablero)) {
+        return;
+    }
+    // ... juega la IA ...
+}</pre>
+<p><code>while (true)</code> es un bucle cuya condición nunca se vuelve falsa: un bucle infinito <i>a propósito</i>. La salida está dentro: el <code>return</code> termina el método <code>main</code> (y con él el programa) cuando la partida acaba. Es un patrón legítimo cuando la condición de salida se conoce a mitad del cuerpo y no al principio. La ventana del Totito no necesita este bucle: Swing tiene el suyo propio, que espera clics (capítulo 37).</p>
+
+<h2>El bucle <code>do-while</code></h2>
+<p><code>do-while</code> es un <code>while</code> con la condición al final. La diferencia: el cuerpo se ejecuta <b>al menos una vez</b>, porque se pregunta después de hacerlo.</p>
+<pre class="java">do {
+    // cuerpo: se ejecuta una vez seguro
+} while (condicion);</pre>
+<p>Encaja cuando necesitas hacer algo para saber si tienes que repetirlo. Por ejemplo, una IA «tonta» que, en lugar de pensar como Minimax, elige casillas al azar hasta dar con una libre: primero hay que elegir, y solo después se puede comprobar si la casilla estaba vacía.</p>
+<pre class="java">import java.util.Random;
+
+public class IaAlAzar {
+    public static void main(String[] args) {
+        char[][] casillas = {
+            {'X', 'O', 'X'},
+            {'O', 'X', ' '},
+            {' ', ' ', 'O'}
+        };
+        Random azar = new Random(11);   // semilla fija: siempre los mismos numeros
+        int fila, columna;
+        int intentos = 0;
+
+        // Una IA "tonta": elige casillas al azar HASTA dar con una vacia
+        do {
+            fila = azar.nextInt(3);      // 0, 1 o 2
+            columna = azar.nextInt(3);
+            intentos++;
+            System.out.println("intento " + intentos + ": (" + fila + ", " + columna + ") tiene '" + casillas[fila][columna] + "'");
+        } while (casillas[fila][columna] != ' ');
+
+        System.out.println("La IA tonta juega en (" + fila + ", " + columna + ")");
+    }
+}</pre>
+<pre class="salida">intento 1: (0, 2) tiene 'X'
+intento 2: (0, 0) tiene 'X'
+intento 3: (0, 0) tiene 'X'
+intento 4: (1, 2) tiene ' '
+La IA tonta juega en (1, 2)</pre>
+<ul>
+<li><code>Random</code> es una clase de Java que genera números al azar; <code>nextInt(3)</code> devuelve 0, 1 o 2. Viene en el paquete <code>java.util</code>, de ahí el <code>import</code>. La «semilla» 11 hace que salgan siempre los mismos números, para que tu salida coincida con la del libro; sin ella (<code>new Random()</code>) cada ejecución sería distinta.</li>
+<li><code>fila</code> y <code>columna</code> se declaran <b>antes</b> del <code>do</code>, no dentro: la condición del <code>while</code> está fuera de las llaves y necesita verlas.</li>
+<li>Fíjate en el <code>;</code> después de <code>while (…)</code>: en <code>do-while</code> es obligatorio, al revés que en el <code>while</code> normal.</li>
+<li>Repetir la (0, 0) dos veces es lo que hace el azar: no tiene memoria. Por eso esta IA es mala y el Totito usa Minimax.</li>
+</ul>
+<div class="caja cuidado">Esta IA tiene un peligro: si el tablero estuviera lleno, ninguna casilla sería <code>' '</code> y el bucle no terminaría nunca. Antes de un bucle de «buscar hasta encontrar», asegúrate de que lo buscado existe (aquí, comprobando primero que el tablero no está lleno, como hace <code>Partida</code> antes de dejar jugar a la IA).</div>
+
+<h2><code>break</code> y <code>continue</code></h2>
+<p>Dos palabras para alterar el curso normal de un bucle desde dentro:</p>
+<ul>
+<li><b><code>break</code></b> («romper») sale del bucle inmediatamente, sin terminar la vuelta actual ni hacer las siguientes. Es el mismo <code>break</code> del switch clásico.</li>
+<li><b><code>continue</code></b> («continuar») abandona solo la vuelta actual y salta a la siguiente (en un <code>for</code>, pasa por la actualización).</li>
+</ul>
+<pre class="java">public class BreakContinue {
+    public static void main(String[] args) {
+        char[] fila = {'X', 'O', ' ', 'X', ' '};
+
+        // break: buscar la PRIMERA casilla vacia y dejar de buscar
+        int primeraVacia = -1;
+        for (int i = 0; i &lt; fila.length; i++) {
+            System.out.println("miro la posicion " + i);
+            if (fila[i] == ' ') {
+                primeraVacia = i;
+                break;
+            }
+        }
+        System.out.println("Primera vacia: " + primeraVacia);
+
+        // continue: saltar las ocupadas y procesar solo las vacias
+        for (int i = 0; i &lt; fila.length; i++) {
+            if (fila[i] != ' ') {
+                continue;
+            }
+            System.out.println("La posicion " + i + " esta libre");
+        }
+    }
+}</pre>
+<pre class="salida">miro la posicion 0
+miro la posicion 1
+miro la posicion 2
+Primera vacia: 2
+La posicion 2 esta libre
+La posicion 4 esta libre</pre>
+<p>Con <code>break</code> el bucle miró solo tres posiciones: en cuanto encontró lo que buscaba, dejó de trabajar. <code>-1</code> como valor inicial es una convención para «no encontrado» (ninguna posición real es negativa); el Totito la usa en <code>filaEncima = -1</code> para decir «el ratón no está sobre ninguna casilla». <code>fila.length</code> es el tamaño del arreglo (capítulo 15).</p>
+<p>En el Totito, <code>PruebaConsola</code> usa <code>continue</code> cuando escribes una casilla inválida: imprime «Esa casilla no se puede usar. Prueba otra.» y salta al principio del <code>while (true)</code>, para volver a pedir la jugada sin dejar jugar a la IA. Y en lugar de <code>break</code>, los métodos del Totito suelen salir con <code>return</code>, que es aún más drástico: no solo sale del bucle, sale del método entero (así lo hacen <code>tableroLleno</code>, <code>verificarGanador</code> y <code>buscarLineaGanadora</code>).</p>
+<div class="caja cuidado"><code>break</code> sale solo del bucle <b>más interno</b>. Si estás en dos <code>for</code> anidados y haces <code>break</code> en el de dentro, el de fuera sigue con la siguiente fila. Para salir de los dos a la vez, lo más claro es poner los bucles en un método y usar <code>return</code>, como hace <code>tableroLleno</code>.</div>
+
+<h2>El for-each: «para cada elemento»</h2>
+<p>Muchas veces no te interesa la posición, solo cada elemento de una colección. Para eso existe el <b>for mejorado</b> o <b>for-each</b>:</p>
+<pre class="java">for (Tipo elemento : coleccion) {
+    // usa elemento
+}</pre>
+<p>Los dos puntos se leen «en»: «para cada <code>familia</code> <b>en</b> <code>FAMILIAS</code>». No hay contador, ni condición, ni actualización: Java te va dando los elementos de uno en uno, del primero al último. El Totito lo usa tres veces:</p>
+<ul>
+<li><code>Tema.elegirFamilia</code>: <code>for (String familia : FAMILIAS)</code> prueba las fuentes preferidas en orden y se queda con la primera instalada.</li>
+<li><code>Partida.buscarLineaGanadora</code>: <code>for (int[] l : lineas)</code> revisa las 8 líneas posibles del tablero, cada una descrita por seis números.</li>
+<li><code>PanelTablero</code>: <code>for (char[] fila : fichas)</code> recorre las filas de la matriz para llenarlas de casillas vacías.</li>
+</ul>
+<pre class="java">public class ParaCada {
+    public static void main(String[] args) {
+        String[] familias = {"Nunito", "Poppins", "Segoe UI", "Arial"};
+        String instalada = "Segoe UI";
+
+        // Como Tema.elegirFamilia: usar la primera fuente que exista
+        for (String familia : familias) {
+            System.out.println("¿Esta instalada " + familia + "?");
+            if (familia.equals(instalada)) {
+                System.out.println("Si: se usa " + familia);
+                break;
+            }
+        }
+
+        // Como Partida.buscarLineaGanadora: recorrer las lineas del tablero
+        int[][] lineas = {
+            {0, 0, 0, 1, 0, 2},
+            {0, 0, 1, 1, 2, 2}
+        };
+        for (int[] l : lineas) {
+            System.out.println("linea de (" + l[0] + "," + l[1] + ") a (" + l[4] + "," + l[5] + ")");
+        }
+    }
+}</pre>
+<pre class="salida">¿Esta instalada Nunito?
+¿Esta instalada Poppins?
+¿Esta instalada Segoe UI?
+Si: se usa Segoe UI
+linea de (0,0) a (0,2)
+linea de (0,0) a (2,2)</pre>
+<p>En Windows lo normal es que no estén Nunito ni Poppins y se quede con «Segoe UI»: por eso el orden de la lista es el orden de preferencia. (<code>equals</code> compara textos; capítulo 17.)</p>
+<table class="tabla">
+<tr><th>Usa…</th><th>Cuando…</th><th>Ejemplo del Totito</th></tr>
+<tr><td><code>for</code> clásico</td><td>Sabes cuántas vueltas o necesitas el índice (la fila, la columna)</td><td>Recorrer el tablero: hace falta saber <i>dónde</i> está cada casilla</td></tr>
+<tr><td>for-each</td><td>Quieres cada elemento y no te importa su posición</td><td>Probar fuentes, revisar las 8 líneas</td></tr>
+<tr><td><code>while</code></td><td>No sabes cuántas vueltas; depende de algo que cambia</td><td>Recortar un texto hasta que quepa</td></tr>
+<tr><td><code>do-while</code></td><td>Hay que hacerlo al menos una vez antes de poder preguntar</td><td>Elegir al azar hasta acertar</td></tr>
+</table>
+<div class="caja cuidado">El for-each te da una <b>copia</b> del valor en cada vuelta (o la referencia al objeto, capítulo 16). Asignar algo a la variable del bucle (<code>familia = "Arial";</code>) no cambia la lista. Para modificar los elementos de un arreglo, usa el <code>for</code> con índice, como <code>reiniciar</code>. Observa que <code>PanelTablero</code> sí puede rellenar con <code>for (char[] fila : fichas)</code> porque no reemplaza la fila, sino que modifica su contenido con <code>Arrays.fill(fila, Tablero.VACIA)</code>.</div>
+
+<h2>Bucles infinitos: cómo se producen y cómo evitarlos</h2>
+<p>Un <b>bucle infinito</b> es uno cuya condición nunca llega a ser falsa. El programa no da error: simplemente no termina, o se queda congelado. Las causas típicas:</p>
+<ol>
+<li><b>Olvidar avanzar.</b> Un <code>while</code> sin la actualización:
+<pre class="java">public class BucleInfinito {
+    public static void main(String[] args) {
+        int fila = 0;
+        while (fila &lt; 3) {
+            System.out.println("fila " + fila);
+            // falta fila++: fila vale 0 para siempre
+        }
+    }
+}</pre>
+<pre class="salida">fila 0
+fila 0
+fila 0
+fila 0
+...</pre>
+Imprime «fila 0» miles de veces por segundo hasta que lo detengas.</li>
+<li><b>Avanzar en el sentido equivocado.</b> <code>for (int i = 6; i &gt;= 1; i++)</code>: <code>i</code> crece y siempre es mayor o igual que 1 (hasta que desborda, capítulo 12).</li>
+<li><b>Una condición que nunca cambia.</b> Buscar al azar una casilla vacía en un tablero lleno, como viste arriba.</li>
+<li><b>Modificar el contador dentro del cuerpo</b> de un <code>for</code>, de forma que nunca alcanza el límite. Regla: en un <code>for</code>, el contador solo lo toca la actualización.</li>
+</ol>
+<p><b>Cómo detenerlo:</b> en PowerShell, pulsa <b>Ctrl+C</b>. En NetBeans, el botón cuadrado rojo de la ventana <i>Output</i> (o <i>Run → Stop Build/Run</i>). Si el bucle está en una ventana de Swing, la ventana se congela (no responde a clics) porque el hilo que la dibuja está atrapado en el bucle; ciérrala desde NetBeans o con el Administrador de tareas.</p>
+<div class="caja consejo"><b>Lista de comprobación de cualquier bucle</b>: 1) ¿Dónde empieza? 2) ¿Qué condición lo detiene? 3) ¿Qué cambia en cada vuelta que lo acerca a esa condición? Si no puedes señalar una línea concreta para la pregunta 3, tienes un bucle infinito (o un <code>while (true)</code> que debe tener su <code>return</code> o <code>break</code> bien visible).</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Un bucle repite un bloque mientras se cumpla una condición; necesita inicio, condición y algo que avance.</li>
+<li><code>for (inicio; condición; actualización)</code>: el inicio se ejecuta una vez, la condición antes de cada vuelta y la actualización después de cada vuelta. Para N elementos: <code>for (int i = 0; i &lt; N; i++)</code>.</li>
+<li>Puede contar con pasos distintos (<code>angulo += 45</code>) o hacia atrás (<code>i--</code>, el halo neón se pinta de la capa ancha a la fina).</li>
+<li>Dos <code>for</code> anidados recorren el tablero 3×3: el de dentro da sus 3 vueltas completas por cada vuelta del de fuera; 9 en total, de izquierda a derecha y de arriba abajo.</li>
+<li><code>while</code> repite sin número fijo de vueltas; <code>while (true)</code> con un <code>return</code> dentro es el bucle de un juego en consola; <code>do-while</code> ejecuta el cuerpo al menos una vez.</li>
+<li><code>break</code> sale del bucle (el más interno), <code>continue</code> salta a la siguiente vuelta y <code>return</code> sale del método entero.</li>
+<li>El for-each (<code>for (String familia : FAMILIAS)</code>) recorre cada elemento sin índice.</li>
+<li>Un bucle infinito se detiene con Ctrl+C; se evita comprobando que algo avance hacia la condición de salida.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Cualquier cuadrícula</b> se recorre con dos <code>for</code> anidados: las 42 casillas de Conecta 4 (6 filas × 7 columnas), las minas de un Buscaminas, los píxeles de una foto para aplicarle un filtro, las celdas de una hoja de cálculo.</li>
+<li><b>Acumuladores en informes</b>: sumar las ventas del día, contar cuántos alumnos aprobaron o encontrar el producto más caro son bucles con una variable que empieza fuera y se actualiza dentro, como <code>vacias</code>.</li>
+<li><b>Menús de consola</b>: un <code>while (true)</code> que muestra opciones, lee la elegida y sale con <code>return</code> cuando el usuario escribe «salir»; la base de un gestor de tareas en consola.</li>
+<li><b>Reintentos</b>: un <code>do-while</code> que intenta conectarse a Internet o pedir una contraseña, y repite mientras falle (con un máximo de intentos para no hacer un bucle infinito).</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Con un <code>for</code>, imprime la tabla del 7 (de 7×1 a 7×10). Luego, con dos <code>for</code> anidados, imprime todas las tablas del 1 al 10 en forma de cuadrícula.</li>
+<li>Modifica <code>RecorrerTablero</code> para que imprima, en cada vuelta, el número de casilla del 0 al 8 calculado con <code>fila * 3 + columna</code>. Luego cambia el orden de los bucles (columnas fuera, filas dentro) y describe en qué orden se visitan ahora.</li>
+<li>Escribe un bucle que revise solo las dos diagonales de un <code>char[][]</code> de 3×3 usando una sola variable <code>i</code>. Pista: la diagonal principal es <code>[i][i]</code>; la otra es <code>[i][2 - i]</code>.</li>
+<li>Con <code>break</code>, encuentra la primera casilla vacía de un tablero 3×3 recorriéndolo por filas, e imprime su fila y columna. Si no hay ninguna, imprime «Tablero lleno». Pista: necesitarás una variable <code>boolean encontrada</code> para salir también del bucle exterior.</li>
+<li>Reto: usando <code>Random</code> con semilla, simula una partida completa entre dos IA «tontas» que juegan al azar en un tablero de consola, alternando X y O con <code>turno = 1 - turno</code>, hasta que se llene el tablero. Imprime el tablero tras cada jugada. (No hace falta detectar al ganador todavía.)</li>
+</ol></div>
+</section>

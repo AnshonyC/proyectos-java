@@ -1,0 +1,223 @@
+<section class="capitulo" id="cap65">
+<h1><span class="num">Capítulo 65</span>jpackage: una carpeta portable con Totito.exe</h1>
+<p class="entrada">En este capítulo conviertes el <code>.jar</code> en una carpeta con un <code>Totito.exe</code> de verdad, con tu icono y con su propio Java recortado a la medida. Quien la reciba hace doble clic y juega, sin instalar nada. Al final la comprimes en un <code>.zip</code> listo para compartir por correo, memoria USB o internet.</p>
+
+<h2>El problema que resolvemos</h2>
+<p>En el capítulo 63 viste el gran límite del <code>.jar</code>: solo funciona si la otra persona tiene Java 17 o más nuevo instalado. La solución es no depender de su computadora y <b>llevar el Java con nosotros</b>. Pero no todo el JDK: tu JDK 21 ocupa unos 300 MB y trae compiladores, herramientas y bibliotecas que el Totito jamás usa. Lo que necesitamos es un Java pequeño, recortado, que tenga solo lo que el juego necesita para correr. En este capítulo aparecen tres herramientas que vienen dentro de tu JDK y trabajan juntas:</p>
+<table class="tabla">
+<tr><th>Herramienta</th><th>Qué hace</th><th>Analogía</th></tr>
+<tr><td><code>jdeps</code></td><td>Lee tu <code>.jar</code> y dice qué partes de Java usa</td><td>Revisar la receta para saber qué ingredientes comprar</td></tr>
+<tr><td><code>jlink</code></td><td>Fabrica un Java recortado, solo con esas partes</td><td>Comprar solo esos ingredientes en vez de vaciar el supermercado</td></tr>
+<tr><td><code>jpackage</code></td><td>Junta tu <code>.jar</code>, ese Java recortado y un lanzador <code>.exe</code> con tu icono</td><td>Armar la canasta de regalo con todo y su moño</td></tr>
+</table>
+<p>No necesitas instalar nada nuevo: <code>jdeps</code>, <code>jlink</code> y <code>jpackage</code> están en la carpeta <code>bin</code> del JDK de Temurin que instalaste en el capítulo 4, la misma de <code>java</code> y <code>javac</code>. Compruébalo:</p>
+<pre class="ps">jpackage --version</pre>
+<pre class="salida">21.0.8</pre>
+<p>Tu número exacto puede ser otro (lo importante es que empiece por 21). Si PowerShell responde que <code>jpackage</code> no se reconoce como comando, el <code>bin</code> del JDK no está en el PATH: repasa el capítulo 4.</p>
+
+<h2>Qué es un runtime</h2>
+<p>Para ejecutar bytecode hace falta la <b>máquina virtual</b> (la JVM, el «motor») y la <b>biblioteca de clases</b> de Java: todas esas clases que usas sin haberlas escrito, como <code>String</code>, <code>JFrame</code>, <code>Color</code> o <code>ArrayList</code>. A ese conjunto, JVM más biblioteca, se le llama <b>entorno de ejecución</b> o <b>runtime</b> (en inglés <i>Java Runtime Environment</i>, JRE).</p>
+<div class="caja concepto"><b>JDK y runtime.</b> El <b>JDK</b> (<i>Java Development Kit</i>) es el runtime más las herramientas para <b>desarrollar</b>: <code>javac</code>, <code>jar</code>, <code>jdeps</code>, <code>jlink</code>, <code>jpackage</code>… Tú, que programas, necesitas el JDK. Quien solo juega necesita el runtime. Es la diferencia entre un taller mecánico completo y el motor que hace andar el carro: al cliente le entregas el carro, no el taller.</div>
+
+<h2>Los módulos de Java</h2>
+<p>Desde Java 9, la biblioteca de clases está dividida en <b>módulos</b>: paquetes grandes y con nombre, cada uno con una responsabilidad. Algunos de los más conocidos:</p>
+<table class="tabla">
+<tr><th>Módulo</th><th>Qué contiene</th><th>¿Lo usa el Totito?</th></tr>
+<tr><td><code>java.base</code></td><td>Lo esencial: <code>String</code>, <code>Math</code>, arreglos, colecciones, archivos (<code>java.io</code>)… Todo programa lo necesita</td><td>Sí</td></tr>
+<tr><td><code>java.desktop</code></td><td>Interfaces gráficas: AWT, Swing, Java2D, <code>ImageIO</code></td><td>Sí</td></tr>
+<tr><td><code>java.sql</code></td><td>Bases de datos (JDBC, capítulo 69)</td><td>No</td></tr>
+<tr><td><code>java.net.http</code></td><td>Conectarse a páginas y servicios web</td><td>No</td></tr>
+<tr><td><code>java.xml</code></td><td>Leer y escribir XML</td><td>Solo indirectamente (lo pide <code>java.desktop</code>)</td></tr>
+<tr><td><code>jdk.compiler</code></td><td>El compilador <code>javac</code></td><td>No: es del JDK, no del juego</td></tr>
+</table>
+<p>Un JDK completo trae decenas de módulos. Para saber cuáles usa <b>exactamente</b> el Totito, no hace falta adivinar: <code>jdeps</code> (<i>Java dependencies</i>) lee cada <code>.class</code> del <code>.jar</code> y anota de qué módulos son las clases que usa. Desde la carpeta del proyecto, con el <code>.jar</code> ya compilado:</p>
+<pre class="ps">cd $HOME\Proyectos\Totito
+jdeps --print-module-deps target\Totito-1.0-SNAPSHOT.jar</pre>
+<pre class="salida">java.base,java.desktop</pre>
+<p>Solo dos. Todo el Totito, con sus pantallas, su neón, su IA y su generador de icono, se apoya únicamente en lo esencial y en la parte gráfica. Esa línea es la lista de la compra para <code>jlink</code>.</p>
+<p>Un detalle: <code>java.desktop</code>, a su vez, necesita otros módulos (por ejemplo <code>java.xml</code>, porque algunas partes de Swing leen configuración en XML). <code>jlink</code> los añade solo. El runtime que fabricaremos lleva, en total, estos cinco: <code>java.base</code>, <code>java.datatransfer</code>, <code>java.xml</code>, <code>java.prefs</code> y <code>java.desktop</code>. Lo comprobé fabricándolo y preguntándole con <code>java --list-modules</code>.</p>
+
+<h2>jlink: fabricar un Java a la medida</h2>
+<p><code>jlink</code> toma los módulos que le pidas del JDK y construye con ellos una carpeta que es un runtime completo y funcional, con su propio <code>bin\java.exe</code>, pero mucho más pequeño. jpackage llama a <code>jlink</code> por dentro, así que no tienes que usarlo directamente. Pero para que veas que no hay magia, puedes probarlo una vez:</p>
+<pre class="ps">jlink --add-modules java.desktop --strip-debug --no-man-pages --no-header-files --compress=zip-6 --output dist\runtime-prueba
+.\dist\runtime-prueba\bin\java --list-modules
+.\dist\runtime-prueba\bin\java -jar target\Totito-1.0-SNAPSHOT.jar</pre>
+<p>La segunda línea muestra los cinco módulos; la tercera abre el Totito con <b>ese</b> Java recortado, no con el que instalaste. Esa carpeta ocupa unos 54 MB, frente a los ~300 MB del JDK. Cuando termines, bórrala; jpackage fabricará la suya:</p>
+<pre class="ps">Remove-Item -Recurse -Force dist\runtime-prueba</pre>
+<div class="caja cuidado"><b>Remove-Item -Recurse -Force no pregunta.</b> Borra la carpeta y todo su contenido sin pasar por la Papelera de reciclaje. Escribe la ruta con cuidado, usa Tab para autocompletarla y nunca lo uses con una ruta que no entiendas (capítulo 3). En todo este capítulo solo lo usamos dentro de <code>dist\</code>, que es una carpeta de cosas fabricadas que se pueden volver a fabricar.</div>
+
+<h2>jpackage, paso a paso</h2>
+<p>jpackage puede producir dos clases de resultado, según la opción <code>--type</code>:</p>
+<ul>
+<li><code>--type app-image</code>: una <b>imagen de aplicación</b>, es decir, una carpeta lista para usar con el <code>.exe</code>, tu <code>.jar</code> y el runtime. No instala nada en el sistema. Es lo que haremos en este capítulo.</li>
+<li><code>--type exe</code> o <code>--type msi</code>: un <b>instalador</b> de Windows. Lo harás en el capítulo 66.</li>
+</ul>
+
+<h3>Paso 1: el .jar recién compilado</h3>
+<p>En NetBeans, <i>Run → Clean and Build Project</i> (Shift+F11). Así te aseguras de empaquetar la última versión del código y no una vieja. Debe existir <code>target\Totito-1.0-SNAPSHOT.jar</code> (capítulo 63).</p>
+
+<h3>Paso 2: una carpeta de entrada solo con el .jar</h3>
+<pre class="ps">New-Item -ItemType Directory -Force dist\entrada | Out-Null
+Copy-Item target\Totito-1.0-SNAPSHOT.jar dist\entrada\</pre>
+<p>La primera línea crea <code>dist\entrada</code> (y <code>dist</code> si no existe). <code>-Force</code> hace que no se queje si ya existía, y <code>| Out-Null</code> descarta el texto que <code>New-Item</code> escribe, para que la pantalla quede limpia. La segunda copia el <code>.jar</code> ahí.</p>
+<p>¿Por qué no darle a jpackage directamente la carpeta <code>target</code>? Porque jpackage <b>copia todo</b> lo que hay en la carpeta de entrada dentro de tu aplicación. En <code>target</code> hay además <code>classes\</code>, <code>maven-status\</code>, <code>generated-sources\</code>… y todo eso viajaría inútilmente en el paquete. Una carpeta de entrada limpia, con solo lo necesario, es la forma correcta. Si algún día tu programa usara librerías (otros <code>.jar</code>), también irían en esa carpeta.</p>
+
+<h3>Paso 3: el comando jpackage</h3>
+<p>Este es el comando completo. Escríbelo exactamente así, en PowerShell, desde la carpeta del proyecto. Es una sola orden repartida en siete líneas:</p>
+<pre class="ps">jpackage --type app-image --name Totito --input dist\entrada `
+  --main-jar Totito-1.0-SNAPSHOT.jar --main-class TotitoApp `
+  --icon recursos\totito.ico --app-version 1.0.0 --vendor "Tu Nombre" `
+  --description "Juego del Totito" --add-modules java.desktop `
+  --jlink-options "--strip-debug --no-man-pages --no-header-files --compress=zip-6" `
+  --dest dist\app</pre>
+<div class="caja concepto"><b>El acento grave de PowerShell.</b> El carácter <code>`</code> al final de cada línea (el <b>acento grave</b> o <i>backtick</i>; en un teclado latinoamericano suele estar en la tecla a la derecha de la Ñ o junto al Enter, y a veces hay que pulsarlo dos veces o seguido de un espacio para que aparezca) significa en PowerShell «la orden continúa en la línea siguiente». Sirve para que un comando largo se pueda leer. Tiene una regla estricta: <b>tiene que ser el último carácter de la línea</b>. Si después del <code>`</code> queda un espacio invisible, PowerShell da la orden por terminada ahí y trata la línea siguiente como otro comando, con un error del tipo <i>El término '--main-jar' no se reconoce como nombre de un cmdlet</i>. Si te pasa, o si te resulta incómodo, escribe todo en una sola línea larga, sin acentos graves: funciona igual.</div>
+<p>Al pulsar Enter, jpackage trabaja entre 20 segundos y un minuto sin escribir casi nada. Si termina sin mostrar ningún error, funcionó. Ahora, opción por opción:</p>
+<table class="tabla">
+<tr><th>Opción</th><th>Qué hace</th><th>Por qué ese valor</th></tr>
+<tr><td><code>--type app-image</code></td><td>Qué fabricar: una carpeta de aplicación</td><td>Queremos la versión portable, sin instalador</td></tr>
+<tr><td><code>--name Totito</code></td><td>Nombre de la aplicación</td><td>Será el nombre de la carpeta y del lanzador: <code>Totito\Totito.exe</code></td></tr>
+<tr><td><code>--input dist\entrada</code></td><td>Carpeta de la que se copian los archivos de la aplicación</td><td>Solo contiene el <code>.jar</code> (paso 2)</td></tr>
+<tr><td><code>--main-jar Totito-1.0-SNAPSHOT.jar</code></td><td>Cuál de los <code>.jar</code> de la entrada es el principal</td><td>Se escribe <b>relativo a <code>--input</code></b>: solo el nombre, sin <code>dist\entrada\</code> delante</td></tr>
+<tr><td><code>--main-class TotitoApp</code></td><td>La clase con el <code>main</code> que arranca</td><td>El manifiesto ya lo dice, pero decirlo explícitamente evita sorpresas</td></tr>
+<tr><td><code>--icon recursos\totito.ico</code></td><td>Icono del <code>.exe</code></td><td>El del capítulo 64. En Windows debe ser <code>.ico</code></td></tr>
+<tr><td><code>--app-version 1.0.0</code></td><td>Versión pública del programa</td><td>La que verá la gente (capítulo 67). En Windows solo admite números separados por puntos: <code>1.0-SNAPSHOT</code> no vale</td></tr>
+<tr><td><code>--vendor "Tu Nombre"</code></td><td>Quién lo publica (el «fabricante»)</td><td>Pon tu nombre real o artístico. Lleva comillas porque tiene un espacio</td></tr>
+<tr><td><code>--description "Juego del Totito"</code></td><td>Descripción corta</td><td>Windows la muestra en las propiedades del <code>.exe</code> y en el Administrador de tareas</td></tr>
+<tr><td><code>--add-modules java.desktop</code></td><td>Qué módulos meter en el runtime</td><td>Lo que dijo <code>jdeps</code>. <code>java.base</code> va siempre, no hace falta nombrarlo</td></tr>
+<tr><td><code>--jlink-options "..."</code></td><td>Opciones que jpackage le pasa a <code>jlink</code> al fabricar el runtime</td><td>Para recortar aún más (siguiente tabla). Van entre comillas porque son varias</td></tr>
+<tr><td><code>--dest dist\app</code></td><td>Dónde dejar el resultado</td><td>Dentro de <code>dist</code>, que Git ignora</td></tr>
+</table>
+<p>Y las cuatro opciones de reducción que van dentro de <code>--jlink-options</code>:</p>
+<table class="tabla">
+<tr><th>Opción de jlink</th><th>Qué quita o hace</th><th>¿Se nota?</th></tr>
+<tr><td><code>--strip-debug</code></td><td>Borra la información de depuración de las clases de Java (los números de línea, nombres de variables locales)</td><td>Solo en los stack traces de clases de Java, que dirán <code>(Unknown Source)</code> en vez de un número de línea. Las líneas de <b>tus</b> clases se conservan, porque tu <code>.jar</code> no pasa por <code>jlink</code></td></tr>
+<tr><td><code>--no-man-pages</code></td><td>No incluye las páginas de manual (documentación de comandos, típica de Linux)</td><td>No</td></tr>
+<tr><td><code>--no-header-files</code></td><td>No incluye los archivos de cabecera de C, que solo usa quien programa extensiones nativas</td><td>No</td></tr>
+<tr><td><code>--compress=zip-6</code></td><td>Comprime el archivo grande donde viven las clases de Java (<code>lib\modules</code>) con ZIP, nivel 6 de 9</td><td>El arranque puede tardar una fracción de segundo más; a cambio, el runtime ocupa la mitad</td></tr>
+</table>
+<div class="caja consejo"><b>Una nota sobre --compress.</b> La forma <code>zip-6</code> es la sintaxis nueva, que existe desde el JDK 21. En tutoriales antiguos verás <code>--compress=2</code>; en el JDK 21 todavía funciona pero está marcada como obsoleta. Si algún día usas un JDK 17, tendrás que usar <code>--compress=2</code>, porque allí <code>zip-6</code> no existe.</div>
+
+<h3>El tamaño: por qué importan esas opciones</h3>
+<p>Para este capítulo fabriqué la misma imagen de aplicación de tres formas, con el JDK 21, y medí el resultado:</p>
+<table class="tabla">
+<tr><th>Variante</th><th>Tamaño de la carpeta</th></tr>
+<tr><td>Sin <code>--add-modules</code> (jpackage mete todos los módulos estándar)</td><td>~157 MB</td></tr>
+<tr><td>Con <code>--add-modules java.desktop</code>, sin <code>--jlink-options</code></td><td>~83 MB</td></tr>
+<tr><td>Con <code>--add-modules java.desktop</code> y las cuatro opciones de reducción (el comando de este capítulo)</td><td><b>~54 MB</b></td></tr>
+</table>
+<p>De 157 a 54 MB: casi tres veces menos, solo por decir qué necesitas. Las medidas las tomé en Linux; en Windows los números son parecidos (los archivos del runtime de Windows tienen otros nombres y tamaños), así que mira el tuyo y anótalo. Para saber cuánto ocupa tu carpeta:</p>
+<pre class="ps">"{0:N1} MB" -f ((Get-ChildItem dist\app\Totito -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)</pre>
+<p>Esta línea suma el tamaño (<code>Length</code>) de todos los archivos de la carpeta (<code>-Recurse -File</code>) y lo divide entre <code>1MB</code>, una constante de PowerShell que vale 1 048 576 bytes. <code>"{0:N1}" -f</code> le da formato con un decimal. También puedes hacer clic derecho en la carpeta → <i>Propiedades</i>.</p>
+<p>¿54 MB para un totito? Sí: el juego son 77 KB; el resto es el Java que lleva dentro. Es el precio de que funcione en cualquier Windows sin instalar nada, y hoy en día es menos que una canción en buena calidad o un par de fotos de teléfono. Comprimido en <code>.zip</code>, más abajo, ocupa bastante menos.</p>
+
+<h2>Qué hay dentro de la carpeta</h2>
+<p>En Windows, jpackage deja esta estructura en <code>dist\app\Totito</code> (los detalles pueden variar un poco entre versiones del JDK):</p>
+<table class="tabla">
+<tr><th>Ruta</th><th>Qué es</th></tr>
+<tr><td><code>Totito.exe</code></td><td>El <b>lanzador</b>: un programa pequeño de Windows con tu icono que arranca el runtime de <code>runtime\</code> y le pide ejecutar tu <code>.jar</code></td></tr>
+<tr><td><code>Totito.ico</code></td><td>Una copia de tu icono</td></tr>
+<tr><td><code>app\Totito-1.0-SNAPSHOT.jar</code></td><td>Tu juego, tal cual lo hizo Maven</td></tr>
+<tr><td><code>app\Totito.cfg</code></td><td>La configuración del lanzador: qué <code>.jar</code>, qué clase y qué opciones</td></tr>
+<tr><td><code>runtime\</code></td><td>El Java recortado: <code>bin</code>, <code>conf</code>, <code>legal</code>, <code>lib</code> y <code>release</code></td></tr>
+</table>
+<p>El archivo <code>Totito.cfg</code> es texto. Míralo con <code>Get-Content dist\app\Totito\app\Totito.cfg</code>. El que obtuve es este:</p>
+<pre class="texto">[Application]
+app.classpath=$APPDIR/Totito-1.0-SNAPSHOT.jar
+app.mainclass=TotitoApp
+
+[JavaOptions]
+java-options=-Djpackage.app-version=1.0.0</pre>
+<p><code>$APPDIR</code> es la carpeta <code>app</code>; <code>app.mainclass</code> es lo que pusiste en <code>--main-class</code>; y en <code>[JavaOptions]</code> jpackage deja la versión disponible para el programa como una propiedad del sistema. Es decir, <code>Totito.exe</code> hace lo mismo que harías tú con <code>runtime\bin\java -cp app\Totito-1.0-SNAPSHOT.jar TotitoApp</code>, pero sin consola, con tu icono y sin que nadie tenga que saber nada de Java.</p>
+<p>La carpeta <code>runtime\legal</code> contiene las licencias de los componentes de Java. El JDK de Temurin es software libre (licencia GPL con la «excepción Classpath»), y esa excepción es justamente la que te permite distribuir su runtime junto con tu programa, sea libre o no. Deja esa carpeta tal cual: es la forma de cumplir la licencia.</p>
+<div class="caja cuidado"><b>Totito.exe no viaja solo.</b> Si copias únicamente <code>Totito.exe</code> al escritorio y le haces doble clic, no funcionará: el lanzador busca <code>app\</code> y <code>runtime\</code> junto a él. La aplicación es <b>la carpeta completa</b>. Para tenerlo en el escritorio, crea un acceso directo (clic derecho en <code>Totito.exe</code> → <i>Mostrar más opciones</i> en Windows 11 → <i>Enviar a → Escritorio (crear acceso directo)</i>), o espera al instalador del capítulo 66, que lo hace solo.</div>
+
+<h2>Probar Totito.exe</h2>
+<pre class="ps">.\dist\app\Totito\Totito.exe</pre>
+<p>El <code>.\</code> del principio significa «a partir de la carpeta actual». La ventana del Totito se abre como siempre. Fíjate en tres cosas nuevas:</p>
+<ul>
+<li><b>La barra de tareas</b> muestra el icono del Totito, y al pasar el ratón por encima dice «Totito», no «Java».</li>
+<li><b>PowerShell queda libre enseguida</b>: <code>Totito.exe</code> es un programa de ventanas, no de consola.</li>
+<li><b>En el Explorador</b> (<code>explorer dist\app\Totito</code>), el archivo <code>Totito.exe</code> tiene tu icono. Haz clic derecho → <i>Propiedades</i> → pestaña <i>Detalles</i>: deberías ver la descripción «Juego del Totito» y la versión 1.0.0, tomadas de las opciones <code>--description</code> y <code>--app-version</code>.</li>
+</ul>
+<p>Ahora la prueba de fuego: ¿funciona sin tu Java? La forma más fiable es probarlo en otra computadora que no tenga Java (la de un familiar, por ejemplo) después de comprimirlo, más abajo. Si no tienes otra a mano, al menos comprueba con el Administrador de tareas (Ctrl+Shift+Esc) que el proceso se llama <code>Totito.exe</code>; su Java es el de <code>runtime\</code>, no el que instalaste con winget. Y recorre la lista de pruebas manuales del capítulo 62: un programa empaquetado se prueba otra vez.</p>
+
+<h3>Si Totito.exe no abre: --win-console</h3>
+<p>Un lanzador sin consola tiene un inconveniente: si el programa revienta al arrancar, no ves ningún stack trace; simplemente no pasa nada. Para diagnosticarlo, fabrica una segunda imagen con la opción <code>--win-console</code>, que hace que el <code>.exe</code> abra una consola donde aparecen los mensajes y errores:</p>
+<pre class="ps">jpackage --type app-image --name Totito --input dist\entrada --main-jar Totito-1.0-SNAPSHOT.jar --main-class TotitoApp --add-modules java.desktop --win-console --dest dist\app-consola
+.\dist\app-consola\Totito\Totito.exe</pre>
+<p>Lee el stack trace con lo que aprendiste en el capítulo 62. El error más típico a estas alturas es un <code>NoClassDefFoundError</code> o <code>ClassNotFoundException</code> de una clase de un módulo que no incluiste en <code>--add-modules</code>: si tu programa usara, por ejemplo, <code>java.sql</code>, tendrías que añadirlo (<code>--add-modules java.desktop,java.sql</code>). Por eso <code>jdeps</code> va primero. Cuando lo resuelvas, borra esa carpeta de diagnóstico con <code>Remove-Item -Recurse -Force dist\app-consola</code>: la versión que se comparte es la de <code>dist\app</code>, sin consola.</p>
+
+<h2>Errores típicos de jpackage</h2>
+<table class="tabla">
+<tr><th>Mensaje (resumido)</th><th>Qué pasa</th><th>Solución</th></tr>
+<tr><td><code>Error: Application destination directory ...\dist\app\Totito already exists</code></td><td>Ya existe una imagen anterior; jpackage no sobrescribe</td><td><code>Remove-Item -Recurse -Force dist\app</code> y vuelve a ejecutar</td></tr>
+<tr><td><code>The configured main jar does not exist Totito.jar in the input directory</code></td><td>El nombre de <code>--main-jar</code> no coincide con el archivo de <code>dist\entrada</code>, o escribiste la ruta completa</td><td>Solo el nombre del archivo, tal como aparece en <code>Get-ChildItem dist\entrada</code></td></tr>
+<tr><td>Un error sobre la versión, que menciona <code>1.0-SNAPSHOT</code> o un componente no válido</td><td>En Windows la versión solo puede tener números y puntos</td><td><code>--app-version 1.0.0</code></td></tr>
+<tr><td>El <code>.exe</code> aparece con el icono genérico de Java</td><td>No pusiste <code>--icon</code>, la ruta está mal o el archivo no es un <code>.ico</code></td><td>Comprueba que existe <code>recursos\totito.ico</code> (capítulo 64)</td></tr>
+<tr><td><i>jpackage no se reconoce como nombre de un cmdlet</i></td><td>El <code>bin</code> del JDK no está en el PATH, o abriste PowerShell antes de instalar el JDK</td><td>Cierra y abre PowerShell; si sigue, capítulo 4</td></tr>
+<tr><td><i>El término '--main-jar' no se reconoce…</i></td><td>Un espacio después de un acento grave, o falta uno</td><td>Revisa los finales de línea o escribe el comando en una sola línea</td></tr>
+</table>
+<div class="caja consejo"><b>Para ver qué hace jpackage por dentro</b>, añade <code>--verbose</code> al comando: escribe cada paso, incluida la llamada a <code>jlink</code> con sus opciones. Es lo primero que conviene hacer cuando algo falla sin un mensaje claro.</div>
+
+<h2>Comprimir para compartir</h2>
+<p>Una carpeta con cientos de archivos no se puede adjuntar a un correo ni subir cómodamente a una página. Se comprime en un único <code>.zip</code>. PowerShell trae un comando para eso:</p>
+<pre class="ps">Compress-Archive -Path dist\app\Totito -DestinationPath dist\Totito-1.0.0-portable.zip</pre>
+<table class="tabla">
+<tr><th>Parte</th><th>Significado</th></tr>
+<tr><td><code>Compress-Archive</code></td><td>El comando de PowerShell que crea archivos ZIP</td></tr>
+<tr><td><code>-Path dist\app\Totito</code></td><td>Qué comprimir. Al dar la carpeta (sin <code>\*</code> al final), el ZIP contendrá la carpeta <code>Totito</code> con todo dentro. Así, quien lo descomprima obtiene una carpeta ordenada, no cientos de archivos sueltos regados en su escritorio</td></tr>
+<tr><td><code>-DestinationPath dist\Totito-1.0.0-portable.zip</code></td><td>Dónde y con qué nombre. El nombre dice qué es, qué versión y qué tipo (<i>portable</i>, que no se instala). En el capítulo 67 lo subirás a GitHub con este nombre</td></tr>
+</table>
+<p>Si el ZIP ya existía de un intento anterior, <code>Compress-Archive</code> se queja; añade <code>-Force</code> al final para reemplazarlo. El archivo resultante ocupa notablemente menos que la carpeta (en mi prueba en Linux, con la misma compresión ZIP, unos 35 MB frente a 54). Míralo con <code>Get-ChildItem dist\*.zip</code>.</p>
+<h3>Probar el ZIP como lo haría otra persona</h3>
+<pre class="ps">Expand-Archive dist\Totito-1.0.0-portable.zip -DestinationPath dist\prueba-zip
+.\dist\prueba-zip\Totito\Totito.exe</pre>
+<p><code>Expand-Archive</code> es el comando inverso: descomprime. Si el juego abre desde <code>dist\prueba-zip</code>, el ZIP está bien hecho. Bórralo después con <code>Remove-Item -Recurse -Force dist\prueba-zip</code>.</p>
+<div class="caja cuidado"><b>Primero descomprimir, luego jugar.</b> El Explorador de Windows deja «entrar» en un ZIP como si fuera una carpeta, y hacer doble clic en <code>Totito.exe</code> desde ahí. No funciona bien: Windows extrae solo ese archivo a una carpeta temporal, sin <code>app\</code> ni <code>runtime\</code>. Dile a quien reciba tu juego: clic derecho en el ZIP → <i>Extraer todo…</i>, y luego abrir <code>Totito.exe</code> en la carpeta extraída. En el capítulo 67 verás además el aviso de SmartScreen que puede aparecer la primera vez.</div>
+
+<h2>Las ventajas y límites del portable</h2>
+<table class="tabla">
+<tr><th>A favor</th><th>En contra</th></tr>
+<tr><td>No necesita Java ni permisos de administrador</td><td>No aparece en el menú Inicio ni crea accesos directos</td></tr>
+<tr><td>Se puede llevar en una memoria USB y jugar en cualquier Windows de 64 bits</td><td>El usuario tiene que descomprimir y recordar dónde lo dejó</td></tr>
+<tr><td>Se «desinstala» borrando la carpeta</td><td>No se actualiza solo: para la versión nueva hay que reemplazar la carpeta</td></tr>
+<tr><td>Ideal para probar o para personas que no quieren instalar nada</td><td>Solo sirve en Windows: para Linux o macOS hay que ejecutar jpackage <b>en</b> esos sistemas</td></tr>
+</table>
+<p>La última fila es importante: jpackage no hace «compilación cruzada». El <code>Totito.exe</code> y el runtime de Windows se fabrican en Windows; en Linux, jpackage fabrica un ejecutable de Linux con un runtime de Linux (así comprobé yo los comandos de este capítulo, usando <code>recursos/totito.png</code> como icono, porque en Linux el icono es PNG). El <code>.jar</code>, en cambio, es el mismo para todos.</p>
+
+<div class="caja git"><b>Git</b> No hay commit en este capítulo: todo lo que fabricaste está en <code>dist\</code>, y el <code>.gitignore</code> que creaste en el capítulo 5 ya incluye la línea <code>dist/</code>. Compruébalo:
+<pre class="ps">git status
+git check-ignore -v dist\Totito-1.0.0-portable.zip</pre>
+<code>git status</code> no debe mostrar nada de <code>dist</code>, y <code>git check-ignore -v</code> te dice qué línea de qué archivo hace que se ignore (verás algo como <code>.gitignore:3:dist/</code>). Los 54 MB del runtime no tienen por qué estar en tu historial: se regeneran con un comando. El ZIP se compartirá como archivo de una Release de GitHub (capítulo 67).</div>
+
+<div class="caja hito"><b>Hito</b> Tienes un <code>Totito.exe</code> con tu icono que funciona en cualquier Windows de 64 bits sin instalar Java, y un <code>Totito-1.0.0-portable.zip</code> listo para compartir.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Un <b>runtime</b> es la JVM más la biblioteca de clases; el JDK es el runtime más las herramientas de desarrollo.</li>
+<li>La biblioteca de Java está dividida en <b>módulos</b>; <code>jdeps --print-module-deps</code> dice que el Totito solo usa <code>java.base</code> y <code>java.desktop</code>.</li>
+<li><code>jlink</code> fabrica un runtime recortado con solo esos módulos (y los que ellos necesitan); jpackage lo usa por dentro.</li>
+<li><code>jpackage --type app-image</code> crea <code>dist\app\Totito</code> con <code>Totito.exe</code>, <code>app\</code> (el <code>.jar</code> y <code>Totito.cfg</code>) y <code>runtime\</code>.</li>
+<li><code>--add-modules java.desktop</code> y las <code>--jlink-options</code> de reducción bajan el tamaño de ~157 MB a ~54 MB.</li>
+<li>El acento grave <code>`</code> continúa una orden en la línea siguiente y debe ser el último carácter de la línea.</li>
+<li>La aplicación es la carpeta completa; <code>--win-console</code> ayuda a diagnosticar si no arranca.</li>
+<li><code>Compress-Archive</code> la convierte en <code>Totito-1.0.0-portable.zip</code>; quien lo reciba debe descomprimirlo antes de abrirlo.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Cualquier programa de escritorio en Java</b> (el gestor de tareas o el inventario de la tienda del capítulo 68): los mismos tres pasos sirven sin cambios: <code>jdeps</code> para saber los módulos, una carpeta de entrada con tus <code>.jar</code>, y jpackage con tu nombre, icono y clase principal.</li>
+<li><b>Programas con base de datos</b>: si usas JDBC (capítulo 69), <code>jdeps</code> te dirá <code>java.sql</code>, y el conector de la base de datos (otro <code>.jar</code>) irá también en la carpeta de entrada. jpackage los pone todos en el classpath.</li>
+<li><b>Herramientas internas de una empresa u oficina</b>: una versión portable en una carpeta compartida de red o en una USB evita pedirle permisos de administrador al departamento de informática para instalar Java en cada equipo.</li>
+<li><b>Programas para Linux o macOS</b>: el mismo comando, ejecutado en esos sistemas con un icono <code>.png</code> (Linux) o <code>.icns</code> (macOS), produce la versión nativa de cada uno. Muchos proyectos de código abierto lo automatizan en GitHub Actions para fabricar las tres versiones a la vez.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Ejecuta <code>jdeps --print-module-deps</code> sobre tu <code>.jar</code> y anota el resultado. Luego ejecuta <code>jdeps -s target\Totito-1.0-SNAPSHOT.jar</code> (la <code>-s</code> es de <i>summary</i>, resumen) y compara las dos salidas.</li>
+<li>Fabrica la imagen sin <code>--jlink-options</code> en <code>dist\app-sin-reducir</code> y mide las dos carpetas con el comando de PowerShell de este capítulo. ¿Cuántos MB te ahorran las cuatro opciones en tu Windows?</li>
+<li>Abre <code>dist\app\Totito\runtime\release</code> con <code>Get-Content</code> y busca la línea <code>MODULES</code>. ¿Coincide con los cinco módulos de este capítulo? Pista: es un archivo de texto con líneas <code>NOMBRE="valor"</code>.</li>
+<li>Escribe un pequeño script <code>empaquetar.ps1</code> en la carpeta del proyecto que haga, en orden: borrar <code>dist\app</code> y <code>dist\entrada</code> si existen (<code>if (Test-Path dist\app) { Remove-Item -Recurse -Force dist\app }</code>), copiar el <code>.jar</code>, ejecutar jpackage y comprimir el ZIP con <code>-Force</code>. Ejecútalo con <code>powershell -ExecutionPolicy Bypass -File .\empaquetar.ps1</code>. Pista: Windows bloquea por defecto los scripts <code>.ps1</code>; esa opción lo permite solo para esta ejecución, sin cambiar la configuración del equipo.</li>
+<li>Reto: copia el ZIP a una memoria USB, llévalo a una computadora que no tenga Java (puedes comprobarlo con <code>java -version</code> en su PowerShell: debe responder que no se reconoce), descomprímelo y juega. Anota cuánto tardó en abrir la primera vez y la segunda.</li>
+</ol></div>
+</section>

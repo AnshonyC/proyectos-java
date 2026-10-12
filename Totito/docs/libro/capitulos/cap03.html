@@ -1,0 +1,293 @@
+<section class="capitulo" id="cap03">
+<h1><span class="num">Capítulo 3</span>La terminal: PowerShell desde cero</h1>
+<p class="entrada">En este capítulo aprendes a darle órdenes a Windows escribiendo, en lugar de hacer clic. Es la herramienta con la que vas a instalar Java, crear el proyecto, usar Git y fabricar el instalador del Totito. Al terminar sabrás moverte por las carpetas, crear, copiar, mover y borrar archivos con seguridad, y habrás creado la carpeta donde vivirán tus proyectos.</p>
+
+<h2>Qué es una terminal y por qué usarla</h2>
+<p>Hasta ahora has usado la computadora con la <b>interfaz gráfica</b>: ventanas, iconos, menús y el ratón. Una <b>terminal</b> (también llamada <i>consola</i> o <i>línea de comandos</i>) es la otra forma de usarla: una ventana donde escribes una orden, presionas <b>Enter</b>, la computadora la ejecuta y te responde con texto. <b>PowerShell</b> es la terminal moderna de Windows, y ya viene instalada.</p>
+<p>Al principio parece un paso atrás: ¿para qué escribir si se puede hacer clic? Hay varias razones de peso, y todas aparecen en este libro:</p>
+<ul>
+<li><b>Precisión.</b> Un comando dice exactamente qué hacer. «Haz clic en el botón azul de la derecha» puede confundirse; <code>java -version</code> no.</li>
+<li><b>Se puede copiar y repetir.</b> Un libro, un compañero o un foro te pueden pasar un comando y obtienes el mismo resultado. Una secuencia de clics no se puede pegar.</li>
+<li><b>Muchas herramientas de programación solo tienen terminal.</b> El compilador de Java, Git y el empaquetador <code>jpackage</code> se usan escribiendo.</li>
+<li><b>Rapidez.</b> Instalar cuatro programas con cuatro líneas es mucho más rápido que buscar cuatro páginas web, descargar cuatro instaladores y hacer clic en «Siguiente» veinte veces.</li>
+<li><b>Automatización.</b> Lo que se hace con comandos se puede guardar en un archivo y repetir mil veces sin errores.</li>
+</ul>
+<div class="caja concepto"><b>La terminal no es «hackear».</b> En las películas, la pantalla negra con letras es cosa de piratas informáticos. En la vida real es una herramienta de trabajo cotidiana, como la llave inglesa para un mecánico. Todo lo que harás en ella podrías hacerlo también con el ratón; solo que escribiendo es más exacto y más rápido.</div>
+
+<h2>Abrir PowerShell</h2>
+<p>Hay varias formas; usa la que te resulte más cómoda:</p>
+<ul>
+<li><b>Desde el menú Inicio:</b> presiona la tecla <b>Win</b>, escribe <code>powershell</code> y presiona <b>Enter</b>.</li>
+<li><b>Con Win+X:</b> se abre un menú en la esquina; en Windows 11 elige <i>Terminal</i>; en Windows 10, <i>Windows PowerShell</i>.</li>
+<li><b>Desde una carpeta del Explorador:</b> haz clic en la barra de direcciones (donde dice la ruta de la carpeta), escribe <code>powershell</code> y presiona <b>Enter</b>. Se abre PowerShell ya situado en esa carpeta. En Windows 11 también puedes hacer clic derecho en un espacio vacío de la carpeta y elegir <i>Abrir en Terminal</i>.</li>
+</ul>
+<p>Verás algo así:</p>
+<pre class="salida">Windows PowerShell
+Copyright (C) Microsoft Corporation. Todos los derechos reservados.
+
+PS C:\Users\ana&gt;</pre>
+<p>La última línea es el <b>indicador</b> (<i>prompt</i>) y tiene tres partes: <code>PS</code> te recuerda que estás en PowerShell; <code>C:\Users\ana</code> es <b>la carpeta en la que estás parado</b> (en tu caso dirá tu usuario); y <code>&gt;</code> significa «listo, escribe». El cursor parpadea después: ahí escribes.</p>
+
+<h3>PowerShell, Terminal, Símbolo del sistema… ¿cuál es cuál?</h3>
+<table class="tabla">
+<tr><th>Nombre</th><th>Qué es</th><th>¿Lo usas en el libro?</th></tr>
+<tr><td><b>Windows PowerShell</b> (5.1)</td><td>La versión de PowerShell que viene con Windows 10 y 11. Fondo azul o negro.</td><td>Sí. Todos los comandos del libro funcionan aquí.</td></tr>
+<tr><td><b>PowerShell 7</b></td><td>La versión nueva, que se instala aparte. Casi idéntica para lo que harás.</td><td>Opcional. También funciona todo.</td></tr>
+<tr><td><b>Windows Terminal</b></td><td>No es una terminal en sí, sino una <i>ventana con pestañas</i> donde se abren PowerShell u otras. Viene en Windows 11.</td><td>Recomendado si lo tienes (capítulo 4).</td></tr>
+<tr><td><b>Símbolo del sistema</b> (<code>cmd</code>)</td><td>La terminal antigua de Windows. Su indicador no empieza con <code>PS</code>.</td><td>No. Muchos comandos del libro no funcionan ahí.</td></tr>
+</table>
+<div class="caja cuidado"><b>Fíjate en que diga <code>PS</code>.</b> Si tu indicador es <code>C:\Users\ana&gt;</code>, sin <code>PS</code> delante, abriste el Símbolo del sistema por error. Ciérralo y abre PowerShell. Y no abras PowerShell «como administrador» salvo que el libro lo pida: con permisos de administrador un error puede afectar a todo el sistema, y para casi todo lo que harás no hacen falta.</div>
+
+<h2>Rutas: la dirección de cada archivo</h2>
+<p>Todo archivo de la computadora vive dentro de una carpeta, que vive dentro de otra carpeta, y así hasta llegar a una <b>unidad</b> (un disco), como <code>C:</code>. La <b>ruta</b> es la dirección completa de un archivo o carpeta: la lista de carpetas que hay que atravesar para llegar a él, separadas por la barra invertida <code>\</code>. Es como una dirección postal, pero escrita de lo general a lo particular: país, ciudad, calle, casa.</p>
+<pre class="texto">C:\
+└── Users
+    └── ana                     ← tu carpeta personal
+        ├── Desktop             ← el Escritorio
+        ├── Documents           ← Documentos
+        ├── Downloads           ← Descargas
+        └── Proyectos           ← la crearás en este capítulo
+            └── Totito          ← la crearás en el capítulo 5
+                └── pom.xml</pre>
+<p>La ruta del archivo <code>pom.xml</code> de este dibujo es <code>C:\Users\ana\Proyectos\Totito\pom.xml</code>. Hay dos tipos de ruta:</p>
+<ul>
+<li><b>Absoluta:</b> empieza desde la unidad (<code>C:\…</code>). Funciona desde cualquier lugar, como una dirección completa con país.</li>
+<li><b>Relativa:</b> parte de la carpeta donde estás parado. Si estás en <code>C:\Users\ana\Proyectos</code>, la ruta relativa <code>Totito\pom.xml</code> lleva al mismo archivo. Es como decir «la segunda casa a la derecha»: solo tiene sentido según dónde estés.</li>
+</ul>
+<p>Hay tres nombres especiales que vas a usar mucho:</p>
+<table class="tabla">
+<tr><th>Símbolo</th><th>Significa</th><th>Ejemplo</th></tr>
+<tr><td><code>.</code></td><td>La carpeta actual.</td><td><code>.\notas.txt</code> = «el archivo <code>notas.txt</code> de aquí».</td></tr>
+<tr><td><code>..</code></td><td>La carpeta de arriba (la que contiene a la actual).</td><td>Desde <code>Proyectos\Totito</code>, <code>..</code> es <code>Proyectos</code>.</td></tr>
+<tr><td><code>~</code></td><td>Tu carpeta personal.</td><td><code>~\Proyectos</code> = <code>C:\Users\ana\Proyectos</code>.</td></tr>
+</table>
+<div class="caja cuidado"><b>«Documentos» se llama en realidad <code>Documents</code>.</b> En el Explorador de un Windows en español ves «Documentos», «Descargas» y «Escritorio», pero esas carpetas tienen nombres reales en inglés: <code>Documents</code>, <code>Downloads</code> y <code>Desktop</code>. El Explorador te muestra una traducción; la terminal te muestra el nombre real. Además, si usas OneDrive, puede que Documentos y Escritorio estén en realidad dentro de <code>C:\Users\ana\OneDrive\</code>. Por eso, en este libro, los proyectos van en una carpeta propia, <code>C:\Users\&lt;tu-usuario&gt;\Proyectos</code>, que no se traduce ni se sincroniza.</div>
+<div class="caja consejo"><b>¿Por qué no guardar el proyecto en OneDrive?</b> Al compilar, Java crea y borra cientos de archivos en pocos segundos. OneDrive intenta subir cada uno a internet, lo que vuelve todo lento y, a veces, bloquea archivos justo cuando el compilador los necesita, con errores difíciles de entender. Tu respaldo en internet será GitHub (Parte II), que está hecho para código.</div>
+
+<h2>Los comandos básicos</h2>
+<p>Los comandos de PowerShell se llaman <b>cmdlets</b> y siguen el patrón <i>Verbo-Sustantivo</i>: <code>Get-Location</code> (obtener ubicación), <code>New-Item</code> (nuevo elemento), <code>Remove-Item</code> (eliminar elemento). Son largos pero se entienden solos. Para escribir menos, la mayoría tiene <b>alias</b>: nombres cortos heredados de otras terminales. <code>ls</code> y <code>Get-ChildItem</code> son exactamente lo mismo. El libro usa uno u otro según convenga; los dos funcionan.</p>
+<p>PowerShell <b>no distingue mayúsculas de minúsculas</b> en los comandos: <code>get-location</code> y <code>Get-Location</code> funcionan igual. (Java sí las distingue, y mucho: lo verás en el capítulo 11).</p>
+
+<h3>Dónde estoy: <code>pwd</code> / <code>Get-Location</code></h3>
+<pre class="ps">pwd</pre>
+<pre class="salida">
+Path
+----
+C:\Users\ana
+
+</pre>
+<p><code>pwd</code> viene del inglés <i>print working directory</i>, «muestra la carpeta de trabajo». La <b>carpeta de trabajo</b> (o carpeta actual) es aquella en la que estás parado; todas las rutas relativas parten de ella. El indicador ya la muestra, pero <code>pwd</code> es útil cuando la ruta es tan larga que el indicador se corta.</p>
+
+<h3>Moverse: <code>cd</code> / <code>Set-Location</code></h3>
+<p><code>cd</code> (<i>change directory</i>, «cambiar de carpeta») te lleva a otra carpeta:</p>
+<pre class="ps">cd Downloads
+cd ..
+cd C:\Windows
+cd ~</pre>
+<p>Línea por línea: entras a <code>Downloads</code> (ruta relativa: la carpeta <code>Downloads</code> que está dentro de la actual); subes un nivel con <code>..</code>; saltas a <code>C:\Windows</code> con una ruta absoluta; y vuelves a tu carpeta personal con <code>~</code>. Después de cada uno, observa cómo cambia el indicador.</p>
+<p>Si la carpeta no existe, PowerShell responde con un error en rojo:</p>
+<pre class="salida">cd : No se encuentra la ruta de acceso 'C:\Users\ana\Dowloads' porque no existe.</pre>
+<p>Lee el error: dice qué ruta buscó. Aquí el problema es que falta una <code>n</code> en <code>Downloads</code>. Un error en rojo no rompe nada; solo significa que el comando no se pudo hacer.</p>
+
+<h3>Ver el contenido: <code>ls</code> / <code>Get-ChildItem</code></h3>
+<pre class="ps">ls</pre>
+<pre class="salida">
+    Directorio: C:\Users\ana
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d-r---        12/10/2026      9:02                Desktop
+d-r---        12/10/2026      9:02                Documents
+d-r---        12/10/2026      9:40                Downloads
+-a----        11/10/2026     18:21            214 notas.txt</pre>
+<p><code>Get-ChildItem</code> significa «obtener los elementos hijos», es decir, lo que hay dentro de la carpeta. También responde a <code>ls</code> y a <code>dir</code>. Las columnas:</p>
+<ul>
+<li><b>Mode</b>: si empieza con <code>d</code> es una carpeta (<i>directory</i>); si empieza con <code>-</code>, un archivo. Las otras letras son atributos (<code>r</code> = solo lectura, <code>a</code> = archivo modificado, <code>h</code> = oculto).</li>
+<li><b>LastWriteTime</b>: fecha y hora de la última modificación.</li>
+<li><b>Length</b>: tamaño en bytes (solo en archivos).</li>
+<li><b>Name</b>: el nombre.</li>
+</ul>
+<p>Algunas variantes útiles:</p>
+<pre class="ps">ls Downloads
+ls *.txt
+ls -Force</pre>
+<p>La primera lista otra carpeta sin entrar en ella. La segunda usa el <b>comodín</b> <code>*</code>, que significa «cualquier texto»: <code>*.txt</code> es «todo lo que termine en <code>.txt</code>» (lo usarás en el libro con <code>src\*.java</code>). La tercera muestra también los archivos ocultos; el <code>-Force</code> es un <b>parámetro</b>: una opción que modifica lo que hace el comando. Los parámetros empiezan con un guion.</p>
+
+<h3>Crear carpetas y archivos: <code>mkdir</code> / <code>New-Item</code></h3>
+<pre class="ps">mkdir practica
+New-Item -ItemType Directory -Path practica2
+New-Item -ItemType File -Path practica\hola.txt</pre>
+<p><code>mkdir</code> (<i>make directory</i>) crea una carpeta. Es un atajo de <code>New-Item -ItemType Directory</code>, que dice lo mismo de forma explícita: crea un elemento nuevo, de tipo carpeta, en esta ruta. Con <code>-ItemType File</code> se crea un archivo vacío. PowerShell confirma mostrando lo que creó:</p>
+<pre class="salida">
+    Directorio: C:\Users\ana\practica
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a----        12/10/2026     10:15              0 hola.txt</pre>
+<p>Para escribir en el archivo, ábrelo con el Bloc de notas directamente desde la terminal:</p>
+<pre class="ps">notepad practica\hola.txt</pre>
+<p>Escribe algo, guarda con <b>Ctrl+S</b> y cierra. Así crearás varios archivos del proyecto en el capítulo 5.</p>
+<p>Si la carpeta ya existe, <code>New-Item</code> da un error. El parámetro <code>-Force</code> le dice «si ya existe, no te quejes»: <code>New-Item -ItemType Directory -Force practica</code>. Lo verás en los comandos de empaquetado de la Parte VIII, donde importa que el comando funcione tanto la primera vez como las siguientes.</p>
+
+<h3>Leer un archivo: <code>cat</code> / <code>Get-Content</code></h3>
+<pre class="ps">cat practica\hola.txt</pre>
+<p><code>Get-Content</code> («obtener contenido»), con sus alias <code>cat</code> y <code>type</code>, muestra el texto de un archivo en la terminal sin abrir ningún programa. Es muy útil para echar un vistazo rápido a un archivo de configuración. Solo tiene sentido con archivos de texto: si lo usas con una imagen o un <code>.exe</code> verás símbolos sin sentido (no pasa nada; limpia la pantalla con <code>cls</code>).</p>
+
+<h3>Copiar: <code>Copy-Item</code></h3>
+<pre class="ps">Copy-Item practica\hola.txt practica\copia.txt
+Copy-Item practica\hola.txt practica2\
+Copy-Item practica practica-respaldo -Recurse</pre>
+<p><code>Copy-Item</code> (alias <code>cp</code> y <code>copy</code>) recibe primero el <b>origen</b> y después el <b>destino</b>. La primera línea copia el archivo con otro nombre en la misma carpeta; la segunda lo copia a otra carpeta con el mismo nombre (la barra final deja claro que <code>practica2\</code> es una carpeta). La tercera copia una carpeta entera: <code>-Recurse</code> significa «con todo lo que tiene dentro, y lo que hay dentro de eso, y así sucesivamente». Sin <code>-Recurse</code>, copiaría solo la carpeta vacía.</p>
+
+<h3>Mover y renombrar: <code>Move-Item</code></h3>
+<pre class="ps">Move-Item practica\copia.txt practica2\
+Move-Item practica2\copia.txt practica2\renombrado.txt</pre>
+<p><code>Move-Item</code> (alias <code>mv</code> y <code>move</code>) funciona como copiar, pero el original desaparece. Mover un archivo a la misma carpeta con otro nombre es <b>renombrarlo</b>; también existe <code>Rename-Item</code> para eso.</p>
+
+<h3>Borrar: <code>Remove-Item</code>, con mucho cuidado</h3>
+<pre class="ps">Remove-Item practica2\renombrado.txt</pre>
+<p><code>Remove-Item</code> (alias <code>rm</code> y <code>del</code>) borra archivos y carpetas. Para una carpeta con contenido, PowerShell te pregunta antes, salvo que agregues <code>-Recurse</code>:</p>
+<pre class="ps">Remove-Item practica-respaldo -Recurse</pre>
+<div class="caja cuidado"><b>Lo que borra la terminal no va a la Papelera.</b> Desaparece de inmediato y no hay «deshacer». Por eso:
+<ul>
+<li>Antes de borrar, haz <code>ls</code> de lo que vas a borrar para ver qué hay dentro.</li>
+<li>Usa rutas concretas, nunca comodines amplios como <code>*</code> en una carpeta importante.</li>
+<li>Prueba primero con <code>-WhatIf</code>: <code>Remove-Item practica -Recurse -WhatIf</code> muestra lo que <i>haría</i> sin hacerlo.</li>
+<li>Nunca combines <code>-Recurse -Force</code> en tu carpeta personal, en <code>C:\</code> ni en una ruta que no hayas leído dos veces. <code>-Force</code> además borra archivos ocultos y de solo lectura sin preguntar.</li>
+</ul>
+Cuando en la Parte II tengas el proyecto en Git y en GitHub, un archivo borrado por error se podrá recuperar del historial. Pero lo que no está en Git no tiene red de seguridad.</div>
+
+<h3>Limpiar la pantalla y abrir el Explorador</h3>
+<pre class="ps">cls
+ii .</pre>
+<p><code>cls</code> (<i>clear screen</i>, alias de <code>Clear-Host</code>) borra el texto de la ventana; no borra ningún archivo, solo deja la pantalla limpia. <code>ii</code> es el alias de <code>Invoke-Item</code>, «abrir elemento»: abre algo con su programa habitual, igual que si le hicieras doble clic. Con <code>.</code> (la carpeta actual) abre el Explorador de archivos justo ahí. Es el puente perfecto entre la terminal y el ratón: lo usarás a menudo para ver en el Explorador lo que acabas de crear. <code>ii notas.txt</code> abriría el archivo con el Bloc de notas, y <code>explorer .</code> hace lo mismo que <code>ii .</code>.</p>
+
+<h3>Tabla de equivalencias</h3>
+<table class="tabla">
+<tr><th>Para…</th><th>Cmdlet completo</th><th>Alias</th></tr>
+<tr><td>Ver dónde estoy</td><td><code>Get-Location</code></td><td><code>pwd</code></td></tr>
+<tr><td>Cambiar de carpeta</td><td><code>Set-Location</code></td><td><code>cd</code></td></tr>
+<tr><td>Listar contenido</td><td><code>Get-ChildItem</code></td><td><code>ls</code>, <code>dir</code></td></tr>
+<tr><td>Crear carpeta</td><td><code>New-Item -ItemType Directory</code></td><td><code>mkdir</code></td></tr>
+<tr><td>Crear archivo vacío</td><td><code>New-Item -ItemType File</code></td><td>—</td></tr>
+<tr><td>Ver un archivo de texto</td><td><code>Get-Content</code></td><td><code>cat</code>, <code>type</code></td></tr>
+<tr><td>Copiar</td><td><code>Copy-Item</code></td><td><code>cp</code>, <code>copy</code></td></tr>
+<tr><td>Mover o renombrar</td><td><code>Move-Item</code></td><td><code>mv</code>, <code>move</code></td></tr>
+<tr><td>Borrar</td><td><code>Remove-Item</code></td><td><code>rm</code>, <code>del</code></td></tr>
+<tr><td>Limpiar la pantalla</td><td><code>Clear-Host</code></td><td><code>cls</code></td></tr>
+<tr><td>Abrir con su programa</td><td><code>Invoke-Item</code></td><td><code>ii</code></td></tr>
+</table>
+<p>El Apéndice A tiene esta tabla y muchos más comandos, para consultar rápido.</p>
+
+<h2>Escribir menos y equivocarse menos</h2>
+<h3>Tab: autocompletar</h3>
+<p>Escribe <code>cd Dow</code> y presiona <b>Tab</b>: PowerShell completa <code>cd .\Downloads\</code>. Si hay varias opciones que empiezan igual, cada vez que presionas <b>Tab</b> muestra la siguiente (y <b>Shift+Tab</b>, la anterior). Funciona con nombres de carpetas, de archivos, de cmdlets (<code>Get-Chi</code> + <b>Tab</b>) y de parámetros (<code>-Rec</code> + <b>Tab</b>).</p>
+<p>Usar Tab no es solo comodidad: si Tab no completa nada, es porque <b>lo que escribiste no existe</b>. Es la forma más rápida de detectar un error de escritura antes de presionar Enter.</p>
+<h3>Flechas: el historial</h3>
+<p>La <b>flecha arriba</b> recupera el comando anterior; presiónala varias veces para ir más atrás, y la <b>flecha abajo</b> para volver. Puedes editar el comando recuperado con las flechas izquierda y derecha antes de presionar Enter. Esto te ahorrará muchísimo tiempo en el libro, porque repetirás los mismos comandos (compilar, ejecutar, <code>git status</code>) una y otra vez. <b>Ctrl+R</b> busca en el historial: presiónalo y escribe parte de un comando que usaste antes.</p>
+<h3>Otras teclas útiles</h3>
+<ul>
+<li><b>Ctrl+C</b> cancela el comando que se está ejecutando (por ejemplo, uno que tarda demasiado). Si no hay nada ejecutándose, deja la línea sin ejecutar y te da un indicador nuevo.</li>
+<li><b>Esc</b> borra la línea que estabas escribiendo.</li>
+<li><b>Ctrl+V</b> o el <b>clic derecho</b> pegan texto en la terminal. Para copiar texto de la ventana, selecciónalo con el ratón y presiona <b>Enter</b> (en PowerShell clásico) o <b>Ctrl+C</b> (en Windows Terminal, con texto seleccionado).</li>
+</ul>
+
+<h2>Comillas y espacios</h2>
+<p>PowerShell usa los espacios para separar un comando de sus partes. Así que, si una ruta tiene espacios, hay que encerrarla entre comillas para que se lea como una sola cosa:</p>
+<pre class="ps">cd "C:\Program Files"</pre>
+<p>Sin comillas, <code>cd C:\Program Files</code> se interpretaría como «ve a <code>C:\Program</code>», con una palabra suelta <code>Files</code> que no se sabe qué es, y daría error. Tab pone las comillas por ti automáticamente cuando hacen falta.</p>
+<p>Hay dos tipos de comillas, y no son iguales:</p>
+<ul>
+<li><b>Dobles <code>"…"</code></b>: PowerShell <b>reemplaza las variables</b> que haya dentro (verás qué es una variable en un momento). <code>"$HOME\Proyectos"</code> se convierte en <code>C:\Users\ana\Proyectos</code>.</li>
+<li><b>Simples <code>'…'</code></b>: el texto se toma <b>tal cual</b>. <code>'$HOME\Proyectos'</code> se queda literalmente como <code>$HOME\Proyectos</code>.</li>
+</ul>
+<p>Regla práctica: usa comillas dobles para rutas. En Java, como verás en el capítulo 17, las comillas dobles son para textos y las simples para un solo carácter; no lo confundas con esto.</p>
+<div class="caja cuidado"><b>Comillas rectas, no tipográficas.</b> Si copias un comando desde un documento de Word o algunas páginas web, puede traer comillas «curvas» como <code>“ ”</code> o <code>‘ ’</code>. Para PowerShell, Java y Git solo valen las rectas: <code>"</code> y <code>'</code>, las que escribes con el teclado. Si un comando copiado falla de forma extraña, revisa las comillas.</div>
+
+<h2>Variables: <code>$HOME</code> y <code>$env:Path</code></h2>
+<p>Una <b>variable</b> es un nombre que guarda un valor, como una caja con una etiqueta. En PowerShell los nombres de variable empiezan con <code>$</code>. Escribe el nombre y presiona Enter para ver su valor:</p>
+<pre class="ps">$HOME</pre>
+<pre class="salida">C:\Users\ana</pre>
+<p><code>$HOME</code> guarda la ruta de tu carpeta personal. Es la razón de que el libro escriba <code>$HOME\Proyectos\Totito</code> en lugar de <code>C:\Users\ana\Proyectos\Totito</code>: el mismo comando funciona en la computadora de cualquier persona, sea cual sea su usuario.</p>
+<p>Las <b>variables de entorno</b> son variables que Windows comparte con todos los programas. En PowerShell se leen con el prefijo <code>$env:</code>:</p>
+<pre class="ps">$env:USERNAME
+$env:Path</pre>
+<p>La primera muestra tu nombre de usuario. La segunda es una de las variables más importantes para programar: <b><code>Path</code></b> es la lista de carpetas donde Windows busca los programas cuando escribes su nombre en la terminal. Cuando escribas <code>java</code>, Windows recorrerá esas carpetas, una por una, hasta encontrar <code>java.exe</code>. Si ninguna lo contiene, verás el error «no se reconoce como nombre de un cmdlet». Las carpetas están separadas por punto y coma, todas en una línea larguísima; para verlas una por renglón:</p>
+<pre class="ps">$env:Path -split ";"</pre>
+<pre class="salida">C:\WINDOWS\system32
+C:\WINDOWS
+C:\WINDOWS\System32\Wbem
+C:\WINDOWS\System32\WindowsPowerShell\v1.0\
+C:\Users\ana\AppData\Local\Microsoft\WindowsApps</pre>
+<p><code>-split ";"</code> parte el texto en trozos cada vez que encuentra un punto y coma. Guarda esta línea: en el capítulo 4 la usarás para comprobar que la instalación de Java agregó su carpeta a esta lista.</p>
+
+<h2>Comandos largos: el acento grave <code>`</code></h2>
+<p>Algunos comandos son tan largos que no caben cómodamente en una línea, como los de <code>jpackage</code> en el capítulo 65. PowerShell permite partirlos terminando la línea con un <b>acento grave</b> <code>`</code> (en inglés <i>backtick</i>). Significa «el comando sigue en la línea de abajo»:</p>
+<pre class="ps">New-Item -ItemType Directory `
+  -Path "$HOME\practica3" `
+  -Force</pre>
+<p>Es exactamente lo mismo que <code>New-Item -ItemType Directory -Path "$HOME\practica3" -Force</code> en una sola línea. Al presionar Enter después de un acento grave, PowerShell muestra <code>&gt;&gt;</code> en la línea siguiente, esperando el resto. Para escribirlo: en el teclado latinoamericano es <b>AltGr</b> más la tecla <b>}</b> (la que está junto a la <b>{</b>, a la derecha de la <b>Ñ</b>); en el de España está en la tecla a la derecha de la <b>P</b>; en el estadounidense, a la izquierda del <b>1</b>. En los teclados en español es una tecla «muerta», como la de las tildes: después de presionarla, presiona la barra espaciadora para que aparezca.</p>
+<div class="caja cuidado"><b>El acento grave debe ser el último carácter.</b> Si después del <code>`</code> queda un espacio invisible, PowerShell ya no entiende que la línea continúa, ejecuta un comando incompleto y la línea siguiente da un error extraño. Si pegas un comando de varias líneas y falla, revisa que no haya espacios al final, o escríbelo todo en una sola línea quitando los acentos graves.</div>
+
+<h2>Pedir ayuda a PowerShell</h2>
+<p>Dos comandos para cuando no recuerdes algo:</p>
+<pre class="ps">Get-Command *Item*
+Get-Alias ls</pre>
+<p>El primero lista los comandos cuyo nombre contiene <code>Item</code> (verás <code>Copy-Item</code>, <code>Move-Item</code>, <code>New-Item</code>…). El segundo te dice a qué cmdlet corresponde un alias. También existe <code>Get-Help</code>, aunque la ayuda completa en Windows PowerShell hay que descargarla aparte; la documentación en línea de Microsoft (busca el nombre del cmdlet) es más cómoda.</p>
+<div class="caja consejo"><b>Si ves «la ejecución de scripts está deshabilitada».</b> Es un mensaje de PowerShell que aparece al intentar ejecutar un archivo de comandos <code>.ps1</code>. En este libro no vas a ejecutar ninguno, así que no deberías verlo. Si te aparece al seguir un tutorial de internet, no cambies la configuración de seguridad sin entender qué hace.</div>
+
+<h2>Práctica: tu carpeta de proyectos</h2>
+<p>Ahora vas a crear la carpeta donde vivirán el Totito y todos tus proyectos futuros. Abre PowerShell y escribe, línea por línea:</p>
+<pre class="ps">cd $HOME
+New-Item -ItemType Directory -Path "$HOME\Proyectos" -Force
+cd Proyectos
+pwd
+ii .</pre>
+<p>Qué hace cada línea:</p>
+<ol>
+<li><code>cd $HOME</code>: te sitúa en tu carpeta personal, estés donde estés.</li>
+<li><code>New-Item … -Force</code>: crea la carpeta <code>Proyectos</code> dentro de tu carpeta personal. La ruta va entre comillas dobles para que <code>$HOME</code> se reemplace por su valor (y por si tu usuario tuviera espacios). <code>-Force</code> evita el error si ya existía.</li>
+<li><code>cd Proyectos</code>: entra en ella (ruta relativa: estabas en <code>$HOME</code>).</li>
+<li><code>pwd</code>: confirma dónde estás. Debe decir <code>C:\Users\&lt;tu-usuario&gt;\Proyectos</code>.</li>
+<li><code>ii .</code>: abre la carpeta en el Explorador para que la veas con tus propios ojos. Está vacía, por ahora.</li>
+</ol>
+<div class="caja hito"><b>Hito</b> Tienes tu carpeta <code>C:\Users\&lt;tu-usuario&gt;\Proyectos</code>, creada desde la terminal. En el capítulo 5 nacerá dentro de ella <code>Totito</code>. Fíjala en el Explorador: haz clic derecho sobre ella y elige <i>Anclar a Acceso rápido</i> para tenerla siempre a mano.</div>
+<p>Si en los ejemplos del capítulo creaste carpetas de práctica (<code>practica</code>, <code>practica2</code>, <code>practica3</code>), bórralas ahora con cuidado, revisando antes qué contienen:</p>
+<pre class="ps">cd $HOME
+ls practica*
+Remove-Item practica, practica2, practica3 -Recurse -WhatIf</pre>
+<p>Si la lista del <code>-WhatIf</code> muestra solo esas carpetas, repite el último comando (flecha arriba) quitando <code>-WhatIf</code> (Retroceso hasta borrarlo) y presiona Enter. Observa que se pueden indicar varias rutas separadas por comas.</p>
+
+<div class="caja cuidado"><b>Si tu usuario tiene espacios o tildes.</b> Si tu carpeta personal es algo como <code>C:\Users\José Pérez</code>, todo funciona, pero acuérdate siempre de poner las rutas entre comillas dobles: <code>cd "$HOME\Proyectos"</code>. Algunas herramientas antiguas tienen problemas con tildes en las rutas; ninguna de las del libro debería tenerlos, pero si en algún capítulo ves un error extraño con una ruta, anótalo como sospechoso en tu cuaderno de errores.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>PowerShell es la terminal de Windows: escribes una orden, presionas Enter y te responde con texto. Es precisa, repetible y la única forma de usar muchas herramientas de programación.</li>
+<li>El indicador <code>PS C:\Users\ana&gt;</code> muestra la carpeta de trabajo; las rutas relativas parten de ella, y las absolutas empiezan con la unidad.</li>
+<li><code>.</code> es la carpeta actual, <code>..</code> la de arriba y <code>~</code> o <code>$HOME</code> tu carpeta personal.</li>
+<li>Comandos básicos: <code>pwd</code>, <code>cd</code>, <code>ls</code>, <code>mkdir</code>/<code>New-Item</code>, <code>cat</code>, <code>Copy-Item</code>, <code>Move-Item</code>, <code>Remove-Item</code>, <code>cls</code> e <code>ii .</code>.</li>
+<li>Lo que borra <code>Remove-Item</code> no va a la Papelera: revisa con <code>ls</code> y prueba con <code>-WhatIf</code>.</li>
+<li>Tab autocompleta (y delata los errores de escritura), las flechas recorren el historial y Ctrl+C cancela.</li>
+<li>Las rutas con espacios van entre comillas dobles; las dobles reemplazan variables y las simples no. El acento grave <code>`</code> al final de una línea continúa el comando en la siguiente.</li>
+<li><code>$env:Path</code> es la lista de carpetas donde Windows busca los programas; la usarás en el capítulo 4.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> La terminal es una herramienta para toda la vida:
+<ul>
+<li><b>Ordenar archivos en masa:</b> <code>Move-Item *.pdf Facturas\</code> mueve todos los PDF de una carpeta en un instante, algo tedioso con el ratón si son cientos.</li>
+<li><b>Respaldar una carpeta de trabajo:</b> <code>Copy-Item "$HOME\Proyectos" "D:\Respaldo" -Recurse</code> copia todos tus proyectos a un disco externo.</li>
+<li><b>Cualquier otro lenguaje de programación:</b> Python, Node.js, PHP, .NET o Android se manejan con los mismos conceptos: carpeta de trabajo, rutas, PATH, comandos con parámetros.</li>
+<li><b>Administrar servidores:</b> los servidores de internet casi nunca tienen pantalla; se manejan por terminal con comandos como <code>cd</code>, <code>ls</code> y <code>cat</code>, que son los mismos (heredados de Unix) que acabas de usar como alias.</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Desde tu carpeta personal, entra a <code>Downloads</code>, lista su contenido, sube un nivel y entra a <code>Desktop</code>, usando Tab para completar los nombres. Al final, vuelve con <code>cd ~</code>.</li>
+<li>Crea dentro de <code>$HOME\Proyectos</code> una carpeta <code>ensayo</code> con tres archivos vacíos (<code>a.txt</code>, <code>b.txt</code>, <code>c.md</code>). Lista solo los <code>.txt</code> con un comodín. Pista: <code>ls *.txt</code>.</li>
+<li>Escribe una frase en <code>a.txt</code> con el Bloc de notas, muéstrala con <code>cat</code>, cópiala a <code>d.txt</code> y renombra <code>b.txt</code> a <code>vacio.txt</code>.</li>
+<li>Borra la carpeta <code>ensayo</code> completa, pero primero con <code>-WhatIf</code>. Anota en tu cuaderno qué mostró.</li>
+<li>Muestra las carpetas de tu <code>$env:Path</code> una por línea y cuéntalas. Pista: <code>($env:Path -split ";").Count</code>. Guarda el número: en el capítulo 4 verás cuántas agregaron los instaladores.</li>
+</ol>
+</div>
+</section>

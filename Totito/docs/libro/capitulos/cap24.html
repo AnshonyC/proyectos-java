@@ -1,0 +1,614 @@
+<section class="capitulo" id="cap24">
+<h1><span class="num">Capítulo 24</span>Clases abstractas e interfaces</h1>
+<p class="entrada">En este capítulo aprendes a escribir clases «a medias» que obligan a sus hijas a completarlas, y contratos que dicen <i>qué</i> debe saber hacer un objeto sin decir <i>cómo</i>. Son las dos herramientas que permiten que las pantallas del Totito no se conozcan entre sí y que puedas ver una pantalla suelta antes de que exista el resto del juego.</p>
+
+<h2>Dos problemas que todavía no sabes resolver</h2>
+<p>Con lo que viste en los capítulos 22 y 23 ya puedes hacer que una clase herede de otra y que Java llame al método correcto según el objeto real (eso era el polimorfismo). Pero quedan dos huecos:</p>
+<ol>
+<li><b>Clases que no deberían existir solas.</b> En el Totito hay una clase <code>PantallaBase</code> que pinta el fondo y pone el encabezado, pero que no trae ningún botón ni ningún contenido. Una «pantalla base» sola sería una pantalla vacía. ¿Cómo le dices a Java «de esta clase se hereda, pero no se crean objetos»?</li>
+<li><b>Objetos que tienen que hablar sin conocerse.</b> La pantalla del menú tiene un botón «Jugar» que debe llevar a la configuración. ¿Quién cambia de pantalla? Si el menú tuviera que conocer a la clase que guarda todas las pantallas, y esa clase a su vez conociera al menú, quedarían amarradas una con otra. ¿Cómo dices «necesito a <i>alguien</i> que sepa cambiar de pantalla, no me importa quién»?</li>
+</ol>
+<p>La respuesta al primer problema es la <b>clase abstracta</b>. La respuesta al segundo es la <b>interfaz</b>. Las vemos en ese orden y al final las comparamos.</p>
+
+<h2>Clases abstractas</h2>
+
+<h3>La idea: una categoría, no una cosa</h3>
+<p>Entra a una tienda de electrodomésticos y pide «un electrodoméstico». El vendedor te va a preguntar: «¿Cuál? ¿Una licuadora, una refrigeradora, una plancha?». La palabra <i>electrodoméstico</i> describe lo que todos tienen en común (se enchufan, tienen marca, consumen tantos watts), pero en la bodega no hay ninguna caja que diga solo «electrodoméstico». Es una <b>categoría</b>: sirve para agrupar y para describir lo común, no para fabricar.</p>
+<p>Una <b>clase abstracta</b> es eso mismo en Java: una clase de la que <b>no se pueden crear objetos con <code>new</code></b>, que existe para que otras hereden de ella. Puede tener campos, constructores y métodos completos (lo común), y además puede tener <b>métodos abstractos</b>: métodos que solo tienen nombre y parámetros, sin cuerpo, que cada hija está <i>obligada</i> a escribir. Es como un formulario con casillas en blanco: el formulario ya viene impreso, pero cada quien llena su parte.</p>
+
+<h3>Cómo se escribe</h3>
+<p>Un ejemplo pequeño, fuera del Totito: figuras geométricas. Toda figura tiene un nombre y sabe describirse, pero cada una calcula su área de forma distinta.</p>
+<pre class="java">abstract class Figura {
+    private final String nombre;
+
+    protected Figura(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public abstract double area();
+
+    public void describir() {
+        System.out.printf("%s: area = %.2f%n", nombre, area());
+    }
+}</pre>
+<p>Pieza por pieza:</p>
+<ul>
+<li><code>abstract class Figura</code>: la palabra <code>abstract</code> delante de <code>class</code> dice «esta clase está incompleta a propósito: no se pueden hacer objetos de ella». Lo demás (<code>class</code>, el nombre, la llave <code>{</code>) es como en cualquier clase (capítulo 18).</li>
+<li><code>private final String nombre;</code>: un campo normal. Una clase abstracta <b>sí puede guardar datos</b>; las hijas los reciben, aunque al ser <code>private</code> solo los usa la propia <code>Figura</code> (capítulo 19).</li>
+<li><code>protected Figura(String nombre)</code>: un constructor. «¿Para qué un constructor si no se pueden crear objetos?» Porque cuando creas un <code>Circulo</code>, el <code>Circulo</code> también es una <code>Figura</code>, y su parte de <code>Figura</code> hay que inicializarla: la hija lo llama con <code>super(nombre)</code> (capítulo 22). Se marca <code>protected</code> porque solo las hijas tienen motivo para llamarlo.</li>
+<li><code>public abstract double area();</code>: un <b>método abstracto</b>. Fíjate en tres cosas: lleva la palabra <code>abstract</code>, dice qué devuelve (<code>double</code>) y qué recibe (nada, por los paréntesis vacíos <code>()</code>), y <b>termina en punto y coma en vez de llaves</b>. No hay cuerpo porque la figura genérica no sabe calcular su área; solo promete que toda figura concreta sabrá.</li>
+<li><code>public void describir() { ... }</code>: un método completo, con cuerpo. Fíjate que llama a <code>area()</code> aunque <code>area()</code> no tenga cuerpo aquí: cuando se ejecute, el objeto real será un <code>Circulo</code> o un <code>Rectangulo</code>, y por enlace dinámico (capítulo 23) se usará <i>su</i> versión de <code>area()</code>.</li>
+</ul>
+<div class="caja concepto"><b>Regla de las dos direcciones</b> Si una clase tiene aunque sea un método abstracto, la clase <b>tiene</b> que declararse <code>abstract</code>. Pero al revés no: una clase puede ser <code>abstract</code> sin tener ningún método abstracto. El Totito usa justo este segundo caso, como verás enseguida.</div>
+<p>Ahora el programa completo, con dos hijas concretas. Guárdalo como <code>Figuras.java</code> en tu carpeta de prácticas:</p>
+<pre class="java">public class Figuras {
+    public static void main(String[] args) {
+        Figura[] figuras = {
+            new Circulo("rueda", 1.0),
+            new Rectangulo("puerta", 2.0, 0.9)
+        };
+        for (Figura f : figuras) {
+            f.describir();
+        }
+    }
+}
+
+abstract class Figura {
+    private final String nombre;
+
+    protected Figura(String nombre) {
+        this.nombre = nombre;
+    }
+
+    /** Cada figura sabe calcular su area, pero cada una a su manera. */
+    public abstract double area();
+
+    /** Metodo normal: es igual para todas las figuras. */
+    public void describir() {
+        System.out.printf("%s: area = %.2f%n", nombre, area());
+    }
+}
+
+class Circulo extends Figura {
+    private final double radio;
+
+    Circulo(String nombre, double radio) {
+        super(nombre);
+        this.radio = radio;
+    }
+
+    @Override
+    public double area() {
+        return Math.PI * radio * radio;
+    }
+}
+
+class Rectangulo extends Figura {
+    private final double ancho;
+    private final double alto;
+
+    Rectangulo(String nombre, double ancho, double alto) {
+        super(nombre);
+        this.ancho = ancho;
+        this.alto = alto;
+    }
+
+    @Override
+    public double area() {
+        return ancho * alto;
+    }
+}</pre>
+<pre class="ps">cd $HOME\Proyectos\Practicas
+java Figuras.java</pre>
+<pre class="salida">rueda: area = 3.14
+puerta: area = 1.80</pre>
+<p>El arreglo es de tipo <code>Figura[]</code>, la clase abstracta. Eso sí se puede: lo que no se puede es <i>crear</i> un objeto <code>Figura</code>, pero una variable o un arreglo de tipo <code>Figura</code> puede guardar cualquier hija. El <code>for</code> llama a <code>describir()</code> sin saber qué figura tiene en la mano.</p>
+
+<h3>Lo que Java no te deja hacer (y por qué es bueno)</h3>
+<p>Prueba a agregar <code>new Figura("misterio")</code> dentro del arreglo. Java se niega antes de ejecutar nada:</p>
+<pre class="salida">Figuras.java:4: error: Figura is abstract; cannot be instantiated
+            new Circulo("rueda", 1.0), new Figura("misterio"),
+                                       ^
+1 error
+error: compilation failed</pre>
+<p>«Figura es abstracta; no se puede instanciar» (<i>instanciar</i> = crear un objeto, una <i>instancia</i>). Tiene todo el sentido: si existiera un objeto <code>Figura</code> a secas, ¿qué devolvería su <code>area()</code>? No tiene cuerpo.</p>
+<p>El segundo error útil: una hija que se olvida de completar el formulario. Si escribes <code>class Triangulo extends Figura { }</code> sin método <code>area()</code>:</p>
+<pre class="salida">Figuras2.java:11: error: Triangulo is not abstract and does not override abstract method area() in Figura
+class Triangulo extends Figura {
+^
+1 error
+error: compilation failed</pre>
+<p>«Triangulo no es abstracta y no sobrescribe el método abstracto area() de Figura». Tienes dos salidas: escribir el método (lo normal) o declarar <code>Triangulo</code> también como <code>abstract</code>, pasándole la tarea a <i>sus</i> hijas. Los mensajes del compilador salen en inglés aunque tu Windows esté en español; con el tiempo te los aprenderás de memoria.</p>
+<div class="caja consejo"><b>El compilador como lista de pendientes</b> Los métodos abstractos convierten un olvido (que en ejecución sería un error difícil de encontrar) en un error de compilación con el nombre exacto del método que falta. Cuando una clase tiene que «completar» algo sí o sí, hazlo abstracto y deja que Java te lo recuerde.</div>
+
+<h3>En el Totito: <code>PantallaBase</code></h3>
+<p>Todas las pantallas del juego (menú, instrucciones, configuración, juego, resultado) comparten el mismo fondo morado con X y O gigantes, el mismo encabezado arriba y una columna central donde se apilan las cosas. Todo eso vive en <code>src/PantallaBase.java</code>, que construirás línea por línea en el capítulo 55:</p>
+<pre class="java">public abstract class PantallaBase extends JPanel {
+
+    private final JPanel contenido;
+
+    protected PantallaBase(Navegacion navegacion) {
+        super(new BorderLayout());
+        add(new Encabezado(navegacion::salir), BorderLayout.NORTH);
+
+        contenido = new JPanel();
+        contenido.setOpaque(false);
+        contenido.setLayout(new BoxLayout(contenido, BoxLayout.Y_AXIS));
+        contenido.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        add(contenido, BorderLayout.CENTER);
+    }</pre>
+<p>Lee la primera línea: <code>public abstract class PantallaBase extends JPanel</code>. Es pública, es <b>abstracta</b> y hereda de <code>JPanel</code>. Ahora busca en el archivo un método abstracto: <b>no hay ninguno</b>. Tiene métodos completos (<code>agregar</code>, <code>espacio</code>, <code>relleno</code>, <code>fila</code>, <code>paintComponent</code>) y ni uno solo termina en punto y coma sin cuerpo. Entonces, ¿por qué es abstracta?</p>
+<p>Porque una <code>PantallaBase</code> sola no tiene sentido: sería un fondo con encabezado y una columna vacía en medio. La palabra <code>abstract</code> aquí no obliga a completar ningún método; <b>documenta y hace cumplir una intención</b>: «esta clase es para heredar de ella». Las cinco pantallas sí son concretas, por ejemplo <code>src/PantallaMenu.java</code> (capítulo 56):</p>
+<pre class="java">public class PantallaMenu extends PantallaBase {
+
+    public PantallaMenu(Navegacion navegacion) {
+        super(navegacion);</pre>
+<p>La hija llama al constructor del padre con <code>super(navegacion)</code> y después, con <code>agregar(...)</code> y <code>relleno()</code>, pone sus botones en la columna.</p>
+<h3>¿Qué pasaría si no fuera abstracta?</h3>
+<p>Quizá pienses: «el constructor es <code>protected</code>, así que de todas formas nadie podría hacer <code>new PantallaBase(...)</code>». Cuidado: recuerda del capítulo 19 que <code>protected</code> deja pasar a las hijas <b>y a todas las clases del mismo paquete</b>. En el Totito todas las clases viven en el paquete por defecto (sin <code>package</code>), así que cualquier clase podría escribir <code>new PantallaBase(navegacion)</code> y obtener una pantalla vacía que nadie pidió. Con <code>abstract</code>, eso es un error de compilación en cualquier parte del programa. La protección no depende de dónde esté el archivo.</p>
+
+<h3>Aplícalo en otros sistemas</h3>
+<ul>
+<li><b>Banco:</b> <code>abstract class Cuenta</code> con saldo, número y <code>depositar()</code> completos, y <code>abstract double calcularInteres()</code>; las hijas <code>CuentaAhorro</code> y <code>CuentaMonetaria</code> calculan cada una su interés. Nadie abre «una cuenta» genérica.</li>
+<li><b>Planilla de una empresa:</b> <code>abstract class Empleado</code> con nombre y DPI, y <code>abstract double salarioDelMes()</code>; <code>EmpleadoFijo</code> paga sueldo base, <code>EmpleadoPorHora</code> multiplica horas por tarifa.</li>
+<li><b>Otro juego:</b> <code>abstract class Personaje</code> con vida y posición, y <code>abstract void atacar(Personaje otro)</code>; el guerrero, el mago y el arquero atacan distinto.</li>
+</ul>
+
+<h2>Interfaces</h2>
+
+<h3>La idea: un contrato, como el tomacorriente</h3>
+<p>El tomacorriente de tu casa no sabe qué le vas a conectar. Puede ser una licuadora, el cargador del teléfono o una lámpara. No le importa: solo exige que lo que se conecte tenga la forma de enchufe correcta. Y a la licuadora tampoco le importa si la electricidad viene de la red, de una planta o de un panel solar. Los dos lados acordaron una <b>forma común</b>, y gracias a eso cualquiera de un lado funciona con cualquiera del otro.</p>
+<p>Una <b>interfaz</b> en Java es esa forma común: una lista de métodos (nombre, parámetros y tipo de retorno) <b>sin código</b>. No guarda datos ni dice cómo se hace nada; solo dice «quien firme este contrato sabrá hacer estas cosas». Una clase «firma» el contrato con la palabra <code>implements</code> y queda obligada a escribir todos esos métodos.</p>
+<div class="caja cuidado"><b>Dos significados de «interfaz»</b> En este libro también hablamos de la <i>interfaz gráfica</i> (las ventanas y botones que ve el jugador). No tiene nada que ver: aquí <code>interface</code> es una palabra de Java para un tipo de contrato entre clases. El contexto siempre deja claro cuál es cuál.</div>
+
+<h3>Cómo se escribe: <code>Navegacion</code>, completa</h3>
+<p>El archivo <code>src/Navegacion.java</code> del Totito (capítulo 39) es una interfaz pura. Aquí está entero:</p>
+<pre class="java">/**
+ * Lo que las pantallas pueden pedir: cambiar a otra pantalla, empezar una
+ * partida o cerrar el juego. Lo implementa PanelPrincipal.
+ *
+ * Gracias a esta interfaz ninguna pantalla conoce a las demas: solo dicen
+ * "quiero ir al menu" y PanelPrincipal se encarga.
+ */
+public interface Navegacion {
+
+    void irAlMenu();
+
+    void irAInstrucciones();
+
+    void irAConfiguracion();
+
+    /** Crea una partida nueva (marcador en cero) y muestra el tablero. */
+    void iniciarPartida(Jugador jugador1, Jugador jugador2, Partida.Modo modo);
+
+    /** Muestra la pantalla de victoria o empate de la partida terminada. */
+    void mostrarResultado(Partida partida);
+
+    /** Otra partida con los mismos jugadores, conservando el marcador. */
+    void jugarDeNuevo();
+
+    void salir();
+}</pre>
+<p>Símbolo por símbolo:</p>
+<ul>
+<li><code>public interface Navegacion</code>: en lugar de <code>class</code> se escribe <code>interface</code>. El nombre sigue la misma regla que las clases (mayúscula inicial) y el archivo se llama igual, <code>Navegacion.java</code>.</li>
+<li><code>void irAlMenu();</code>: un método sin cuerpo, terminado en <code>;</code>, igual que un método abstracto. En una interfaz <b>no hace falta escribir <code>public abstract</code></b>: Java lo da por hecho. Todos los métodos sin cuerpo de una interfaz son automáticamente públicos y abstractos.</li>
+<li><code>void iniciarPartida(Jugador jugador1, Jugador jugador2, Partida.Modo modo);</code>: los métodos pueden recibir parámetros como cualquier otro. <code>Partida.Modo</code> es un <i>enum</i> que vive dentro de <code>Partida</code> (capítulo 26).</li>
+<li>No hay campos, no hay constructor, no hay <code>new</code>. Una interfaz no se puede crear con <code>new Navegacion()</code> a secas, por la misma razón que una clase abstracta: sus métodos no tienen cuerpo.</li>
+</ul>
+<p>Lee los nombres de los métodos en voz alta: «ir al menú», «ir a instrucciones», «iniciar partida», «salir». Son exactamente <b>las cosas que una pantalla puede pedir</b>. Ni una más. La interfaz es el menú de servicios.</p>
+
+<h3>Firmar el contrato: <code>implements</code></h3>
+<p>Quien de verdad sabe cambiar de pantalla es <code>PanelPrincipal</code> (capítulo 61), que guarda las cinco pantallas en un <code>CardLayout</code> (un «mazo de cartas» que muestra una a la vez). Su primera línea y uno de sus métodos:</p>
+<pre class="java">public class PanelPrincipal extends JPanel implements Navegacion {
+    ...
+    @Override
+    public void irAlMenu() {
+        cartas.show(this, MENU);
+    }</pre>
+<ul>
+<li><code>extends JPanel</code>: hereda de <code>JPanel</code>, porque es un panel que se mete en la ventana (capítulo 22).</li>
+<li><code>implements Navegacion</code>: además, firma el contrato <code>Navegacion</code>. Desde ese momento Java exige que <code>PanelPrincipal</code> tenga los siete métodos, con los mismos nombres, parámetros y tipos de retorno.</li>
+<li><code>@Override</code>: la misma anotación del capítulo 23. Aquí significa «este método cumple uno del contrato». Si te equivocas en el nombre (<code>irAlMenú</code> con tilde, por ejemplo), Java avisa.</li>
+<li><code>public void irAlMenu()</code>: <b>tiene que ser <code>public</code></b>. Como los métodos de la interfaz son públicos, la clase no puede ofrecerlos «más cerrados»; si quitas el <code>public</code>, el compilador se queja de que intentas asignar privilegios de acceso más débiles.</li>
+</ul>
+<p>Si a la clase le falta un método del contrato, el error es casi el mismo que con la clase abstracta. Por ejemplo, una clase <code>Controlador implements Navegacion</code> que solo escribe <code>irAConfiguracion()</code> y se olvida de <code>salir()</code>:</p>
+<pre class="salida">Incompleta.java:12: error: Controlador is not abstract and does not override abstract method salir() in Navegacion
+class Controlador implements Navegacion {
+^
+1 error
+error: compilation failed</pre>
+
+<h3>Del otro lado: quien usa la interfaz</h3>
+<p>Ahora mira cómo la usan las pantallas. El constructor de <code>PantallaMenu</code>:</p>
+<pre class="java">    public PantallaMenu(Navegacion navegacion) {
+        super(navegacion);
+
+        BotonNeon jugar = BotonNeon.menu("Jugar", Iconos.JUGAR, Tema.ROSA);
+        jugar.addActionListener(e -&gt; navegacion.irAConfiguracion());
+        BotonNeon instrucciones = BotonNeon.menu("Instrucciones", Iconos.LIBRO, Tema.AZUL);
+        instrucciones.addActionListener(e -&gt; navegacion.irAInstrucciones());
+        BotonNeon salir = BotonNeon.menu("Salir", Iconos.SALIR, Tema.MORADO);
+        salir.addActionListener(e -&gt; navegacion.salir());</pre>
+<p>El parámetro es de tipo <code>Navegacion</code>, <b>no</b> <code>PanelPrincipal</code>. El menú no sabe que existe un <code>PanelPrincipal</code>, ni un <code>CardLayout</code>, ni cuántas pantallas hay. Solo sabe que le dieron «alguien que cumple <code>Navegacion</code>», y cuando se pulsa «Jugar» le dice <code>navegacion.irAConfiguracion()</code>. (Lo de <code>e -&gt; ...</code> es una <i>lambda</i>; la explica el capítulo 25. Por ahora léelo como «cuando se pulse, haz esto».)</p>
+<p>Y <code>PanelPrincipal</code>, al crear las pantallas, se pasa a sí mismo:</p>
+<pre class="java">        add(new PantallaMenu(this), MENU);</pre>
+<p><code>this</code> es el propio <code>PanelPrincipal</code> (capítulo 20). Como <code>PanelPrincipal</code> implementa <code>Navegacion</code>, <b>es</b> una <code>Navegacion</code>, y se puede pasar donde se pide una. Es la misma regla del capítulo 23 («una variable de tipo padre puede apuntar a un hijo»), pero con interfaces: una variable de tipo interfaz puede apuntar a cualquier objeto de una clase que la implemente.</p>
+
+<h3>Pruébalo en pequeño</h3>
+<p>Este programa reproduce la idea con tres piezas: la interfaz, un controlador que la implementa y una pantalla que solo conoce la interfaz. Al final aparece una segunda <code>Navegacion</code> «de mentira», que explicamos en la sección siguiente. Guárdalo como <code>MiniNavegacion.java</code>:</p>
+<pre class="java">public class MiniNavegacion {
+    public static void main(String[] args) {
+        // 1) Con el "jefe" de verdad:
+        Controlador jefe = new Controlador();
+        PantallaMenu menu = new PantallaMenu(jefe);
+        menu.pulsar("Jugar");
+        menu.pulsar("Salir");
+
+        // 2) Con una Navegacion "de mentira" (clase anonima), para probar la pantalla sola:
+        Navegacion deMentira = new Navegacion() {
+            @Override
+            public void irAConfiguracion() {
+                System.out.println("[prueba] la pantalla pidio ir a configuracion");
+            }
+
+            @Override
+            public void salir() {
+                System.out.println("[prueba] la pantalla pidio salir");
+            }
+        };
+        PantallaMenu menuDePrueba = new PantallaMenu(deMentira);
+        menuDePrueba.pulsar("Jugar");
+        menuDePrueba.pulsar("Salir");
+    }
+}
+
+/** Lo que una pantalla puede pedir. No dice COMO se hace. */
+interface Navegacion {
+    void irAConfiguracion();
+
+    void salir();
+}
+
+/** Quien de verdad sabe cambiar de pantalla. */
+class Controlador implements Navegacion {
+    private String pantallaActual = "menu";
+
+    @Override
+    public void irAConfiguracion() {
+        pantallaActual = "configuracion";
+        System.out.println("Controlador: ahora se ve " + pantallaActual);
+    }
+
+    @Override
+    public void salir() {
+        System.out.println("Controlador: cerrando el juego (estaba en " + pantallaActual + ")");
+    }
+}
+
+/** La pantalla solo conoce la INTERFAZ, no al Controlador. */
+class PantallaMenu {
+    private final Navegacion navegacion;
+
+    PantallaMenu(Navegacion navegacion) {
+        this.navegacion = navegacion;
+    }
+
+    void pulsar(String boton) {
+        if (boton.equals("Jugar")) {
+            navegacion.irAConfiguracion();
+        } else if (boton.equals("Salir")) {
+            navegacion.salir();
+        }
+    }
+}</pre>
+<pre class="ps">java MiniNavegacion.java</pre>
+<pre class="salida">Controlador: ahora se ve configuracion
+Controlador: cerrando el juego (estaba en configuracion)
+[prueba] la pantalla pidio ir a configuracion
+[prueba] la pantalla pidio salir</pre>
+<p>La clase <code>PantallaMenu</code> es <b>la misma</b> en los dos casos; no se cambió ni una letra. Lo que cambió fue el objeto que se le dio. Esa es toda la gracia de una interfaz.</p>
+
+<h3>¿Qué pasaría sin la interfaz?</h3>
+<p>Imagina que el constructor fuera <code>public PantallaMenu(PanelPrincipal principal)</code>. Tres consecuencias:</p>
+<ol>
+<li><b>Dependencia circular.</b> <code>PanelPrincipal</code> crea a <code>PantallaMenu</code>, y <code>PantallaMenu</code> necesita a <code>PanelPrincipal</code>. Cada una depende de la otra: no puedes entender, cambiar ni compilar una sin la otra.</li>
+<li><b>Demasiado poder.</b> El menú tendría a mano <i>todos</i> los métodos públicos de <code>PanelPrincipal</code> (y de <code>JPanel</code>, que son cientos): podría cambiarle el tamaño, quitarle pantallas o leer la partida. Con la interfaz solo ve siete métodos, los que necesita.</li>
+<li><b>No se podría ver una pantalla suelta.</b> En este libro construyes las pantallas en los capítulos 56 a 60 y <code>PanelPrincipal</code> recién en el 61. Si las pantallas exigieran un <code>PanelPrincipal</code>, no podrías verlas hasta el final. Gracias a la interfaz, en el capítulo 56 usarás la <code>VistaPrevia</code> con una <code>Navegacion</code> de mentira y verás el menú funcionando semanas antes.</li>
+</ol>
+
+<h2>La <code>Navegacion</code> de mentira de <code>VistaPrevia</code></h2>
+<p>El archivo <code>herramientas/VistaPrevia.java</code> (capítulo 56) abre una pantalla sola en una ventana. Para crear la pantalla necesita una <code>Navegacion</code>, pero <code>PanelPrincipal</code> todavía no existe. La solución:</p>
+<pre class="java">            // Una Navegacion "de mentira": cada metodo existe pero no hace nada.
+            Navegacion sinNavegacion = new Navegacion() {
+                @Override public void irAlMenu() { }
+                @Override public void irAInstrucciones() { }
+                @Override public void irAConfiguracion() { }
+                @Override public void iniciarPartida(Jugador j1, Jugador j2, Partida.Modo modo) { }
+                @Override public void mostrarResultado(Partida partida) { }
+                @Override public void jugarDeNuevo() { }
+                @Override public void salir() { System.exit(0); }
+            };
+
+            JPanel pantalla = new PantallaMenu(sinNavegacion);   // &lt;-- AQUI</pre>
+<p>Parece que hace <code>new Navegacion()</code>, lo que acabamos de decir que no se puede. La diferencia está en la llave <code>{</code> que viene justo después de los paréntesis: eso es una <b>clase anónima</b>, una clase sin nombre que se declara y se usa en el mismo lugar. Se lee así: «crea un objeto de una clase nueva, sin nombre, que implementa <code>Navegacion</code>, y cuyos métodos son estos». Como trae los siete métodos con cuerpo (aunque el cuerpo sea <code>{ }</code>, vacío), el contrato queda cumplido. El <code>;</code> después de la llave de cierre <code>}</code> termina la sentencia de asignación, como en <code>int x = 5;</code>. El capítulo 25 explica las clases anónimas a fondo.</p>
+<p>Fíjate en dos detalles. Primero, todos los métodos están vacíos excepto <code>salir()</code>, que cierra el programa: así la X del encabezado y el botón «Salir» funcionan en la vista previa, y el resto de botones simplemente no hacen nada. Segundo, la variable <code>pantalla</code> es de tipo <code>JPanel</code>, el abuelo de <code>PantallaMenu</code>: para meterla en la ventana no hace falta saber qué pantalla es (polimorfismo, capítulo 23).</p>
+<div class="caja concepto"><b>Doble de prueba</b> Un objeto que se hace pasar por el de verdad para poder probar otra pieza aislada se llama <b>doble de prueba</b> (en inglés <i>test double</i>; según lo que hace se le dice <i>stub</i>, <i>fake</i> o <i>mock</i>). Solo es posible cuando la pieza que pruebas depende de una <b>interfaz</b> y no de una clase concreta. Es la base de las pruebas automáticas que verás en el capítulo 69.</div>
+
+<h2>Otras dos interfaces del Totito</h2>
+<h3><code>PanelTablero.OyenteCasilla</code>: «avísame cuando hagan clic»</h3>
+<p><code>PanelTablero</code> (capítulo 48) dibuja el tablero de neón, y se usa en tres lugares: la partida (donde se hace clic), la pantalla de victoria y el ejemplo de las instrucciones (donde no). El panel no decide qué hacer con un clic: solo avisa. Para eso declara, <b>dentro</b> de su propia clase, una interfaz de un solo método:</p>
+<pre class="java">public class PanelTablero extends JComponent {
+
+    /** Quien quiera enterarse de los clics implementa esta interfaz. */
+    public interface OyenteCasilla {
+        void casillaPulsada(int fila, int columna);
+    }</pre>
+<p>Una interfaz puede declararse dentro de una clase; desde fuera se nombra <code>PanelTablero.OyenteCasilla</code>, con un punto, como una dirección: «la interfaz OyenteCasilla que está en PanelTablero». Se puso ahí porque solo tiene sentido junto al tablero. El panel guarda un campo <code>private OyenteCasilla oyente;</code> y, cuando detecta un clic válido, llama a <code>oyente.casillaPulsada(filaEncima, columnaEncima)</code>. Quien sea el oyente, el panel no lo sabe. En la partida, el oyente es <code>PantallaJuego</code>, que se registra con <code>tablero.setOyente(this::alPulsarCasilla);</code> (esa forma de escribirlo, con <code>::</code>, es una referencia a método: capítulo 25).</p>
+<p>¿Qué pasaría sin la interfaz? <code>PanelTablero</code> tendría que conocer a <code>PantallaJuego</code> y a <code>Partida</code>, y ya no serviría para dibujar el tablero de muestra de las instrucciones ni el de la victoria sin arrastrar toda la lógica del juego. Este estilo de «yo aviso, tú decides» se llama patrón <b>Observador</b>, y el capítulo 27 lo pone en su contexto.</p>
+
+<h3><code>Iconos.Icono</code>: «algo que sabe dibujarse»</h3>
+<p>En <code>src/Iconos.java</code> (capítulo 42):</p>
+<pre class="java">    /** Un icono sabe dibujarse en el cuadrado (x, y, tam, tam) con el color dado. */
+    @FunctionalInterface
+    public interface Icono {
+        void dibujar(Graphics2D g, double x, double y, double tam, Color color);
+    }</pre>
+<p>Cada icono del juego (el triángulo de «Jugar», el libro, la puerta de «Salir», la casa, el trofeo) es un objeto que cumple este contrato. <code>BotonNeon</code> guarda un campo <code>private final Iconos.Icono icono;</code> y al pintarse llama a <code>icono.dibujar(...)</code>, sin saber si está dibujando un libro o una casa. Para tener un botón con otro dibujo no hay que tocar <code>BotonNeon</code>: basta con darle otro icono. La anotación <code>@FunctionalInterface</code> y la forma en que se escriben los iconos (con lambdas) son tema del capítulo 25.</p>
+
+<h2>Programar contra interfaces</h2>
+<p>Hay un consejo que vas a leer en cualquier libro de diseño: <b>«programa contra interfaces, no contra implementaciones»</b>. Quiere decir: cuando declares un parámetro, un campo o una variable, usa el tipo <i>más general que te alcance</i> (la interfaz), no la clase concreta. Así quien te use puede darte cualquier cosa que cumpla el contrato.</p>
+<p>Ya lo hiciste sin darte cuenta si escribiste algo como:</p>
+<pre class="java">List&lt;String&gt; nombres = new ArrayList&lt;&gt;();</pre>
+<p><code>List</code> es una interfaz del JDK (la biblioteca que viene con Java) y <code>ArrayList</code> una de sus implementaciones. Si mañana necesitas una <code>LinkedList</code>, cambias solo lo que va después del <code>new</code>; todo el resto del código, que solo conoce <code>List</code>, sigue igual.</p>
+<p>El dibujo muestra cómo quedan conectadas las piezas del Totito gracias a <code>Navegacion</code>. Las flechas de línea continua son «usa»; las punteadas con punta hueca son «implementa» (la notación UML del capítulo 21):</p>
+<svg viewBox="0 0 640 300" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="640" height="300" fill="#1C1740"/>
+<rect x="20" y="20" width="170" height="40" rx="8" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="105" y="45" fill="#FFFFFF" font-size="15" font-family="sans-serif" text-anchor="middle">PantallaMenu</text>
+<rect x="20" y="75" width="170" height="40" rx="8" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="105" y="100" fill="#FFFFFF" font-size="15" font-family="sans-serif" text-anchor="middle">PantallaJuego</text>
+<rect x="20" y="130" width="170" height="40" rx="8" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="105" y="155" fill="#FFFFFF" font-size="15" font-family="sans-serif" text-anchor="middle">PantallaResultado</text>
+<text x="105" y="195" fill="#C8BCF6" font-size="13" font-family="sans-serif" text-anchor="middle">(y las demás pantallas)</text>
+<rect x="240" y="80" width="170" height="50" rx="8" fill="#2B2363" stroke="#A05CFF" stroke-width="2.5"/>
+<text x="325" y="100" fill="#C8BCF6" font-size="12" font-family="sans-serif" text-anchor="middle">«interface»</text>
+<text x="325" y="120" fill="#FFFFFF" font-size="16" font-family="sans-serif" text-anchor="middle">Navegacion</text>
+<line x1="190" y1="40" x2="240" y2="95" stroke="#C8BCF6" stroke-width="1.5"/>
+<line x1="190" y1="95" x2="240" y2="105" stroke="#C8BCF6" stroke-width="1.5"/>
+<line x1="190" y1="150" x2="240" y2="115" stroke="#C8BCF6" stroke-width="1.5"/>
+<text x="215" y="230" fill="#C8BCF6" font-size="12" font-family="sans-serif" text-anchor="middle">usan</text>
+<rect x="460" y="30" width="165" height="50" rx="8" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="542" y="52" fill="#FFFFFF" font-size="15" font-family="sans-serif" text-anchor="middle">PanelPrincipal</text>
+<text x="542" y="70" fill="#C8BCF6" font-size="12" font-family="sans-serif" text-anchor="middle">(el juego real)</text>
+<rect x="460" y="140" width="165" height="50" rx="8" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="542" y="162" fill="#FFFFFF" font-size="15" font-family="sans-serif" text-anchor="middle">clase anónima</text>
+<text x="542" y="180" fill="#C8BCF6" font-size="12" font-family="sans-serif" text-anchor="middle">(VistaPrevia)</text>
+<line x1="460" y1="55" x2="418" y2="92" stroke="#2F84FF" stroke-width="1.5" stroke-dasharray="6 4"/>
+<polygon points="410,99 424,96 415,86" fill="#1C1740" stroke="#2F84FF" stroke-width="1.5"/>
+<line x1="460" y1="165" x2="418" y2="122" stroke="#2F84FF" stroke-width="1.5" stroke-dasharray="6 4"/>
+<polygon points="410,115 415,126 424,118" fill="#1C1740" stroke="#2F84FF" stroke-width="1.5"/>
+<text x="560" y="115" fill="#C8BCF6" font-size="12" font-family="sans-serif" text-anchor="middle">implementan</text>
+<text x="320" y="270" fill="#C8BCF6" font-size="13" font-family="sans-serif" text-anchor="middle">Las pantallas no conocen a quien implementa: solo al contrato del centro.</text>
+</svg>
+<p>El contrato queda en medio, y los dos lados dependen de él, no el uno del otro. A esto se le llama <b>desacoplar</b>: separar dos piezas para que una pueda cambiar (o reemplazarse) sin tocar la otra. El capítulo 27 vuelve sobre el acoplamiento como principio de diseño.</p>
+
+<h2>Una clase, varias interfaces; métodos <code>default</code> y <code>static</code></h2>
+<h3>Varias interfaces a la vez</h3>
+<p>Una clase solo puede heredar de <b>una</b> clase (<code>extends</code> lleva un solo nombre, capítulo 22), pero puede implementar <b>todas las interfaces que quiera</b>, separadas por comas: <code>class X extends Y implements A, B, C</code>. ¿Por qué esa diferencia? Porque si heredaras de dos clases que tienen un método con el mismo nombre y distinto código, Java no sabría cuál usar. Las interfaces, en cambio, solo prometen: si dos interfaces piden el mismo método, la clase escribe uno y cumple con las dos.</p>
+<p>Por eso <code>PanelPrincipal</code> puede ser a la vez un <code>JPanel</code> (hereda) y una <code>Navegacion</code> (implementa). Si <code>Navegacion</code> hubiera sido una clase abstracta en vez de una interfaz, <code>PanelPrincipal</code> habría tenido que elegir entre ser un panel o ser una navegación.</p>
+<h3>Métodos <code>default</code> y <code>static</code></h3>
+<p>Desde Java 8 una interfaz puede traer dos clases de métodos <i>con</i> cuerpo:</p>
+<ul>
+<li><b><code>default</code></b>: un método ya hecho que todas las clases que implementan la interfaz reciben gratis, y que pueden sobrescribir si quieren. Sirve para agregar comportamiento a un contrato sin romper a quienes ya lo cumplían.</li>
+<li><b><code>static</code></b>: un método que pertenece a la interfaz misma, no a cada objeto, y se llama con el nombre de la interfaz: <code>Notificador.largoMaximo()</code> (como los <code>static</code> de clases del capítulo 20).</li>
+</ul>
+<p>El Totito no los necesita, pero aparecen mucho en el JDK. Este ejemplo de avisos de una escuela junta todo: una interfaz con un método <code>default</code> y uno <code>static</code>, tres clases que la cumplen y una que además implementa una segunda interfaz. Guárdalo como <code>Avisos.java</code>:</p>
+<pre class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class Avisos {
+    public static void main(String[] args) {
+        List&lt;Notificador&gt; canales = new ArrayList&lt;&gt;();
+        canales.add(new Correo("ana@escuela.edu"));
+        canales.add(new Sms("5555-1234"));
+        canales.add(new CorreoYRegistro("direccion@escuela.edu"));
+
+        for (Notificador canal : canales) {
+            canal.enviar("Mañana no hay clases");
+            canal.enviarUrgente("Se suspendió el examen");
+        }
+        System.out.println("Largo máximo de un aviso: " + Notificador.largoMaximo());
+    }
+}
+
+interface Notificador {
+    void enviar(String mensaje);
+
+    /** Metodo default: todas las clases lo reciben ya hecho (pueden cambiarlo). */
+    default void enviarUrgente(String mensaje) {
+        enviar("URGENTE: " + mensaje);
+    }
+
+    /** Metodo static: pertenece a la interfaz, no a cada objeto. */
+    static int largoMaximo() {
+        return 160;
+    }
+}
+
+interface Registrable {
+    String registro();
+}
+
+class Correo implements Notificador {
+    private final String direccion;
+
+    Correo(String direccion) {
+        this.direccion = direccion;
+    }
+
+    @Override
+    public void enviar(String mensaje) {
+        System.out.println("Correo a " + direccion + ": " + mensaje);
+    }
+}
+
+class Sms implements Notificador {
+    private final String telefono;
+
+    Sms(String telefono) {
+        this.telefono = telefono;
+    }
+
+    @Override
+    public void enviar(String mensaje) {
+        System.out.println("SMS a " + telefono + ": " + mensaje);
+    }
+
+    @Override
+    public void enviarUrgente(String mensaje) {
+        enviar("!!! " + mensaje.toUpperCase() + " !!!");
+    }
+}
+
+/** Una clase puede implementar VARIAS interfaces a la vez. */
+class CorreoYRegistro extends Correo implements Registrable {
+    private int enviados;
+
+    CorreoYRegistro(String direccion) {
+        super(direccion);
+    }
+
+    @Override
+    public void enviar(String mensaje) {
+        super.enviar(mensaje);
+        enviados++;
+        System.out.println("   (" + registro() + ")");
+    }
+
+    @Override
+    public String registro() {
+        return "avisos enviados: " + enviados;
+    }
+}</pre>
+<pre class="ps">java Avisos.java</pre>
+<pre class="salida">Correo a ana@escuela.edu: Mañana no hay clases
+Correo a ana@escuela.edu: URGENTE: Se suspendió el examen
+SMS a 5555-1234: Mañana no hay clases
+SMS a 5555-1234: !!! SE SUSPENDIÓ EL EXAMEN !!!
+Correo a direccion@escuela.edu: Mañana no hay clases
+   (avisos enviados: 1)
+Correo a direccion@escuela.edu: URGENTE: Se suspendió el examen
+   (avisos enviados: 2)
+Largo máximo de un aviso: 160</pre>
+<p>Sigue el recorrido: <code>Correo</code> no escribió <code>enviarUrgente</code>, así que usa el <code>default</code>, que antepone «URGENTE:» y llama a <i>su</i> <code>enviar</code>. <code>Sms</code> lo sobrescribió con signos de exclamación y mayúsculas. <code>CorreoYRegistro</code> hereda de <code>Correo</code>, implementa además <code>Registrable</code> y cuenta los envíos; como su <code>enviar</code> se llama también desde el <code>default</code>, el urgente también se cuenta (por eso el segundo dice 2). El ciclo <code>for</code> no sabe nada de esto: solo ve <code>Notificador</code>.</p>
+
+<h2>Interfaces del JDK que ya estás usando</h2>
+<p>El Totito usa varias interfaces que vienen con Java. Reconocerlas te ayuda a leer cualquier programa:</p>
+<table class="tabla">
+<tr><th>Interfaz</th><th>Su único método (el importante)</th><th>Dónde aparece en el Totito</th></tr>
+<tr><td><code>Runnable</code></td><td><code>void run()</code>: «una acción que se puede ejecutar»</td><td><code>PanelPrincipal</code> recibe <code>Runnable alSalir</code> y lo ejecuta con <code>alSalir.run()</code>; <code>Encabezado</code> recibe <code>Runnable alCerrar</code>; <code>OpcionModo.setAlSeleccionar(Runnable)</code></td></tr>
+<tr><td><code>ActionListener</code></td><td><code>void actionPerformed(ActionEvent e)</code>: «reacciona a un clic de botón»</td><td>Cada <code>addActionListener(...)</code> de los botones</td></tr>
+<tr><td><code>MouseListener</code></td><td>cinco métodos (clic, presionar, soltar, entrar, salir)</td><td><code>PanelTablero</code>, <code>SelectorSimbolo</code>, <code>OpcionModo</code>, a través de <code>MouseAdapter</code> (capítulo 25)</td></tr>
+<tr><td><code>Comparable&lt;T&gt;</code></td><td><code>int compareTo(T otro)</code>: «sé compararme con otro»</td><td>No aparece; lo usa <code>String</code> para ordenarse, y abajo tienes un ejemplo</td></tr>
+<tr><td><code>List&lt;T&gt;</code></td><td>muchos (<code>add</code>, <code>get</code>, <code>size</code>…)</td><td><code>Tema.FAMILIAS</code> es una <code>List&lt;String&gt;</code></td></tr>
+</table>
+<p>Fíjate en <code>Runnable</code> en <code>PanelPrincipal</code>: el panel no sabe cómo se cierra el juego (eso depende de la ventana), así que pide «una acción para cuando haya que salir». <code>TotitoApp</code> le pasa su método <code>cerrar</code>. Es la misma idea de <code>Navegacion</code> en miniatura.</p>
+<p>Un ejemplo con <code>Comparable</code>: una tabla de posiciones que se ordena sola porque cada puntaje sabe compararse con otro. Guárdalo como <code>Ranking.java</code>:</p>
+<pre class="java">import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class Ranking {
+    public static void main(String[] args) {
+        List&lt;Puntaje&gt; tabla = new ArrayList&lt;&gt;();
+        tabla.add(new Puntaje("Ana", 7));
+        tabla.add(new Puntaje("Luis", 12));
+        tabla.add(new Puntaje("Sofía", 9));
+
+        Collections.sort(tabla);   // funciona porque Puntaje implementa Comparable
+        for (Puntaje p : tabla) {
+            System.out.println(p.nombre() + " -&gt; " + p.victorias());
+        }
+    }
+}
+
+class Puntaje implements Comparable&lt;Puntaje&gt; {
+    private final String nombre;
+    private final int victorias;
+
+    Puntaje(String nombre, int victorias) {
+        this.nombre = nombre;
+        this.victorias = victorias;
+    }
+
+    String nombre() {
+        return nombre;
+    }
+
+    int victorias() {
+        return victorias;
+    }
+
+    /** Negativo: yo voy antes; positivo: voy despues; cero: empate. */
+    @Override
+    public int compareTo(Puntaje otro) {
+        return Integer.compare(otro.victorias, this.victorias);   // de mayor a menor
+    }
+}</pre>
+<pre class="ps">java Ranking.java</pre>
+<pre class="salida">Luis -&gt; 12
+Sofía -&gt; 9
+Ana -&gt; 7</pre>
+<p><code>Collections.sort</code> fue escrito hace muchos años por gente que nunca oyó hablar de tu clase <code>Puntaje</code>. Aun así la ordena, porque solo le pide una cosa: que cumpla <code>Comparable</code>. Lo de <code>&lt;Puntaje&gt;</code> entre ángulos indica <i>con qué tipo</i> se compara (se llaman «genéricos»; aquí basta con leerlo como «comparable con otro Puntaje»). <code>Integer.compare(a, b)</code> devuelve negativo si a &lt; b, cero si son iguales y positivo si a &gt; b; al poner primero <code>otro</code> se invierte el orden y queda de mayor a menor.</p>
+
+<h2>¿Interfaz o clase abstracta?</h2>
+<p>Las dos tienen métodos sin cuerpo y ninguna se puede crear con <code>new</code>. Entonces, ¿cuál usar? Esta tabla resume las diferencias:</p>
+<table class="tabla">
+<tr><th></th><th>Clase abstracta</th><th>Interfaz</th></tr>
+<tr><td>Palabra para usarla</td><td><code>extends</code></td><td><code>implements</code></td></tr>
+<tr><td>Cuántas puede tener una clase</td><td>Una sola</td><td>Todas las que quiera</td></tr>
+<tr><td>Campos (datos de cada objeto)</td><td>Sí</td><td>No (solo constantes <code>static final</code>)</td></tr>
+<tr><td>Constructores</td><td>Sí</td><td>No</td></tr>
+<tr><td>Métodos con código</td><td>Sí, de cualquier tipo</td><td>Solo <code>default</code>, <code>static</code> y <code>private</code></td></tr>
+<tr><td>Visibilidad de sus métodos</td><td>La que elijas</td><td>Públicos (salvo los <code>private</code> de apoyo)</td></tr>
+<tr><td>Expresa…</td><td>«es un» (una pantalla <i>es una</i> PantallaBase)</td><td>«sabe hacer» (PanelPrincipal <i>sabe</i> navegar)</td></tr>
+<tr><td>Ejemplo en el Totito</td><td><code>PantallaBase</code></td><td><code>Navegacion</code>, <code>OyenteCasilla</code>, <code>Icono</code></td></tr>
+</table>
+<p>La regla práctica:</p>
+<ul>
+<li>Si lo que quieres compartir es <b>código y datos</b> entre clases muy parecidas (todas las pantallas pintan el mismo fondo y tienen la misma columna), usa una <b>clase abstracta</b>. <code>PantallaBase</code> no podría ser una interfaz: necesita el campo <code>contenido</code>, un constructor que arme el encabezado y un <code>paintComponent</code> completo.</li>
+<li>Si lo que quieres es <b>un contrato</b> entre piezas que no se parecen (un panel de Swing y una clase anónima de prueba), usa una <b>interfaz</b>. <code>Navegacion</code> no debería ser una clase abstracta: <code>PanelPrincipal</code> ya hereda de <code>JPanel</code> y no podría heredar de nada más.</li>
+<li>Si dudas, empieza por una interfaz. Es lo más flexible y lo que menos amarra a quien la implementa.</li>
+</ul>
+<div class="caja cuidado"><b>No crees interfaces «por si acaso»</b> Una interfaz que solo tiene una implementación y nunca tendrá otra (ni siquiera un doble de prueba) agrega un archivo más sin ganar nada. En el Totito hay una interfaz por cada lugar donde de verdad hay, o puede haber, más de un «enchufado»: <code>Navegacion</code> tiene dos (el panel real y el de mentira), <code>Icono</code> tiene trece, <code>OyenteCasilla</code> existe para que el tablero sirva en tres pantallas.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Una <b>clase abstracta</b> (<code>abstract class</code>) no se puede crear con <code>new</code>; existe para que otras hereden. Puede tener campos, constructores y métodos completos.</li>
+<li>Un <b>método abstracto</b> no tiene cuerpo (termina en <code>;</code>) y obliga a cada hija concreta a escribirlo; si no, el compilador da error.</li>
+<li><code>PantallaBase</code> es abstracta sin métodos abstractos: la palabra <code>abstract</code> impide crear una pantalla vacía, cosa que <code>protected</code> solo no lograría en el paquete por defecto.</li>
+<li>Una <b>interfaz</b> (<code>interface</code>) es un contrato: lista de métodos públicos sin código. Una clase lo firma con <code>implements</code> y debe escribirlos todos.</li>
+<li><code>Navegacion</code> desacopla las pantallas de <code>PanelPrincipal</code>: cada pantalla solo pide servicios, y por eso puede probarse con una <code>Navegacion</code> de mentira (la clase anónima de <code>VistaPrevia</code>).</li>
+<li><code>OyenteCasilla</code> e <code>Icono</code> son interfaces de un solo método: «avísame» y «sé dibujarte».</li>
+<li>Una clase hereda de una sola clase pero puede implementar muchas interfaces; las interfaces pueden traer métodos <code>default</code> y <code>static</code>.</li>
+<li>Programa contra interfaces: declara parámetros y variables con el tipo más general que te sirva (<code>List</code>, <code>Navegacion</code>).</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Tienda en línea:</b> una interfaz <code>MetodoDePago</code> con <code>boolean cobrar(double monto)</code>, implementada por <code>PagoConTarjeta</code>, <code>PagoEnEfectivo</code> y <code>PagoPorTransferencia</code>. El carrito solo conoce <code>MetodoDePago</code>; agregar un nuevo método de pago no toca el carrito. En las pruebas, un <code>PagoDeMentira</code> que siempre aprueba.</li>
+<li><b>Sistema escolar:</b> una clase abstracta <code>Evaluacion</code> con fecha, curso y punteo máximo, y <code>abstract double calificar(...)</code>; <code>Examen</code>, <code>Tarea</code> y <code>Proyecto</code> califican distinto. Y una interfaz <code>Notificador</code> para avisar a los padres por correo, SMS o WhatsApp.</li>
+<li><b>Banco:</b> <code>abstract class Cuenta</code> para lo común de todas las cuentas, y una interfaz <code>Auditable</code> (<code>String registroDeMovimientos()</code>) que pueden implementar tanto cuentas como préstamos, aunque no se parezcan en nada más.</li>
+<li><b>Otro juego (Conecta 4, capítulo 68):</b> una interfaz <code>Navegacion</code> casi idéntica a la del Totito y una clase abstracta <code>PantallaBase</code> reutilizada tal cual; solo cambia el tablero.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>En <code>Figuras.java</code> agrega una clase <code>Triangulo</code> (base y altura) que herede de <code>Figura</code>. Primero escríbela sin <code>area()</code> y lee el error; luego complétala. Pista: el área es base × altura / 2.</li>
+<li>Agrega a <code>Figura</code> un método abstracto <code>double perimetro()</code> y haz que <code>describir()</code> lo muestre. ¿Cuántos errores da el compilador antes de que lo implementes en cada hija? ¿Por qué eso es una ventaja?</li>
+<li>En <code>MiniNavegacion.java</code> agrega <code>irAInstrucciones()</code> a la interfaz y un botón «Instrucciones» a <code>PantallaMenu</code>. Observa que la clase anónima deja de compilar hasta que también le agregues el método. Pista: es exactamente lo que pasaría con <code>VistaPrevia</code> si a <code>Navegacion</code> del Totito le agregaras un método.</li>
+<li>Escribe una interfaz <code>MetodoDePago</code> con <code>boolean cobrar(double monto)</code> y dos implementaciones: <code>Efectivo</code> (siempre aprueba) y <code>Tarjeta</code> (con un límite de crédito; rechaza si el monto lo supera y lo descuenta si no). Una clase <code>Caja</code> recibe un <code>MetodoDePago</code> en su constructor y cobra tres compras.</li>
+<li>Reto: convierte el método <code>enviarUrgente</code> de <code>Notificador</code> en abstracto (quítale <code>default</code> y el cuerpo). ¿Qué clases dejan de compilar? Después explica en dos frases por qué los métodos <code>default</code> permiten agregar cosas a una interfaz sin romper el código que ya existía.</li>
+</ol></div>
+</section>

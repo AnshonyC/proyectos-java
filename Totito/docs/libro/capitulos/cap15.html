@@ -1,0 +1,439 @@
+<section class="capitulo" id="cap15">
+<h1><span class="num">Capítulo 15</span>Arreglos y matrices</h1>
+<p class="entrada">El tablero del Totito son nueve casillas, el marcador son dos contadores y hay ocho líneas que dan la victoria. Guardar cada cosa en su propia variable sería un caos. En este capítulo aprendes a guardar muchos datos del mismo tipo bajo un solo nombre, con arreglos (<code>int[]</code>) y matrices (<code>char[][]</code>), a recorrerlos sin salirte de sus límites y a entender la diferencia, sutil pero crucial, entre <i>copiar</i> un tablero y <i>compartirlo</i>.</p>
+
+<h2>El problema: muchos datos del mismo tipo</h2>
+<p>Imagina el marcador sin arreglos:</p>
+<pre class="java">int victoriasJugador1;
+int victoriasJugador2;
+// y al terminar una partida:
+if (turno == 0) {
+    victoriasJugador1++;
+} else {
+    victoriasJugador2++;
+}</pre>
+<p>Ahora con un arreglo, como lo hace de verdad <code>Partida</code>:</p>
+<pre class="java">private final int[] victorias = new int[2];
+// y al terminar una partida:
+victorias[turno]++;</pre>
+<p>Una línea en lugar de cinco, y sin <code>if</code>: el número del turno (0 o 1) elige directamente qué contador aumentar. Esa es la gracia de los arreglos: puedes <b>calcular</b> a qué dato quieres acceder. Con el tablero es aún más claro: nueve variables <code>casilla00</code>, <code>casilla01</code>… no se podrían recorrer con un bucle; una matriz <code>casillas[fila][columna]</code> sí.</p>
+<div class="caja concepto"><b>Analogía: los casilleros.</b> Un arreglo es como una fila de casilleros numerados en un gimnasio: todos del mismo tamaño, uno junto al otro, con un solo nombre para el conjunto («los casilleros del pasillo B») y un número para cada uno. No preguntas por «el casillero de Ana», sino por «el casillero 7 del pasillo B». Y el número puede salir de una cuenta: «el casillero que corresponde a tu número de socio».</div>
+
+<h2>Declarar y crear un arreglo</h2>
+<p>Un <b>arreglo</b> (en inglés <i>array</i>) es una colección de tamaño fijo de elementos del mismo tipo, numerados desde 0. Analicemos la línea de <code>Partida</code> pieza por pieza:</p>
+<pre class="java">int[] victorias = new int[2];</pre>
+<ul>
+<li><b><code>int[]</code></b>: el tipo «arreglo de <code>int</code>». Los corchetes vacíos convierten cualquier tipo en «arreglo de ese tipo»: <code>char[]</code>, <code>String[]</code>, <code>Jugador[]</code>.</li>
+<li><b><code>victorias</code></b>: el nombre. Por convención, en plural: es una colección.</li>
+<li><b><code>new</code></b>: «crea uno nuevo». Reserva la memoria para el arreglo. Es la misma palabra que crea objetos (<code>new Tablero()</code>, capítulo 18): en Java los arreglos son objetos.</li>
+<li><b><code>int[2]</code></b>: de enteros, con 2 posiciones. El tamaño se fija al crearlo y <b>no puede cambiar después</b>.</li>
+</ul>
+<p>Al crearse, cada posición recibe un <b>valor por defecto</b>: 0 para números, <code>false</code> para <code>boolean</code>, el carácter de código 0 para <code>char</code> y <code>null</code> para objetos (como <code>String</code>). Por eso el marcador empieza en cero sin que nadie lo escriba.</p>
+<pre class="java">import java.util.Arrays;
+
+public class Marcador {
+    public static void main(String[] args) {
+        int[] victorias = new int[2];   // como en Partida: una caja por jugador
+        System.out.println("Al crear: " + Arrays.toString(victorias));
+        System.out.println("Hay " + victorias.length + " posiciones");
+
+        int turno = 0;
+        victorias[turno]++;             // gana el jugador 0
+        turno = 1;
+        victorias[turno]++;             // gana el jugador 1
+        victorias[turno]++;             // y otra vez
+        System.out.println("Despues: " + Arrays.toString(victorias));
+        System.out.println("Jugador 1 (indice 0): " + victorias[0]);
+        System.out.println("Jugador 2 (indice 1): " + victorias[1]);
+
+        System.out.println("Imprimir el arreglo directamente: " + victorias);
+    }
+}</pre>
+<pre class="salida">Al crear: [0, 0]
+Hay 2 posiciones
+Despues: [1, 2]
+Jugador 1 (indice 0): 1
+Jugador 2 (indice 1): 2
+Imprimir el arreglo directamente: [I@29453f44</pre>
+<ul>
+<li><b><code>victorias[turno]</code></b>: los corchetes con un número (o una variable, o una cuenta) <b>acceden</b> a una posición. Ese número se llama <b>índice</b>. <code>victorias[turno]++</code> lee la posición <code>turno</code>, le suma 1 y la guarda.</li>
+<li><b><code>victorias.length</code></b>: el tamaño del arreglo. Ojo: sin paréntesis, porque es un dato que el arreglo guarda, no un método (al revés que <code>texto.length()</code> de los <code>String</code>; es una incoherencia histórica de Java que confunde a todo el mundo).</li>
+<li><b><code>Arrays.toString(…)</code></b>: una utilidad de la clase <code>java.util.Arrays</code> (de ahí el <code>import</code>) que convierte el arreglo en un texto legible. Si imprimes el arreglo directamente obtienes <code>[I@29453f44</code>: <code>[I</code> significa «arreglo de int» y lo demás es un código interno. No es un error; es que un arreglo no sabe describirse solo.</li>
+</ul>
+
+<h2>Los índices empiezan en 0</h2>
+<p>Un arreglo de tamaño 3 tiene los índices 0, 1 y 2. El primero es <code>[0]</code> y el último es <code>[length - 1]</code>. ¿Por qué no del 1 al 3, como contaría cualquier persona? Porque el índice no es «el número de orden» sino <b>la distancia desde el principio</b>. El primer elemento está a 0 pasos del inicio; el segundo, a 1 paso. Para encontrar <code>casillas[2]</code>, la computadora toma la dirección donde empieza el arreglo y avanza 2 casillas: una sola cuenta, rapidísima.</p>
+<div class="caja concepto"><b>Analogía: la regla.</b> En una regla, el primer centímetro no empieza en la marca «1», empieza en la «0». La marca indica cuánto te has alejado del borde. Lo mismo con la edad: durante su primer año de vida, un bebé tiene «0 años».</div>
+<p>En el Totito esto encaja perfecto: las filas y columnas son 0, 1 y 2, el turno es 0 o 1 (índice del arreglo <code>jugadores</code>), y las cuentas como <code>turno = 1 - turno</code> o <code>fila * 3 + columna</code> funcionan precisamente porque se empieza en cero.</p>
+
+<h3>Arreglos literales: crear y llenar a la vez</h3>
+<p>Si ya sabes qué valores van dentro, los escribes entre llaves y Java cuenta el tamaño por ti:</p>
+<pre class="java">import java.util.Arrays;
+
+public class Literales {
+    public static void main(String[] args) {
+        char[] fila = {'X', 'O', ' '};
+        String[] familias = {"Nunito", "Poppins", "Segoe UI"};
+        int[] mejorJugada = new int[]{-1, -1};   // como en IA_Minimax
+
+        System.out.println(Arrays.toString(fila) + " tiene " + fila.length + " casillas");
+        System.out.println("La primera fuente es " + familias[0]);
+        System.out.println("La ultima fuente es " + familias[familias.length - 1]);
+        System.out.println("Mejor jugada inicial: " + Arrays.toString(mejorJugada));
+
+        mejorJugada[0] = 2;
+        mejorJugada[1] = 1;
+        System.out.println("Mejor jugada final: fila " + mejorJugada[0] + ", columna " + mejorJugada[1]);
+    }
+}</pre>
+<pre class="salida">[X, O,  ] tiene 3 casillas
+La primera fuente es Nunito
+La ultima fuente es Segoe UI
+Mejor jugada inicial: [-1, -1]
+Mejor jugada final: fila 2, columna 1</pre>
+<p>Las dos formas, <code>{…}</code> y <code>new int[]{…}</code>, crean lo mismo. La corta solo se permite al declarar la variable; en cualquier otro sitio hay que escribir la larga. Por eso <code>Partida.buscarLineaGanadora</code> devuelve su resultado con <code>return new int[]{l[0], l[1], l[4], l[5]};</code> y el constructor de <code>Partida</code> asigna <code>this.jugadores = new Jugador[]{jugador1, jugador2};</code>.</p>
+<p>Fíjate en para qué usa <code>IA_Minimax</code> el arreglo <code>mejorJugada</code>: un método solo puede devolver <b>un</b> valor, y la IA necesita devolver dos (fila y columna). Solución: los mete en un arreglo de 2 y devuelve el arreglo. Empieza en <code>{-1, -1}</code>, que significa «todavía ninguna», y se va actualizando cada vez que encuentra una jugada mejor. Quien lo recibe lo desarma: <code>jugar(jugada[0], jugada[1])</code>.</p>
+
+<h2>Salirse del arreglo: <code>ArrayIndexOutOfBoundsException</code></h2>
+<p>Pedir una posición que no existe (negativa, o mayor o igual que <code>length</code>) detiene el programa. Ya lo viste en el capítulo 11 con el índice 3. Con índices negativos pasa lo mismo, y esto importa en el Totito, que usa <code>-1</code> como «el ratón no está sobre ninguna casilla»:</p>
+<pre class="java">public class IndiceNegativo {
+    public static void main(String[] args) {
+        char[][] fichas = new char[3][3];
+        int filaEncima = -1;      // "el raton no esta sobre ninguna casilla"
+        int columnaEncima = -1;
+        if (filaEncima &gt;= 0) {    // la guarda de PanelTablero
+            System.out.println("Hay una ficha: " + fichas[filaEncima][columnaEncima]);
+        }
+        System.out.println("Sin la guarda:");
+        System.out.println(fichas[filaEncima][columnaEncima]);
+    }
+}</pre>
+<pre class="salida">Sin la guarda:
+Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index -1 out of bounds for length 3
+	at IndiceNegativo.main(IndiceNegativo.java:10)</pre>
+<p>Por eso en <code>PanelTablero</code> toda lectura de <code>fichas[filaEncima][columnaEncima]</code> va precedida de <code>filaEncima &gt;= 0 &amp;&amp;</code>: gracias al cortocircuito (capítulo 13), si el ratón está fuera, la matriz ni se toca. Y por eso <code>Tablero.marcarCasilla</code> comprueba <code>fila &lt; 0 || fila &gt; 2 || …</code> antes de nada. <b>Regla</b>: si un índice viene de fuera (un clic, lo que escribe el usuario, un cálculo con coordenadas), compruébalo antes de usarlo.</p>
+
+<h2>Recorrer un arreglo</h2>
+<p>Las dos formas del capítulo 14:</p>
+<pre class="java">// Con indice: cuando necesitas saber la posicion o modificar
+for (int i = 0; i &lt; victorias.length; i++) {
+    System.out.println("Jugador " + (i + 1) + ": " + victorias[i]);
+}
+
+// For-each: cuando solo necesitas cada valor
+int total = 0;
+for (int v : victorias) {
+    total += v;
+}</pre>
+<p>Usa siempre <code>i &lt; arreglo.length</code> en lugar de escribir el número a mano (<code>i &lt; 2</code>): si algún día el arreglo crece, el bucle se adapta solo. El Totito escribe <code>3</code> directamente en sus bucles del tablero porque el tablero del totito es 3×3 por definición; en un juego con tablero de tamaño variable usarías <code>casillas.length</code>.</p>
+
+<h2>Matrices: arreglos de dos dimensiones</h2>
+<p>El tablero es una tabla de filas y columnas. En Java eso es una <b>matriz</b>, que se declara con dos pares de corchetes. Así lo declara y crea <code>Tablero</code>:</p>
+<pre class="java">private char[][] casillas;
+
+public Tablero() {
+    casillas = new char[3][3];
+    reiniciar();
+}</pre>
+<p><code>new char[3][3]</code> crea 3 filas de 3 caracteres. Para acceder a una casilla das dos índices: primero la fila, luego la columna. <code>casillas[0][2]</code> es la esquina superior derecha; <code>casillas[2][0]</code>, la inferior izquierda; <code>casillas[1][1]</code>, el centro.</p>
+<table class="tabla">
+<tr><th></th><th>columna 0</th><th>columna 1</th><th>columna 2</th></tr>
+<tr><th>fila 0</th><td><code>[0][0]</code></td><td><code>[0][1]</code></td><td><code>[0][2]</code></td></tr>
+<tr><th>fila 1</th><td><code>[1][0]</code></td><td><code>[1][1]</code> centro</td><td><code>[1][2]</code></td></tr>
+<tr><th>fila 2</th><td><code>[2][0]</code></td><td><code>[2][1]</code></td><td><code>[2][2]</code></td></tr>
+</table>
+<div class="caja cuidado"><b>Fila primero, columna después</b>, siempre. En pantalla, en cambio, las coordenadas son (x, y): primero la horizontal (que corresponde a la columna) y luego la vertical (la fila). Por eso <code>PanelTablero</code> llama a <code>centroX(columna)</code> y <code>centroY(fila)</code>, y en <code>paintComponent</code> la raya ganadora usa <code>centroX(lineaGanadora[1])</code> (el índice 1 es la columna) y <code>centroY(lineaGanadora[0])</code> (el 0 es la fila). Confundir el orden dibuja la ficha en la casilla simétrica respecto a la diagonal: un error muy típico.</div>
+
+<h3>Por qué el constructor llama a <code>reiniciar()</code></h3>
+<p>Una pregunta razonable: si <code>new char[3][3]</code> ya crea las casillas, ¿para qué <code>reiniciar()</code> justo después? Porque el valor por defecto de un <code>char</code> no es el espacio:</p>
+<pre class="java">public class MatrizNueva {
+    public static void main(String[] args) {
+        char[][] casillas = new char[3][3];
+        System.out.println("filas: " + casillas.length + ", columnas de la fila 0: " + casillas[0].length);
+        System.out.println("codigo de casillas[1][1] recien creada: " + (int) casillas[1][1]);
+        System.out.println("¿es igual a ' '? " + (casillas[1][1] == ' '));
+
+        // Por eso el constructor de Tablero llama a reiniciar()
+        for (int fila = 0; fila &lt; 3; fila++) {
+            for (int columna = 0; columna &lt; 3; columna++) {
+                casillas[fila][columna] = ' ';
+            }
+        }
+        System.out.println("tras reiniciar, ¿es igual a ' '? " + (casillas[1][1] == ' '));
+
+        int[] numeros = new int[3];
+        boolean[] marcas = new boolean[3];
+        String[] nombres = new String[3];
+        System.out.println("int: " + numeros[0] + ", boolean: " + marcas[0] + ", String: " + nombres[0]);
+    }
+}</pre>
+<pre class="salida">filas: 3, columnas de la fila 0: 3
+codigo de casillas[1][1] recien creada: 0
+¿es igual a ' '? false
+tras reiniciar, ¿es igual a ' '? true
+int: 0, boolean: false, String: null</pre>
+<p>Una casilla recién creada contiene el carácter de código 0 (se escribe <code>'\u0000'</code>), un carácter invisible que no es el espacio (código 32). Todo el Totito pregunta <code>== VACIA</code>, es decir, <code>== ' '</code>. Sin <code>reiniciar()</code>, un tablero nuevo tendría nueve casillas que no están «vacías» según las reglas: no podrías jugar en ninguna y <code>tableroLleno()</code> diría que está lleno antes de empezar. Una sola línea en el constructor evita ese desastre, y además reutiliza el mismo método que sirve para «jugar otra vez».</p>
+<p><code>PanelTablero</code> resuelve lo mismo de otra forma, con <code>java.util.Arrays.fill</code>, que llena un arreglo entero con un valor:</p>
+<pre class="java">for (char[] fila : fichas) {
+    java.util.Arrays.fill(fila, Tablero.VACIA);
+}</pre>
+
+<h3>Una matriz es un arreglo de arreglos</h3>
+<p>Lo anterior también revela cómo está hecha una matriz por dentro: <code>casillas.length</code> es 3 (hay 3 filas) y <code>casillas[0].length</code> también es 3 (la fila 0 tiene 3 casillas). En Java, <code>char[][]</code> es literalmente un «arreglo de <code>char[]</code>»: un arreglo exterior cuyas 3 posiciones guardan, cada una, una fila. Por eso <code>casillas[1]</code> sola es válida (es la fila 1 entera, un <code>char[]</code>), y por eso el for-each de <code>PanelTablero</code> recorre <code>fichas</code> de fila en fila con <code>char[] fila</code>. También puedes escribir una matriz literal, fila por fila, con llaves dentro de llaves:</p>
+<pre class="java">char[][] casillas = {
+    {'X', 'O', 'X'},
+    {' ', 'X', 'O'},
+    {' ', ' ', 'O'}
+};</pre>
+<p>Esta forma es muy útil para preparar situaciones de prueba («¿qué hace la IA con este tablero?»), como harás en el capítulo 32.</p>
+
+<h2>Copiar o compartir: la referencia</h2>
+<p>Esta es la idea más importante del capítulo, y la causa de muchísimos errores. Una variable de tipo arreglo <b>no contiene el arreglo</b>: contiene una <b>referencia</b>, es decir, la dirección de memoria donde vive. Cuando escribes <code>otra = casillas;</code> no copias el tablero: copias la dirección. Ahora hay dos nombres para el mismo tablero.</p>
+<div class="caja concepto"><b>Analogía: la dirección de una casa.</b> Si le das a un amigo la dirección de tu casa anotada en un papel, no le diste una casa; le diste otra forma de llegar a la misma. Si él entra y pinta la sala de verde, tú encontrarás la sala verde. Copiar un arreglo de verdad es construir otra casa idéntica.</div>
+<p>¿Por qué importa en el Totito? Porque la IA necesita <b>imaginar</b> jugadas: «si juego aquí, ¿qué pasa?». Si simulara sobre el tablero real, las fichas imaginarias aparecerían en la partida de verdad. Este programa muestra las tres maneras de «copiar» y qué pasa con cada una:</p>
+<pre class="java">import java.util.Arrays;
+
+public class CompartirVsCopiar {
+    public static void main(String[] args) {
+        char[][] partida = {
+            {'X', ' ', ' '},
+            {' ', 'O', ' '},
+            {' ', ' ', ' '}
+        };
+
+        // 1) "Copiar" con = : solo se copia la referencia (la direccion)
+        char[][] simulacion = partida;
+        simulacion[2][2] = 'X';
+        System.out.println("1) partida[2][2] = '" + partida[2][2] + "'  &lt;- ¡la partida real cambio!");
+        partida[2][2] = ' ';
+
+        // 2) clone(): copia el arreglo de filas, pero las filas se comparten
+        char[][] superficial = partida.clone();
+        superficial[2][2] = 'X';
+        System.out.println("2) partida[2][2] = '" + partida[2][2] + "'  &lt;- ¡tambien cambio!");
+        System.out.println("   ¿misma matriz? " + (superficial == partida) + ", ¿misma fila 2? " + (superficial[2] == partida[2]));
+        partida[2][2] = ' ';
+
+        // 3) Copia profunda, casilla por casilla (lo que hace Tablero.obtenerCopia)
+        char[][] copia = new char[3][3];
+        for (int fila = 0; fila &lt; 3; fila++) {
+            for (int columna = 0; columna &lt; 3; columna++) {
+                copia[fila][columna] = partida[fila][columna];
+            }
+        }
+        copia[2][2] = 'X';
+        System.out.println("3) partida[2][2] = '" + partida[2][2] + "'  &lt;- intacta");
+        System.out.println("   copia:   " + Arrays.deepToString(copia));
+        System.out.println("   partida: " + Arrays.deepToString(partida));
+    }
+}</pre>
+<pre class="salida">1) partida[2][2] = 'X'  &lt;- ¡la partida real cambio!
+2) partida[2][2] = 'X'  &lt;- ¡tambien cambio!
+   ¿misma matriz? false, ¿misma fila 2? true
+3) partida[2][2] = ' '  &lt;- intacta
+   copia:   [[X,  ,  ], [ , O,  ], [ ,  , X]]
+   partida: [[X,  ,  ], [ , O,  ], [ ,  ,  ]]</pre>
+<svg viewBox="0 0 760 290" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="760" height="290" rx="14" fill="#1C1740"/>
+<text x="20" y="30" fill="#C8BCF6" font-size="15">Caso 1: simulacion = partida</text>
+<rect x="20" y="45" width="110" height="34" rx="6" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="75" y="67" fill="#FFFFFF" font-size="14" text-anchor="middle">partida</text>
+<rect x="20" y="95" width="110" height="34" rx="6" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="75" y="117" fill="#FFFFFF" font-size="14" text-anchor="middle">simulacion</text>
+<line x1="130" y1="62" x2="190" y2="85" stroke="#FF3BD4" stroke-width="2"/>
+<line x1="130" y1="112" x2="190" y2="92" stroke="#FF3BD4" stroke-width="2"/>
+<rect x="195" y="45" width="140" height="90" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="265" y="85" fill="#FFFFFF" font-size="14" text-anchor="middle">UN solo tablero</text>
+<text x="265" y="107" fill="#C8BCF6" font-size="12" text-anchor="middle">(dos nombres)</text>
+<text x="400" y="30" fill="#C8BCF6" font-size="15">Caso 3: copia profunda (obtenerCopia)</text>
+<rect x="400" y="45" width="110" height="34" rx="6" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="455" y="67" fill="#FFFFFF" font-size="14" text-anchor="middle">partida</text>
+<rect x="400" y="95" width="110" height="34" rx="6" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="455" y="117" fill="#FFFFFF" font-size="14" text-anchor="middle">copia</text>
+<line x1="510" y1="62" x2="575" y2="62" stroke="#FF3BD4" stroke-width="2"/>
+<line x1="510" y1="112" x2="575" y2="112" stroke="#2F84FF" stroke-width="2"/>
+<rect x="575" y="45" width="160" height="34" rx="6" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="655" y="67" fill="#FFFFFF" font-size="13" text-anchor="middle">tablero real</text>
+<rect x="575" y="95" width="160" height="34" rx="6" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="655" y="117" fill="#FFFFFF" font-size="13" text-anchor="middle">otro tablero igual</text>
+<text x="20" y="175" fill="#C8BCF6" font-size="15">Caso 2: clone() de una matriz (copia superficial)</text>
+<rect x="20" y="190" width="110" height="34" rx="6" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="75" y="212" fill="#FFFFFF" font-size="14" text-anchor="middle">partida</text>
+<rect x="20" y="240" width="110" height="34" rx="6" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="75" y="262" fill="#FFFFFF" font-size="14" text-anchor="middle">superficial</text>
+<rect x="170" y="190" width="120" height="34" rx="6" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="230" y="212" fill="#FFFFFF" font-size="13" text-anchor="middle">lista de filas A</text>
+<rect x="170" y="240" width="120" height="34" rx="6" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="230" y="262" fill="#FFFFFF" font-size="13" text-anchor="middle">lista de filas B</text>
+<line x1="130" y1="207" x2="170" y2="207" stroke="#FF3BD4" stroke-width="2"/>
+<line x1="130" y1="257" x2="170" y2="257" stroke="#2F84FF" stroke-width="2"/>
+<rect x="400" y="185" width="150" height="26" rx="6" fill="none" stroke="#C8BCF6" stroke-width="2"/>
+<text x="475" y="203" fill="#FFFFFF" font-size="13" text-anchor="middle">fila 0</text>
+<rect x="400" y="219" width="150" height="26" rx="6" fill="none" stroke="#C8BCF6" stroke-width="2"/>
+<text x="475" y="237" fill="#FFFFFF" font-size="13" text-anchor="middle">fila 1</text>
+<rect x="400" y="253" width="150" height="26" rx="6" fill="none" stroke="#C8BCF6" stroke-width="2"/>
+<text x="475" y="271" fill="#FFFFFF" font-size="13" text-anchor="middle">fila 2</text>
+<line x1="290" y1="207" x2="400" y2="198" stroke="#C8BCF6" stroke-width="1.5"/>
+<line x1="290" y1="207" x2="400" y2="232" stroke="#C8BCF6" stroke-width="1.5"/>
+<line x1="290" y1="207" x2="400" y2="266" stroke="#C8BCF6" stroke-width="1.5"/>
+<line x1="290" y1="257" x2="400" y2="198" stroke="#C8BCF6" stroke-width="1.5"/>
+<line x1="290" y1="257" x2="400" y2="232" stroke="#C8BCF6" stroke-width="1.5"/>
+<line x1="290" y1="257" x2="400" y2="266" stroke="#C8BCF6" stroke-width="1.5"/>
+<text x="570" y="225" fill="#C8BCF6" font-size="13">Dos listas distintas,</text>
+<text x="570" y="245" fill="#C8BCF6" font-size="13">pero las MISMAS filas:</text>
+<text x="570" y="265" fill="#C8BCF6" font-size="13">cambiar una casilla</text>
+<text x="570" y="285" fill="#C8BCF6" font-size="13">se ve en las dos.</text>
+</svg>
+<ol>
+<li><b>Con <code>=</code></b>: <code>simulacion</code> y <code>partida</code> son dos nombres para la misma matriz. Escribir en una es escribir en la otra.</li>
+<li><b>Con <code>clone()</code></b>: todo arreglo tiene un método <code>clone()</code> que crea un arreglo nuevo con los mismos elementos. Con un <code>char[]</code> de una dimensión basta. Pero en una matriz, los elementos del arreglo exterior son <i>referencias a filas</i>, así que el clon es una lista nueva que apunta a las mismas filas. La comprobación lo confirma: las matrices son distintas (<code>false</code>) pero la fila 2 es la misma (<code>true</code>). Esto se llama <b>copia superficial</b>.</li>
+<li><b>Casilla por casilla</b>: se crea una matriz nueva con su propio <code>new</code> y se copia cada <code>char</code>. Como los <code>char</code> son valores primitivos (no referencias), lo que se copia es la letra misma. Es una <b>copia profunda</b>: dos tableros totalmente independientes.</li>
+</ol>
+<p>(<code>Arrays.deepToString</code> es el hermano de <code>toString</code> para matrices. Y aquí <code>==</code> entre arreglos pregunta «¿es la misma dirección?», no «¿tienen el mismo contenido?».)</p>
+
+<h3><code>Tablero.obtenerCopia()</code>, explicado</h3>
+<p>Ahora entiendes por qué el Totito tiene este método, y por qué está hecho así:</p>
+<pre class="java">/** Crea una copia independiente del tablero, usada por el algoritmo Minimax
+ *  para simular jugadas sin afectar la partida real. */
+public Tablero obtenerCopia() {
+    Tablero copia = new Tablero();
+    for (int fila = 0; fila &lt; 3; fila++) {
+        for (int columna = 0; columna &lt; 3; columna++) {
+            copia.casillas[fila][columna] = this.casillas[fila][columna];
+        }
+    }
+    return copia;
+}</pre>
+<p><code>new Tablero()</code> crea un tablero nuevo, con su propia matriz <code>casillas</code> recién fabricada. Los dos bucles copian, letra por letra, de <code>this.casillas</code> (las casillas del tablero original; <code>this</code> significa «yo mismo», capítulo 20) a <code>copia.casillas</code>. Es la copia profunda del caso 3. Un <code>return casillas.clone()</code> habría sido más corto… y habría hecho que la IA moviera fichas en tu partida mientras «pensaba». Puedes comprobarlo con el <code>Tablero</code> real del proyecto. Guarda este programa en tu carpeta de prácticas:</p>
+<pre class="java">public class CopiaTablero {
+    public static void main(String[] args) {
+        Tablero real = new Tablero();
+        real.marcarCasilla(0, 0, 'X');
+        real.marcarCasilla(1, 1, 'O');
+
+        Tablero copia = real.obtenerCopia();       // lo que hace IA_Minimax
+        copia.marcarCasilla(2, 2, 'X');            // simula una jugada
+
+        System.out.println("copia[2][2] = '" + copia.obtenerCasilla(2, 2) + "'");
+        System.out.println("real[2][2]  = '" + real.obtenerCasilla(2, 2) + "'");
+
+        Tablero mismo = real;                      // NO es una copia
+        mismo.marcarCasilla(0, 2, 'O');
+        System.out.println("real[0][2]  = '" + real.obtenerCasilla(0, 2) + "'");
+    }
+}</pre>
+<p>Y ejecútalo diciéndole a Java dónde están las clases compiladas del Totito con <code>-cp</code> (<i>classpath</i>, «ruta de clases»), cuando ya hayas compilado el proyecto (capítulo 29 en adelante):</p>
+<pre class="ps">cd $HOME\Proyectos\Practicas
+java -cp $HOME\Proyectos\Totito\target\classes CopiaTablero.java</pre>
+<pre class="salida">copia[2][2] = 'X'
+real[2][2]  = ' '
+real[0][2]  = 'O'</pre>
+<p>La jugada simulada en la copia no tocó el tablero real. En cambio, <code>Tablero mismo = real;</code> no copió nada: es la misma regla de las referencias, ahora con un objeto <code>Tablero</code> en lugar de un arreglo. Lo retomarás en el capítulo 18.</p>
+<div class="caja cuidado"><b>Pista de que compartes sin querer</b>: «cambié algo aquí y apareció un cambio allá». Si te pasa, busca un <code>=</code> entre dos variables de arreglo (u objeto) y pregúntate si querías un segundo nombre o una copia independiente. <code>PanelTablero.mostrar</code> también copia casilla por casilla el tablero que recibe, en lugar de guardar la referencia: así lo que <i>dibuja</i> no cambia por sorpresa mientras la partida avanza.</div>
+
+<h2>Datos en lugar de código: <code>int[][] lineas</code></h2>
+<p><code>Tablero.verificarGanador</code> comprueba las ocho líneas con <code>if</code> escritos a mano. <code>Partida.buscarLineaGanadora</code> hace casi lo mismo de otra forma: describe las ocho líneas como <b>datos</b>, en una matriz literal, y las recorre con un solo bucle:</p>
+<pre class="java">int[][] lineas = {
+    {0, 0, 0, 1, 0, 2}, {1, 0, 1, 1, 1, 2}, {2, 0, 2, 1, 2, 2},   // filas
+    {0, 0, 1, 0, 2, 0}, {0, 1, 1, 1, 2, 1}, {0, 2, 1, 2, 2, 2},   // columnas
+    {0, 0, 1, 1, 2, 2}, {0, 2, 1, 1, 2, 0}                        // diagonales
+};</pre>
+<p>Cada fila de <code>lineas</code> tiene seis números: tres parejas (fila, columna), una por cada casilla de la línea. <code>{0, 2, 1, 1, 2, 0}</code> se lee «(0,2), (1,1), (2,0)»: la diagonal que baja de la esquina superior derecha a la inferior izquierda. Este programa usa la misma tabla sobre un tablero concreto:</p>
+<pre class="java">import java.util.Arrays;
+
+public class LineaGanadora {
+    public static void main(String[] args) {
+        char[][] casillas = {
+            {'O', 'X', 'X'},
+            {' ', 'X', 'O'},
+            {'X', 'O', ' '}
+        };
+        // Igual que Partida.buscarLineaGanadora: 8 lineas, 3 casillas cada una
+        int[][] lineas = {
+            {0, 0, 0, 1, 0, 2}, {1, 0, 1, 1, 1, 2}, {2, 0, 2, 1, 2, 2},   // filas
+            {0, 0, 1, 0, 2, 0}, {0, 1, 1, 1, 2, 1}, {0, 2, 1, 2, 2, 2},   // columnas
+            {0, 0, 1, 1, 2, 2}, {0, 2, 1, 1, 2, 0}                        // diagonales
+        };
+        System.out.println("Hay " + lineas.length + " lineas de " + lineas[0].length + " numeros");
+
+        int numero = 0;
+        for (int[] l : lineas) {
+            char a = casillas[l[0]][l[1]];
+            char b = casillas[l[2]][l[3]];
+            char c = casillas[l[4]][l[5]];
+            System.out.println("linea " + numero + ": [" + a + b + c + "]");
+            if (a != ' ' &amp;&amp; a == b &amp;&amp; a == c) {
+                int[] raya = new int[]{l[0], l[1], l[4], l[5]};
+                System.out.println("¡Ganadora! La raya va de (" + raya[0] + "," + raya[1]
+                        + ") a (" + raya[2] + "," + raya[3] + "): " + Arrays.toString(raya));
+                break;
+            }
+            numero++;
+        }
+    }
+}</pre>
+<pre class="salida">Hay 8 lineas de 6 numeros
+linea 0: [OXX]
+linea 1: [ XO]
+linea 2: [XO ]
+linea 3: [O X]
+linea 4: [XXO]
+linea 5: [XO ]
+linea 6: [OX ]
+linea 7: [XXX]
+¡Ganadora! La raya va de (0,2) a (2,0): [0, 2, 2, 0]</pre>
+<p>Traza de la línea 7: <code>l</code> es <code>{0, 2, 1, 1, 2, 0}</code>. <code>a = casillas[l[0]][l[1]] = casillas[0][2] = 'X'</code>; <code>b = casillas[1][1] = 'X'</code>; <code>c = casillas[2][0] = 'X'</code>. Las tres iguales y no vacías: ganadora. Fíjate en el doble salto de los índices: <code>l[0]</code> es un número que se usa, a su vez, como índice de <code>casillas</code>. Un arreglo que guarda posiciones de otro arreglo.</p>
+<p>El método devuelve solo los extremos de la línea, <code>{filaInicio, columnaInicio, filaFin, columnaFin}</code> (las posiciones 0, 1, 4 y 5 de <code>l</code>; la casilla del medio no hace falta), porque para dibujar la raya neón basta con saber de dónde a dónde va. Si ninguna línea gana, devuelve <code>null</code>: «no hay arreglo». <code>PanelTablero</code> lo guarda en <code>lineaGanadora</code> y solo dibuja la raya <code>if (lineaGanadora != null)</code>.</p>
+<div class="caja consejo"><b>Datos frente a código.</b> Convertir una lista de casos en una tabla de datos más un bucle (en lugar de muchos <code>if</code> casi iguales) hace el código más corto y fácil de ampliar: para un tablero de 4×4 bastaría con añadir filas a la tabla. Es una técnica que usarás mucho: tablas de precios, de niveles de un juego, de traducciones.</div>
+
+<h2>Arreglos de objetos</h2>
+<p>Un arreglo puede guardar objetos, no solo números o caracteres. <code>Partida</code> guarda a sus dos jugadores en un <code>Jugador[]</code> y los elige con el turno: <code>jugadores[turno].getFicha()</code>, <code>getJugadorEnTurno()</code> devuelve <code>jugadores[turno]</code>. Lo que el arreglo guarda en realidad son <b>referencias</b> a los objetos; al crearlo vacío, cada posición vale <code>null</code>:</p>
+<pre class="java">public class Jugadores {
+    public static void main(String[] args) {
+        String[] nombres = new String[2];
+        System.out.println("Recien creado: " + nombres[0] + ", " + nombres[1]);
+        nombres[0] = "Ana";
+        nombres[1] = "Computadora";
+        int turno = 1;
+        System.out.println("Le toca a " + nombres[turno]);
+        turno = 1 - turno;
+        System.out.println("Ahora le toca a " + nombres[turno]);
+    }
+}</pre>
+<pre class="salida">Recien creado: null, null
+Le toca a Computadora
+Ahora le toca a Ana</pre>
+<p>Si llamaras a un método sobre una posición que aún es <code>null</code> (<code>nombres[0].length()</code> antes de asignarla) obtendrías una <code>NullPointerException</code>. Por eso <code>Partida</code> crea el arreglo ya lleno: <code>new Jugador[]{jugador1, jugador2}</code>.</p>
+
+<h2>El límite de los arreglos: tamaño fijo</h2>
+<p>Un arreglo no crece. Para el Totito es perfecto: siempre hay 9 casillas, 2 jugadores, 8 líneas. Pero si quisieras guardar el historial de todas las partidas jugadas, no sabrías de qué tamaño crearlo. Para eso Java tiene las <b>colecciones</b>, como <code>ArrayList</code> y <code>List</code>, que crecen solas. El Totito usa una en <code>Tema</code> (<code>List&lt;String&gt; FAMILIAS = Arrays.asList(…)</code>), solo para poder preguntar <code>instaladas.contains(familia)</code>. Las verás en tus siguientes proyectos (capítulos 68 y 69).</p>
+
+<h2>Resumen</h2>
+<ul>
+<li>Un arreglo guarda varios valores del mismo tipo bajo un nombre: <code>int[] victorias = new int[2];</code>. El tamaño es fijo y cada posición empieza con su valor por defecto (0, <code>false</code>, <code>'\u0000'</code> o <code>null</code>).</li>
+<li>Los índices van de <code>0</code> a <code>length - 1</code> (distancia desde el principio). Salirse lanza <code>ArrayIndexOutOfBoundsException</code>: comprueba los índices que vienen de fuera.</li>
+<li>Un índice puede ser una variable o una cuenta: <code>victorias[turno]++</code> sustituye a un <code>if</code>.</li>
+<li><code>char[][] casillas = new char[3][3]</code> es una matriz: un arreglo de filas. Se accede con <code>[fila][columna]</code>; fila primero.</li>
+<li>El <code>char</code> por defecto no es el espacio: por eso <code>Tablero</code> llama a <code>reiniciar()</code> en su constructor.</li>
+<li>Una variable de arreglo guarda una <b>referencia</b>: <code>=</code> comparte, <code>clone()</code> de una matriz copia solo el exterior, y <code>obtenerCopia</code> copia casilla por casilla para que Minimax simule sin tocar la partida.</li>
+<li>Arreglos literales como <code>int[][] lineas</code> convierten una lista de casos en datos que se recorren con un bucle; un <code>int[]</code> permite devolver varios valores a la vez.</li>
+<li><code>Arrays.toString</code>, <code>Arrays.deepToString</code> y <code>Arrays.fill</code> ayudan a imprimir y llenar arreglos.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Calificaciones de un curso</b>: un <code>double[] notas</code> para calcular promedio, nota máxima y cuántos aprobaron; una matriz <code>double[][]</code> con una fila por alumno y una columna por examen.</li>
+<li><b>Ventas por día de la semana</b>: <code>int[] ventas = new int[7]</code> y <code>ventas[dia]++</code> en cada venta, igual que <code>victorias[turno]++</code>. Un histograma, sin un solo <code>if</code>.</li>
+<li><b>Juegos de cuadrícula</b>: Conecta 4 (<code>char[6][7]</code>), Buscaminas (<code>boolean[][] minas</code> y <code>int[][] vecinas</code>) o un editor de píxeles. Y en todos ellos, si hay «deshacer» o una IA que simula, copia profunda como <code>obtenerCopia</code>.</li>
+<li><b>Tablas de configuración</b>: los precios por talla, las recompensas por nivel o los días de cada mes (<code>int[] diasPorMes = {31, 28, 31, …}</code>) como datos literales en lugar de cadenas de <code>if</code>.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Crea un <code>int[] puntos = {3, 7, 2, 9, 4}</code> e imprime, con bucles, la suma, el mayor y la posición del mayor. Pista: para el mayor, empieza con <code>Integer.MIN_VALUE</code>, como <code>mejorValor</code> en la IA.</li>
+<li>Declara una matriz literal de 3×3 con una partida a medias e imprime, con dos bucles, cuántas X, cuántas O y cuántas casillas vacías tiene.</li>
+<li>Escribe la copia profunda de un <code>char[][]</code> de cualquier tamaño, usando <code>origen.length</code> y <code>origen[fila].length</code> en lugar de 3. Comprueba que modificar la copia no altera el original.</li>
+<li>Usando la tabla <code>lineas</code>, cuenta en cuántas líneas una ficha tiene dos casillas propias y la tercera vacía (una «amenaza» de victoria). Prueba con un tablero donde la X amenace en dos líneas a la vez.</li>
+<li>Reto: modifica <code>LineaGanadora</code> para un tablero de 4×4 donde se gana con cuatro en línea. ¿Cuántas líneas hay ahora? ¿Qué cambió en el código además de la tabla? Pista: son 4 filas, 4 columnas y 2 diagonales.</li>
+</ol></div>
+</section>

@@ -1,0 +1,382 @@
+<section class="capitulo" id="cap11">
+<h1><span class="num">Capítulo 11</span>Cómo funciona Java</h1>
+<p class="entrada">Antes de escribir el Totito necesitas saber qué pasa entre el momento en que tecleas una línea de Java y el momento en que la computadora la obedece. En este capítulo escribes, compilas y ejecutas tu primer programa, entiendes cada palabra y cada símbolo que lleva, y aprendes a leer la «anatomía» de cualquier archivo del Totito.</p>
+
+<h2>Qué es un programa y qué es un lenguaje de programación</h2>
+<p>Un <b>programa</b> es una lista de instrucciones que la computadora sigue al pie de la letra, una tras otra. El Totito es un programa: «dibuja el tablero», «cuando hagan clic en una casilla, pon una X», «revisa si hay tres en línea»…</p>
+<p>El problema es que el procesador de tu computadora (la CPU, el chip que hace los cálculos) solo entiende <b>código máquina</b>: números binarios del tipo <code>10110000 01100001</code>. Nadie escribe programas así. Por eso existen los <b>lenguajes de programación</b>: idiomas a medio camino entre el español y el código máquina, con palabras en inglés (<code>if</code>, <code>for</code>, <code>class</code>) y reglas muy estrictas. Java es uno de ellos.</p>
+<p>Lo que tú escribes en Java se llama <b>código fuente</b>: es texto normal, que podrías abrir con el Bloc de notas. Se guarda en archivos que terminan en <code>.java</code>. Todo el Totito son archivos así: <code>Tablero.java</code>, <code>Jugador.java</code>, <code>PanelTablero.java</code>…</p>
+<div class="caja concepto"><b>Analogía: la receta y el cocinero.</b> El código fuente es como una receta escrita: describe qué hacer, pero por sí sola no cocina nada. Hace falta alguien que la lea y la ejecute. En Java ese «cocinero» tiene dos ayudantes: el <b>compilador</b>, que revisa y traduce la receta, y la <b>máquina virtual</b>, que la cocina.</div>
+
+<h2>El viaje de tu código: fuente → javac → bytecode → JVM</h2>
+<p>En Java, el camino desde tu texto hasta el programa funcionando tiene dos etapas:</p>
+<ol>
+<li><b>Compilar.</b> Un programa llamado <code>javac</code> (el <i>compilador de Java</i>; la «c» final es de <i>compiler</i>) lee tu archivo <code>.java</code>, comprueba que respete todas las reglas del lenguaje y, si está bien, lo traduce a un archivo <code>.class</code>. Si encuentra un error, se detiene y te dice en qué línea está.</li>
+<li><b>Ejecutar.</b> Otro programa, <code>java</code>, arranca la <b>máquina virtual de Java</b> o <b>JVM</b> (<i>Java Virtual Machine</i>), que carga los <code>.class</code> y los ejecuta.</li>
+</ol>
+<p>El contenido de un <code>.class</code> se llama <b>bytecode</b>: instrucciones sencillas, pensadas no para tu procesador concreto sino para una computadora «imaginaria», la JVM. La JVM, que sí está hecha para tu sistema (hay una versión para Windows, otra para macOS, otra para Linux…), traduce ese bytecode al código máquina real mientras el programa corre. Las partes que se repiten mucho las traduce una sola vez y las guarda ya traducidas (eso se llama compilación JIT, <i>just in time</i>, «justo a tiempo»), por eso Java es rápido.</p>
+
+<svg viewBox="0 0 760 230" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="760" height="230" rx="14" fill="#1C1740"/>
+<rect x="20" y="70" width="150" height="70" rx="10" fill="none" stroke="#FF3BD4" stroke-width="3"/>
+<text x="95" y="100" fill="#FFFFFF" font-size="16" text-anchor="middle">HolaTotito.java</text>
+<text x="95" y="122" fill="#C8BCF6" font-size="13" text-anchor="middle">código fuente (texto)</text>
+<line x1="170" y1="105" x2="235" y2="105" stroke="#C8BCF6" stroke-width="2"/>
+<polygon points="235,99 247,105 235,111" fill="#C8BCF6"/>
+<rect x="250" y="80" width="90" height="50" rx="25" fill="none" stroke="#A05CFF" stroke-width="3"/>
+<text x="295" y="111" fill="#FFFFFF" font-size="16" text-anchor="middle">javac</text>
+<line x1="340" y1="105" x2="395" y2="105" stroke="#C8BCF6" stroke-width="2"/>
+<polygon points="395,99 407,105 395,111" fill="#C8BCF6"/>
+<rect x="410" y="70" width="150" height="70" rx="10" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<text x="485" y="100" fill="#FFFFFF" font-size="16" text-anchor="middle">HolaTotito.class</text>
+<text x="485" y="122" fill="#C8BCF6" font-size="13" text-anchor="middle">bytecode</text>
+<line x1="560" y1="105" x2="590" y2="105" stroke="#C8BCF6" stroke-width="2"/>
+<line x1="590" y1="40" x2="590" y2="185" stroke="#C8BCF6" stroke-width="2"/>
+<line x1="590" y1="40" x2="610" y2="40" stroke="#C8BCF6" stroke-width="2"/>
+<line x1="590" y1="105" x2="610" y2="105" stroke="#C8BCF6" stroke-width="2"/>
+<line x1="590" y1="185" x2="610" y2="185" stroke="#C8BCF6" stroke-width="2"/>
+<rect x="612" y="20" width="135" height="40" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="680" y="45" fill="#FFFFFF" font-size="14" text-anchor="middle">JVM de Windows</text>
+<rect x="612" y="85" width="135" height="40" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="680" y="110" fill="#FFFFFF" font-size="14" text-anchor="middle">JVM de macOS</text>
+<rect x="612" y="165" width="135" height="40" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="680" y="190" fill="#FFFFFF" font-size="14" text-anchor="middle">JVM de Linux</text>
+<text x="295" y="60" fill="#C8BCF6" font-size="13" text-anchor="middle">compila (1 vez)</text>
+<text x="680" y="150" fill="#C8BCF6" font-size="13" text-anchor="middle">ejecuta el mismo .class</text>
+</svg>
+
+<h3>Por qué «escribe una vez, ejecuta en todas partes»</h3>
+<p>Ese fue el lema con el que nació Java en 1995 (<i>write once, run anywhere</i>). Como el <code>.class</code> no está atado a ningún procesador ni sistema, el mismo archivo funciona en cualquier computadora que tenga una JVM. El Totito que compilas en tu Windows corre igual en la Mac de un amigo, sin cambiar una letra ni volver a compilar. En lenguajes como C, en cambio, el compilador genera directamente código máquina para un sistema concreto, y para Mac habría que compilar otra vez, en una Mac.</p>
+<div class="caja concepto"><b>Analogía: la partitura.</b> El bytecode es como una partitura musical. El compositor la escribe una vez y cualquier músico del mundo la puede tocar con su instrumento. La JVM es el músico: cada sistema operativo tiene el suyo, pero todos leen la misma partitura.</div>
+<p>Si tienes curiosidad, puedes «abrir» un <code>.class</code> con una herramienta del JDK llamada <code>javap</code>. Este es el bytecode real del programa que escribirás en un momento (no hace falta entenderlo; solo para que veas que existe):</p>
+<pre class="salida">public static void main(java.lang.String[]);
+  Code:
+     0: getstatic     #7    // Field java/lang/System.out:Ljava/io/PrintStream;
+     3: ldc           #13   // String ¡Hola, Totito!
+     5: invokevirtual #15   // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+     ...
+    16: return</pre>
+<p>Cada línea es una instrucción mínima: «trae <code>System.out</code>», «carga el texto», «llama a <code>println</code>», «termina». Por cierto, todo archivo <code>.class</code> empieza con los mismos cuatro bytes, que en hexadecimal se leen <code>CA FE BA BE</code> («cafe babe»): una broma de los creadores de Java, que así reconocen al instante si un archivo es bytecode.</p>
+
+<h2>JDK y JRE: las dos cajas de herramientas</h2>
+<table class="tabla">
+<tr><th>Nombre</th><th>Qué significa</th><th>Qué trae</th><th>Quién lo necesita</th></tr>
+<tr><td><b>JVM</b></td><td>Java Virtual Machine</td><td>El «motor» que ejecuta bytecode</td><td>Va dentro de los otros dos</td></tr>
+<tr><td><b>JRE</b></td><td>Java Runtime Environment (entorno de ejecución)</td><td>La JVM + las bibliotecas estándar (texto, ventanas, archivos…)</td><td>Quien solo quiere <i>usar</i> programas de Java</td></tr>
+<tr><td><b>JDK</b></td><td>Java Development Kit (kit de desarrollo)</td><td>Todo el JRE + <code>javac</code>, <code>jshell</code>, <code>javap</code>, <code>javadoc</code>, <code>jar</code>, <code>jpackage</code>…</td><td>Quien <i>programa</i>: tú</td></tr>
+</table>
+<p>Por eso en el capítulo 4 instalaste el <b>JDK</b> (Temurin 21) y no solo un JRE: sin él no tendrías <code>javac</code>. ¿Y la gente que juegue tu Totito? Tampoco necesitará instalar Java: en el capítulo 65 usarás <code>jpackage</code> para meter dentro de la carpeta del juego una JVM recortada a la medida, de modo que <code>Totito.exe</code> funcione en cualquier Windows.</p>
+<div class="caja consejo">El «21» de Java 21 es la versión. Las versiones <b>LTS</b> (<i>long-term support</i>, soporte prolongado), como la 17, la 21 y la 25, reciben correcciones durante años; por eso se usan en proyectos serios. Compruebas cuál tienes con <code>java -version</code> y <code>javac -version</code>; deben decir lo mismo.</div>
+
+<h2>Tu primer programa: HolaTotito</h2>
+<p>Vamos a hacerlo «a mano», sin NetBeans, para que veas cada paso que el IDE normalmente hace por ti. Los ejercicios sueltos de esta Parte III los guardarás en una carpeta aparte, <code>$HOME\Proyectos\Practicas</code>, para no mezclar pruebas con el proyecto Totito.</p>
+<pre class="ps"># Crear la carpeta de prácticas (si ya existe no pasa nada) y entrar en ella
+New-Item -ItemType Directory -Force $HOME\Proyectos\Practicas | Out-Null
+cd $HOME\Proyectos\Practicas
+# Abrir el Bloc de notas con un archivo nuevo llamado HolaTotito.java
+notepad HolaTotito.java</pre>
+<p>Si el Bloc de notas pregunta si quieres crear el archivo, responde <b>Sí</b>. Escribe exactamente esto (respeta mayúsculas y minúsculas) y guarda con Ctrl+S:</p>
+<pre class="java">public class HolaTotito {
+    public static void main(String[] args) {
+        System.out.println("¡Hola, Totito!");
+        System.out.println("Hoy empiezo a programar en Java.");
+    }
+}</pre>
+<p>Ahora compila y ejecuta desde PowerShell, en la misma carpeta:</p>
+<pre class="ps">javac HolaTotito.java
+Get-ChildItem
+java HolaTotito</pre>
+<p><code>javac</code> no muestra nada si todo salió bien (en programación, el silencio suele ser buena noticia). <code>Get-ChildItem</code> te muestra que ahora hay un archivo nuevo, <code>HolaTotito.class</code>, junto a tu <code>HolaTotito.java</code>. Y <code>java HolaTotito</code> imprime:</p>
+<pre class="salida">¡Hola, Totito!
+Hoy empiezo a programar en Java.</pre>
+<div class="caja cuidado">Fíjate en la diferencia: a <code>javac</code> le das el <b>nombre del archivo</b> con su extensión (<code>HolaTotito.java</code>); a <code>java</code> le das el <b>nombre de la clase</b>, sin extensión (<code>HolaTotito</code>, no <code>HolaTotito.class</code>). Si escribes <code>java HolaTotito.class</code>, Java busca una clase llamada «class» dentro de algo llamado «HolaTotito» y falla.</div>
+<div class="caja hito"><b>Hito</b> Acabas de recorrer el viaje completo: escribiste código fuente, lo compilaste a bytecode y la JVM lo ejecutó. Todo lo que harás en este libro, incluido el Totito neón, sigue exactamente este camino; NetBeans solo lo automatiza con un botón.</div>
+<div class="caja consejo">Atajo para programas de un solo archivo: <code>java HolaTotito.java</code> (con la extensión) compila en memoria y ejecuta de una vez, sin dejar ningún <code>.class</code>. Es lo que hace el libro con <code>herramientas\PruebaConsola.java</code> en el capítulo 32. Para el proyecto entero, con muchos archivos, se sigue usando <code>javac</code> (o NetBeans).</div>
+
+<h2>Cada palabra y cada símbolo, uno por uno</h2>
+<p>Seis líneas y ya hay más de quince cosas que entender. Vamos con todas, porque son las mismas que verás en cada archivo del Totito.</p>
+
+<h3>Línea 1: <code>public class HolaTotito {</code></h3>
+<ul>
+<li><b><code>class</code></b>: anuncia que empieza una <b>clase</b>. En Java <i>todo</i> el código vive dentro de alguna clase; no puedes escribir una instrucción suelta en un archivo. Por ahora piensa en una clase como una «caja con nombre» que agrupa datos e instrucciones relacionados. <code>Tablero</code> es la caja de todo lo que tiene que ver con las casillas; <code>Jugador</code>, la de nombre y ficha. En el capítulo 18 verás que una clase es, sobre todo, un <i>molde</i> para fabricar objetos.</li>
+<li><b><code>HolaTotito</code></b>: el nombre de la clase. Lo eliges tú, con dos condiciones: no puede tener espacios ni empezar con número, y por convención empieza con mayúscula y junta las palabras con mayúscula inicial (<i>PascalCase</i>): <code>PanelTablero</code>, <code>BotonNeon</code>, <code>IA_Minimax</code>.</li>
+<li><b><code>public</code></b>: un <b>modificador de acceso</b>; dice que esta clase la puede usar cualquiera, incluida la JVM. Lo opuesto es <code>private</code> («solo yo»), que verás en el capítulo 19. Regla importante: <b>una clase <code>public</code> debe guardarse en un archivo que se llame exactamente igual</b>, con <code>.java</code> al final. <code>public class Tablero</code> vive en <code>Tablero.java</code>; si no coinciden, <code>javac</code> se niega a compilar.</li>
+<li><b><code>{</code></b>: la <b>llave de apertura</b>. Marca dónde empieza el contenido de la clase. Toda llave que se abre tiene que cerrarse con su <code>}</code>; lo que queda entre las dos es un <b>bloque</b>. En este programa, la llave de la línea 1 se cierra en la línea 6.</li>
+</ul>
+
+<h3>Línea 2: <code>public static void main(String[] args) {</code></h3>
+<p>Esta línea declara un <b>método</b>. Un método es un bloque de instrucciones con nombre, que se puede ejecutar cuando se le llama (el capítulo 16 está dedicado a ellos). Este en particular es especial: es el <b>punto de entrada</b>. Cuando escribes <code>java HolaTotito</code>, la JVM busca dentro de la clase un método con exactamente esta forma y empieza a ejecutar por su primera línea. En el Totito, el punto de entrada es el <code>main</code> de <code>TotitoApp</code>.</p>
+<ul>
+<li><b><code>public</code></b>: la JVM está «fuera» de tu clase y necesita poder llamar a <code>main</code>; por eso tiene que ser público.</li>
+<li><b><code>static</code></b>: significa que el método pertenece a la clase misma y no a un objeto fabricado con ella. Cuando el programa arranca todavía no existe ningún objeto, así que la JVM necesita un método que se pueda llamar «en frío», sin crear nada antes. Eso es lo que garantiza <code>static</code>. (Lo verás a fondo en el capítulo 20.)</li>
+<li><b><code>void</code></b>: «vacío». Indica que el método <b>no devuelve ningún resultado</b> a quien lo llamó. Otros métodos sí devuelven algo: <code>tableroLleno()</code> del Totito devuelve <code>true</code> o <code>false</code>, y por eso en su lugar dice <code>boolean</code>.</li>
+<li><b><code>main</code></b>: el nombre, «principal». No es un nombre libre: la JVM busca exactamente <code>main</code>. Si escribes <code>mian</code>, compila sin errores, pero al ejecutar verás <code>Error: Main method not found in class HolaTotito</code>.</li>
+<li><b><code>( )</code></b>: los <b>paréntesis</b> después del nombre de un método encierran sus <b>parámetros</b>: los datos que el método recibe para trabajar. Siempre van, aunque estén vacíos (<code>reiniciar()</code>).</li>
+<li><b><code>String[] args</code></b>: el único parámetro de <code>main</code>. <code>String</code> es el tipo «texto»; los corchetes <code>[]</code> significan «una lista (arreglo) de» (capítulo 15); y <code>args</code> (de <i>arguments</i>) es el nombre que le damos. Es decir: <code>main</code> recibe una lista de textos. ¿Cuáles? Las palabras que escribas después del nombre de la clase al ejecutarla. Lo verás en un momento.</li>
+<li><b><code>{</code></b>: abre el bloque del método, que se cierra en la línea 5.</li>
+</ul>
+
+<h3>Línea 3: <code>System.out.println("¡Hola, Totito!");</code></h3>
+<ul>
+<li><b><code>System</code></b>: una clase que viene con Java y representa al sistema donde corre el programa.</li>
+<li><b>El punto <code>.</code></b>: significa «de dentro de». <code>System.out</code> se lee «el <code>out</code> que está dentro de <code>System</code>»; <code>out.println</code>, «el <code>println</code> de <code>out</code>». Es la misma idea que una ruta de carpetas: <code>Proyectos\Totito\src</code>. Verás puntos por todas partes: <code>tablero.marcarCasilla(…)</code>, <code>Tema.ROSA</code>, <code>Math.max(…)</code>.</li>
+<li><b><code>out</code></b>: la <b>salida estándar</b>, que normalmente es la ventana de la terminal.</li>
+<li><b><code>println</code></b>: «print line», imprime el texto y después salta a la línea siguiente. Su hermano <code>print</code> imprime sin saltar.</li>
+<li><b><code>( … )</code></b>: aquí los paréntesis son una <b>llamada</b>: «ejecuta <code>println</code> con este dato». Lo que va dentro es el <b>argumento</b>.</li>
+<li><b>Las comillas dobles <code>"…"</code></b>: delimitan un <b>texto literal</b> (un <code>String</code>). Todo lo que está entre ellas se toma tal cual, letra por letra, con sus espacios y tildes. Sin comillas, Java pensaría que <code>Hola</code> es el nombre de algo y daría error.</li>
+<li><b>El punto y coma <code>;</code></b>: termina la <b>instrucción</b> (en Java se dice <i>sentencia</i>). Es como el punto final de una oración: le dice al compilador «aquí acaba esta orden». Las líneas que abren o cierran bloques (<code>{</code> <code>}</code>) no lo llevan; las órdenes, sí.</li>
+</ul>
+
+<h3>Líneas 5 y 6: <code>}</code> y <code>}</code></h3>
+<p>Cierran el método <code>main</code> y la clase, en ese orden: lo último que se abrió es lo primero que se cierra, como unas muñecas rusas. La <b>sangría</b> (los cuatro espacios al principio de las líneas interiores) no la exige Java, pero ayuda muchísimo a ver qué está dentro de qué. NetBeans la pone sola con <b>Alt+Shift+F</b>.</p>
+<table class="tabla">
+<tr><th>Símbolo</th><th>Nombre</th><th>Para qué sirve en Java</th><th>Ejemplo del Totito</th></tr>
+<tr><td><code>{ }</code></td><td>llaves</td><td>Encierran un bloque: el cuerpo de una clase, de un método, de un <code>if</code> o un <code>for</code></td><td><code>public class Tablero { … }</code></td></tr>
+<tr><td><code>( )</code></td><td>paréntesis</td><td>Parámetros de un método, argumentos de una llamada, condiciones, agrupar cuentas</td><td><code>marcarCasilla(int fila, int columna, char ficha)</code></td></tr>
+<tr><td><code>[ ]</code></td><td>corchetes</td><td>Arreglos: declarar (<code>char[][]</code>) y acceder a una posición (<code>casillas[1][2]</code>)</td><td><code>private char[][] casillas;</code></td></tr>
+<tr><td><code>;</code></td><td>punto y coma</td><td>Termina cada sentencia</td><td><code>casillas[fila][columna] = ficha;</code></td></tr>
+<tr><td><code>.</code></td><td>punto</td><td>Entrar en algo: un miembro de una clase u objeto; también el decimal de <code>0.5</code></td><td><code>tablero.obtenerCopia()</code></td></tr>
+<tr><td><code>" "</code></td><td>comillas dobles</td><td>Texto (<code>String</code>)</td><td><code>"Turno de "</code></td></tr>
+<tr><td><code>' '</code></td><td>comillas simples</td><td>Un solo carácter (<code>char</code>)</td><td><code>'X'</code>, <code>'O'</code>, <code>' '</code></td></tr>
+</table>
+<div class="caja cuidado"><b>Java distingue mayúsculas de minúsculas.</b> <code>System</code> y <code>system</code> son cosas distintas, igual que <code>Main</code> y <code>main</code>, o <code>tablero</code> (una variable) y <code>Tablero</code> (la clase). La mitad de los errores de quien empieza vienen de aquí.</div>
+
+<h3>Los argumentos de <code>main</code>: para qué sirve <code>String[] args</code></h3>
+<p>Para comprobar que <code>args</code> recibe de verdad lo que escribes al ejecutar, crea <code>HolaJugador.java</code> en la carpeta de prácticas. Usa un <code>if</code> («si…»), que verás a fondo en el capítulo 13: aquí solo evita leer un nombre cuando no te dieron ninguno.</p>
+<pre class="java">public class HolaJugador {
+    public static void main(String[] args) {
+        System.out.println("Recibí " + args.length + " argumento(s).");
+        if (args.length &gt; 0) {
+            System.out.println("¡Hola, " + args[0] + "! Te toca la X.");
+        }
+    }
+}</pre>
+<pre class="ps">javac HolaJugador.java
+java HolaJugador
+java HolaJugador Ana
+java HolaJugador "Ana Lucía" Pedro</pre>
+<pre class="salida">Recibí 0 argumento(s).
+Recibí 1 argumento(s).
+¡Hola, Ana! Te toca la X.
+Recibí 2 argumento(s).
+¡Hola, Ana Lucía! Te toca la X.</pre>
+<p><code>args.length</code> es cuántos textos llegaron; <code>args[0]</code> es el primero (se cuenta desde cero, capítulo 15). Las comillas en PowerShell juntan «Ana Lucía» en un solo argumento. El signo <code>+</code> entre textos los <b>pega</b> (concatena): <code>"Recibí " + 2 + " argumento(s)."</code> da <code>"Recibí 2 argumento(s)."</code>. El Totito no usa argumentos (se abre con doble clic), pero muchas herramientas sí: cuando escribes <code>git commit -m "mensaje"</code>, <code>commit</code>, <code>-m</code> y <code>"mensaje"</code> llegan al programa <code>git</code> exactamente así.</p>
+
+<h3><code>print</code> frente a <code>println</code></h3>
+<pre class="java">public class PrintVsPrintln {
+    public static void main(String[] args) {
+        System.out.print(" X");
+        System.out.print(" |");
+        System.out.println(" O");
+        System.out.println("---+---");
+    }
+}</pre>
+<pre class="salida"> X | O
+---+---</pre>
+<p>Los dos <code>print</code> escriben en la misma línea; el <code>println</code> escribe y salta. Con estas piezas, en el capítulo 32 dibujarás el tablero en la consola.</p>
+
+<h2>jshell: el laboratorio para experimentar</h2>
+<p>Crear un archivo, compilar y ejecutar solo para probar «¿cuánto da 7 dividido entre 2 en Java?» es lento. Para eso el JDK trae <code>jshell</code>, una consola donde escribes una línea de Java y ves el resultado al instante (un <b>REPL</b>: <i>read–eval–print loop</i>, «lee, evalúa, imprime, repite»). No hace falta clase ni <code>main</code>, y el punto y coma final es opcional.</p>
+<pre class="ps">jshell</pre>
+<pre class="salida">|  Welcome to JShell -- Version 21.0.12.1
+|  For an introduction type: /help intro
+
+jshell&gt; 2 + 3
+$1 ==&gt; 5
+
+jshell&gt; int fila = 1
+fila ==&gt; 1
+
+jshell&gt; fila * 3 + 2
+$3 ==&gt; 5
+
+jshell&gt; char ficha = 'X'
+ficha ==&gt; 'X'
+
+jshell&gt; System.out.println("Juega " + ficha)
+Juega X
+
+jshell&gt; "Totito".length()
+$6 ==&gt; 6
+
+jshell&gt; /exit
+|  Goodbye</pre>
+<p>Cómo leerlo: <code>$1 ==&gt; 5</code> significa «el resultado se guardó en una variable automática llamada <code>$1</code> y vale 5». Cuando tú das el nombre (<code>fila</code>), jshell lo usa. El número exacto de versión que veas puede ser otro; no importa. Los comandos de jshell empiezan con barra: <code>/exit</code> para salir, <code>/vars</code> para ver tus variables, <code>/list</code> para ver lo que escribiste, flecha arriba para repetir.</p>
+<h3>Probar las clases del Totito en jshell</h3>
+<p>Con el comando <code>/open</code> jshell carga un archivo <code>.java</code> entero. Así puedes jugar con el <code>Tablero</code> real sin ventanas. Hazlo desde la carpeta del proyecto, cuando ya tengas <code>Tablero.java</code> (capítulo 29):</p>
+<pre class="ps">cd $HOME\Proyectos\Totito
+jshell</pre>
+<pre class="salida">jshell&gt; /open src/Tablero.java
+
+jshell&gt; Tablero t = new Tablero()
+t ==&gt; Tablero@1e67b872
+
+jshell&gt; t.marcarCasilla(1, 1, 'X')
+$3 ==&gt; true
+
+jshell&gt; t.marcarCasilla(1, 1, 'O')
+$4 ==&gt; false
+
+jshell&gt; t.obtenerCasilla(1, 1)
+$5 ==&gt; 'X'
+
+jshell&gt; t.verificarGanador()
+$6 ==&gt; ' '</pre>
+<p>Acabas de comprobar una regla del juego sin escribir un programa: la casilla del centro aceptó la X (<code>true</code>) y rechazó la O porque ya estaba ocupada (<code>false</code>). <code>verificarGanador()</code> devolvió <code>' '</code> (un espacio, la casilla vacía): todavía no gana nadie. El <code>Tablero@1e67b872</code> es la forma en que Java muestra un objeto que no sabe describirse: nombre de la clase, arroba y un código interno que cambia en cada ejecución.</p>
+<div class="caja consejo">Úsalo cada vez que dudes: «¿qué da <code>7 / 2</code>?», «¿<code>"Ana".equals("ana")</code> es true?». Probar en jshell tarda cinco segundos y te ahorra adivinar. A lo largo de esta Parte III verás muchas pruebas así.</div>
+
+<h2>Comentarios: notas para personas</h2>
+<p>Un <b>comentario</b> es texto que el compilador ignora por completo. Sirve para explicar a quien lea el código (incluido tú dentro de tres meses) <i>por qué</i> algo está hecho así. Java tiene tres clases:</p>
+<pre class="java">/**
+ * Muestra los tres tipos de comentario de Java.
+ * Este bloque es un comentario Javadoc: describe la clase.
+ */
+public class Comentarios {
+
+    /** Punto de entrada: la JVM empieza aqui. */
+    public static void main(String[] args) {
+        // Comentario de una linea: Java ignora todo desde las dos barras.
+        System.out.println("Linea 1");   // tambien puede ir al final de una linea
+
+        /* Comentario de varias lineas:
+           sirve para explicar algo largo
+           o para "apagar" codigo un momento. */
+        /* System.out.println("Esta linea no se ejecuta"); */
+        System.out.println("Linea 2");
+    }
+}</pre>
+<pre class="salida">Linea 1
+Linea 2</pre>
+<table class="tabla">
+<tr><th>Forma</th><th>Alcance</th><th>Uso típico en el Totito</th></tr>
+<tr><td><code>// …</code></td><td>Desde las barras hasta el final de la línea</td><td><code>private static final int MARGEN = 10;   // espacio para el halo del borde</code></td></tr>
+<tr><td><code>/* … */</code></td><td>Todo lo que haya entre <code>/*</code> y <code>*/</code>, aunque ocupe varias líneas</td><td>Explicaciones largas o desactivar código temporalmente</td></tr>
+<tr><td><code>/** … */</code></td><td>Igual que el anterior, pero es <b>Javadoc</b></td><td>Encima de cada clase y método: <code>/** Retorna true si ya no quedan casillas vacias. */</code></td></tr>
+</table>
+<p>Los comentarios <b>Javadoc</b> son especiales: la herramienta <code>javadoc</code> del JDK los recoge y fabrica páginas web de documentación, y NetBeans los muestra en un recuadro cuando pasas el ratón por encima del nombre de un método. Pueden llevar etiquetas como <code>@param</code> para explicar un parámetro; en <code>PanelTablero</code> verás <code>/** @param tamCasilla lado de cada casilla en pixeles. */</code>. Toda la documentación oficial de Java (la que consultarás cuando quieras saber qué hace <code>String.trim()</code>) está generada así.</p>
+<div class="caja consejo"><b>Qué comentar.</b> No repitas lo que el código ya dice (<code>i++; // suma 1 a i</code> no aporta nada). Explica la intención y lo que no es obvio: <code>// mientras la IA "piensa" no se aceptan clics</code> (de <code>PantallaJuego</code>) dice el <i>porqué</i> de un <code>return</code>. Fíjate también en que los comentarios del Totito no llevan tildes: es una costumbre para evitar problemas si algún programa abre el archivo con otra codificación.</div>
+
+<h2>Anatomía de un archivo del Totito</h2>
+<p>Ya tienes el vocabulario para leer un archivo real. Este es <code>Jugador.java</code> completo, la clase más pequeña del juego (la escribirás en el capítulo 30):</p>
+<pre class="java">/**
+ * Representa al jugador humano: su nombre y la ficha que utiliza.
+ * Es una clase simple de datos, sin logica de juego.
+ */
+public class Jugador {
+
+    private final String nombre;
+    private final char ficha;
+
+    public Jugador(String nombre, char ficha) {
+        this.nombre = nombre;
+        this.ficha = ficha;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public char getFicha() {
+        return ficha;
+    }
+}</pre>
+<p>Todo archivo de Java del Totito tiene, de arriba hacia abajo, las mismas partes:</p>
+<ol>
+<li><b>Imports</b> (opcionales). <code>Jugador</code> no los necesita, pero <code>PanelTablero.java</code> empieza así:
+<pre class="java">import java.awt.Color;
+import java.awt.Graphics2D;
+import javax.swing.JComponent;</pre>
+Java trae miles de clases ya hechas, ordenadas en <b>paquetes</b> (carpetas con nombre, como <code>java.awt</code>, para gráficos, o <code>javax.swing</code>, para ventanas). Un <code>import</code> dice «cuando escriba <code>Color</code>, me refiero a <code>java.awt.Color</code>». Sin él tendrías que escribir el nombre completo cada vez; de hecho, <code>PanelTablero</code> lo hace una vez a propósito: <code>java.util.Arrays.fill(fila, Tablero.VACIA)</code>. Las clases de <code>java.lang</code> (como <code>String</code>, <code>System</code> o <code>Math</code>) se importan solas, por eso <code>HolaTotito</code> no tuvo ningún import. Y las clases del propio Totito tampoco necesitan import entre ellas porque viven todas en el mismo «paquete por defecto». Es como en una oficina: a un compañero de tu mismo equipo lo llamas por su nombre; a alguien de otro departamento, por nombre y departamento.</li>
+<li><b>Comentario Javadoc de la clase</b>: qué representa y qué <i>no</i> hace. El de <code>Tablero</code> dice expresamente «No conoce nada de la interfaz grafica».</li>
+<li><b>Declaración de la clase</b>: <code>public class Jugador {</code>. Más adelante verás añadidos como <code>extends JComponent</code> (capítulo 22).</li>
+<li><b>Campos</b> (o atributos): las variables que guarda cada objeto de la clase; sus datos. Aquí, <code>nombre</code> y <code>ficha</code>. En <code>Tablero</code>, la matriz <code>casillas</code>.</li>
+<li><b>Constructor</b>: el bloque con el mismo nombre de la clase y sin tipo de retorno (<code>public Jugador(String nombre, char ficha)</code>), que prepara un objeto nuevo (capítulo 20).</li>
+<li><b>Métodos</b>: lo que la clase sabe hacer. <code>getNombre()</code> y <code>getFicha()</code> aquí; <code>marcarCasilla</code>, <code>verificarGanador</code>… en <code>Tablero</code>.</li>
+<li><b>La llave final</b> que cierra la clase.</li>
+</ol>
+<div class="caja concepto"><b>Analogía: la ficha de un empleado.</b> Una clase se parece a un formulario de recursos humanos. Los <i>campos</i> son las casillas del formulario (nombre, puesto); el <i>constructor</i> es el momento en que se llena al contratar a alguien; los <i>métodos</i> son las preguntas que se le pueden hacer después («¿cómo te llamas?» = <code>getNombre()</code>). Cada persona contratada es un <i>objeto</i>: mismo formulario, datos distintos.</div>
+<h3>Reglas de escritura que se cumplen en todos los archivos</h3>
+<ul>
+<li><b>Los espacios y saltos de línea no importan</b> al compilador (salvo dentro de comillas). <code>int   x=5 ;</code> y <code>int x = 5;</code> son lo mismo. Se formatea bien por las personas. Por eso las condiciones largas del Totito se parten en varias líneas sin problema.</li>
+<li><b>Convenciones de nombres</b>: clases en <code>PascalCase</code> (<code>PanelTablero</code>); métodos y variables en <code>camelCase</code>, empezando en minúscula (<code>marcarCasilla</code>, <code>filaEncima</code>); constantes en <code>MAYUSCULAS_CON_GUIONES</code> (<code>VACIA</code>, <code>PAUSA_IA_MS</code>). Java no lo obliga, pero todo programador de Java lo espera, y al verlo sabes de un vistazo qué es cada cosa.</li>
+<li><b>Palabras reservadas</b>: <code>class</code>, <code>public</code>, <code>if</code>, <code>for</code>, <code>int</code>, <code>return</code>… tienen un significado fijo y no puedes usarlas como nombres.</li>
+<li><b>Un archivo, una clase pública</b>, y el archivo se llama como ella.</li>
+</ul>
+
+<h2>Errores de compilación y errores de ejecución</h2>
+<p>Vas a ver muchos errores; todos los programadores los ven a diario. Lo importante es saber de qué tipo son, porque se buscan distinto.</p>
+<h3>Errores de compilación: <code>javac</code> se niega</h3>
+<p>Ocurren cuando el código no respeta las reglas del lenguaje. <code>javac</code> no genera el <code>.class</code> y te dice <b>archivo, línea y qué esperaba</b>. Los mensajes salen en inglés. Quita el punto y coma de la línea 3 de <code>HolaTotito</code> y compila:</p>
+<pre class="salida">HolaTotito.java:3: error: ';' expected
+        System.out.println("¡Hola, Totito!")
+                                            ^
+1 error</pre>
+<p>Se lee: «en <code>HolaTotito.java</code>, línea 3, esperaba un <code>;</code>», y el <code>^</code> apunta al lugar exacto. Ahora pon el <code>;</code> pero escribe mal el método (<code>printn</code>):</p>
+<pre class="salida">HolaTotito.java:3: error: cannot find symbol
+        System.out.printn("¡Hola, Totito!");
+                  ^
+  symbol:   method printn(String)
+  location: variable out of type PrintStream
+1 error</pre>
+<p>«No encuentro el símbolo»: no existe ningún método <code>printn</code> en <code>out</code>. Es el error más común de todos y casi siempre significa una letra mal escrita, una mayúscula equivocada o un import que falta. Un tercero, muy típico al copiar archivos: guardar <code>public class HolaTotito</code> en un archivo llamado <code>Saludo.java</code>:</p>
+<pre class="salida">Saludo.java:1: error: class HolaTotito is public, should be declared in a file named HolaTotito.java
+public class HolaTotito {
+       ^
+1 error</pre>
+<h3>Errores de ejecución: compila, pero falla al correr</h3>
+<p>El código es correcto para el compilador, pero al ejecutarse ocurre algo imposible: leer una posición que no existe, dividir entre cero, usar un objeto que no existe. La JVM lanza una <b>excepción</b> (capítulo 26) y, si nadie la atiende, el programa se detiene. Por ejemplo, una fila del totito tiene tres casillas (posiciones 0, 1 y 2); pedir la posición 3:</p>
+<pre class="java">public class CasillaFuera {
+    public static void main(String[] args) {
+        char[] fila = {'X', 'O', ' '};
+        System.out.println("Primera casilla: " + fila[0]);
+        System.out.println("Cuarta casilla: " + fila[3]);
+    }
+}</pre>
+<pre class="salida">Primera casilla: X
+Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3
+	at CasillaFuera.main(CasillaFuera.java:5)</pre>
+<p>Fíjate: la primera línea sí se imprimió; el programa corrió hasta la línea 5 y ahí murió. El mensaje dice qué pasó (índice 3 fuera de rango para longitud 3) y la última línea, llamada <b>traza de la pila</b> (<i>stack trace</i>), dice dónde: <code>CasillaFuera.java:5</code>. Este es exactamente el error que el Totito evita en <code>marcarCasilla</code> al comprobar <code>fila &lt; 0 || fila &gt; 2</code> antes de tocar la matriz.</p>
+<table class="tabla">
+<tr><th></th><th>De compilación</th><th>De ejecución</th></tr>
+<tr><td>¿Quién lo detecta?</td><td><code>javac</code> (o NetBeans, con un subrayado rojo mientras escribes)</td><td>La JVM, mientras el programa corre</td></tr>
+<tr><td>¿Cuándo?</td><td>Antes de ejecutar nada</td><td>Solo si el programa pasa por esa línea con esos datos</td></tr>
+<tr><td>¿Se genera el .class?</td><td>No</td><td>Sí</td></tr>
+<tr><td>Ejemplos</td><td>Falta <code>;</code>, nombre mal escrito, llave sin cerrar, tipo equivocado</td><td>Índice fuera de rango, división entera entre cero, objeto <code>null</code></td></tr>
+<tr><td>Cómo se busca</td><td>Leer el mensaje, ir a la línea indicada</td><td>Leer la traza de la pila de arriba abajo hasta la primera línea que sea de tu código</td></tr>
+</table>
+<p>Hay un tercer tipo, el más traicionero: el <b>error de lógica</b>. El programa compila y corre sin quejarse, pero hace otra cosa de la que querías; por ejemplo, que la IA juegue en una casilla ocupada porque olvidaste comprobarla. Nadie te avisa: lo descubres probando. Para eso existen el capítulo 32 (probar la lógica en consola) y el 62 (el depurador).</p>
+<div class="caja consejo"><b>Cómo leer un error sin asustarte.</b> 1) Mira solo el <b>primer</b> error: muchas veces los siguientes son consecuencia de él. 2) Ve a la línea indicada <i>y a la anterior</i> (un <code>;</code> que falta en la línea 3 a veces se reporta en la 4). 3) Copia la frase clave en inglés (<code>cannot find symbol</code>) en un buscador: alguien la tuvo antes. El apéndice D recoge los más frecuentes.</div>
+
+<h2>Lo mismo, en NetBeans</h2>
+<p>Lo que hiciste a mano es lo que NetBeans hace al pulsar <b>Clean and Build</b> (Shift+F11): llama a <code>javac</code> para cada archivo de <code>src\</code> y deja los <code>.class</code> en <code>target\classes</code>. <b>Run Project</b> (F6) llama a <code>java</code> con la clase principal. Y el subrayado rojo que aparece mientras escribes es NetBeans ejecutando el compilador continuamente por debajo, para avisarte antes. Si alguna vez NetBeans «se vuelve loco», saber hacerlo a mano te permite comprobar dónde está el problema: <code>javac -encoding UTF-8 -d out src\*.java</code> y <code>java -cp out TotitoApp</code> desde la carpeta del proyecto, como en el capítulo 5.</p>
+<div class="caja cuidado">En JDK 21 los archivos fuente se leen como UTF-8 por defecto, así que las tildes y la «ñ» funcionan. Si alguna vez ves letras raras (<code>Ã¡</code> en lugar de <code>á</code>), añade <code>-encoding UTF-8</code> a <code>javac</code> y asegúrate de que tu editor guardó el archivo en UTF-8 (en el Bloc de notas, abajo a la derecha de la ventana).</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Escribes <b>código fuente</b> (<code>.java</code>), <code>javac</code> lo revisa y lo traduce a <b>bytecode</b> (<code>.class</code>), y la <b>JVM</b> lo ejecuta. El mismo <code>.class</code> sirve en cualquier sistema con JVM.</li>
+<li>El <b>JDK</b> (para programar) incluye el <b>JRE</b> (para ejecutar), que incluye la <b>JVM</b>.</li>
+<li>Un programa empieza en <code>public static void main(String[] args)</code>: público para que la JVM lo vea, estático para llamarlo sin crear objetos, <code>void</code> porque no devuelve nada, y <code>args</code> con lo que escribas tras el nombre de la clase.</li>
+<li>Llaves = bloques; paréntesis = parámetros, llamadas y condiciones; corchetes = arreglos; <code>;</code> = fin de sentencia; punto = «de dentro de»; comillas dobles = texto, simples = un carácter.</li>
+<li><code>jshell</code> ejecuta Java línea a línea y con <code>/open</code> carga clases del Totito para probarlas.</li>
+<li>Comentarios: <code>//</code> de una línea, <code>/* */</code> de varias, <code>/** */</code> Javadoc para documentar.</li>
+<li>Todo archivo del Totito sigue la misma anatomía: imports, Javadoc, clase, campos, constructor, métodos.</li>
+<li>Errores de compilación los da <code>javac</code> antes de correr; errores de ejecución (excepciones) los da la JVM al correr; los de lógica, solo probando.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Herramientas de línea de comandos.</b> Con <code>main</code> y <code>args</code> puedes hacer un programa que reciba un nombre de archivo (<code>java ContarLineas notas.txt</code>) o un número (<code>java Tabla 7</code>, que imprima la tabla del 7). Es la base de utilidades como <code>git</code> o <code>javac</code> mismos.</li>
+<li><b>Probar una idea en jshell antes de escribirla.</b> En cualquier proyecto (una calculadora de cuotas, un sistema de inventario) prueba la fórmula en jshell y, cuando funcione, pásala al archivo.</li>
+<li><b>Leer código ajeno.</b> La anatomía imports → clase → campos → constructor → métodos es la de cualquier proyecto Java profesional, desde una app de Android hasta un servidor con Spring Boot. Empieza siempre por el Javadoc de la clase.</li>
+<li><b>Diagnosticar fallos en otros programas.</b> Una traza de pila (<code>Exception in thread "main" … at Clase.metodo(Archivo.java:N)</code>) aparece igual en cualquier aplicación Java, incluido Minecraft Java Edition; ya sabes leerla.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Modifica <code>HolaTotito</code> para que imprima tres líneas: tu nombre, «Juego con la X» y «El Totito es tres en raya». Compílalo y ejecútalo desde PowerShell.</li>
+<li>Provoca a propósito cada uno de estos errores, compila y anota el mensaje: borra una llave de cierre; escribe <code>string</code> en minúscula en <code>String[] args</code>; cambia <code>println</code> por <code>Println</code>. Pista: en el de la llave, el mensaje habla del final del archivo (<i>reached end of file while parsing</i>).</li>
+<li>Usando <code>print</code> y <code>println</code>, imprime un tablero de totito vacío de tres filas con separadores <code>---+---+---</code>, como el que verás en el capítulo 32.</li>
+<li>En jshell, calcula <code>7 / 2</code>, <code>7.0 / 2</code> y <code>7 % 2</code>. Anota los resultados: el capítulo 12 te explicará por qué son distintos.</li>
+<li>Reto: escribe <code>Eco.java</code>, que imprima todos los argumentos que reciba, uno por línea, precedidos de su número. Pista: necesitarás repetir algo <code>args.length</code> veces; adelántate al capítulo 14 y busca el bucle <code>for</code>, o déjalo para después.</li>
+</ol></div>
+</section>

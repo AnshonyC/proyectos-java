@@ -1,0 +1,320 @@
+<section class="capitulo" id="cap08">
+<h1><span class="num">Capítulo 8</span>El primer repositorio del Totito</h1>
+<p class="entrada">Vas a convertir la carpeta del Totito en un repositorio de Git, guardar su primera foto con los archivos del capítulo 5 y publicarla en tu cuenta de GitHub con un solo comando. Al final conocerás el plan de commits que seguirás durante todo el libro y sabrás por qué está hecho así.</p>
+
+<h2>Dónde estamos</h2>
+<p>En el capítulo 5 creaste la carpeta del proyecto con tres archivos: <code>pom.xml</code> (la receta de Maven), <code>.gitignore</code> (la lista de lo que Git debe ignorar) y <code>README.md</code> (la presentación del proyecto). En el capítulo 7 configuraste Git y conectaste tu PC con GitHub. Ahora juntamos todo.</p>
+<p>Abre PowerShell y entra a la carpeta del proyecto. <b>Todos</b> los comandos de este capítulo se ejecutan desde ahí:</p>
+<pre class="ps">cd $HOME\Proyectos\Totito
+Get-ChildItem -Force</pre>
+<p><code>Get-ChildItem</code> lista el contenido de la carpeta (capítulo 3) y <code>-Force</code> hace que muestre también los archivos ocultos. Verás algo así (las fechas serán otras):</p>
+<pre class="salida">    Directorio: C:\Users\ana\Proyectos\Totito
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d-----        12/10/2026     11:02                herramientas
+d-----        12/10/2026     11:02                recursos
+d-----        12/10/2026     11:02                src
+d-----        12/10/2026     11:15                target
+-a----        12/10/2026     11:05            106 .gitignore
+-a----        12/10/2026     11:04           1709 pom.xml
+-a----        12/10/2026     11:06            120 README.md</pre>
+<p>Las carpetas <code>src</code>, <code>herramientas</code> y <code>recursos</code> están vacías por ahora (ahí irán los <code>.java</code> desde el capítulo 29, las utilidades desde el 32 y el icono en el 64), y <code>target</code> la creó NetBeans al hacer <i>Clean and Build</i> en el capítulo 5. Si no ves <code>target</code>, no pasa nada. Son exactamente los pasos que el capítulo 5 te dejó anotados en su caja de Git; ahora los vas a entender uno por uno.</p>
+
+<div class="caja cuidado"><b>Asegúrate de estar en la carpeta correcta</b> El error más común de este capítulo es ejecutar <code>git init</code> en la carpeta equivocada, por ejemplo en <code>C:\Users\ana</code> (tu carpeta personal entera). Eso convertiría todos tus documentos en un repositorio. Antes de seguir, mira que el indicador de PowerShell termine en <code>\Proyectos\Totito&gt;</code>. Si te pasó, la solución está más abajo, en «Problemas típicos».</div>
+
+<h2>Paso 1: git init — crear el repositorio</h2>
+<pre class="ps">git init -b main</pre>
+<pre class="salida">Initialized empty Git repository in C:/Users/ana/Proyectos/Totito/.git/</pre>
+<p>«Se inicializó un repositorio de Git vacío en …/Totito/.git/». <code>init</code> viene de <i>initialize</i>, inicializar, y <code>-b main</code> (de <i>branch</i>) dice que la primera rama se llame <code>main</code>. Gracias al <code>init.defaultBranch</code> del capítulo 7 ya sería así, pero escribirlo no cuesta nada y funciona aunque estés en una computadora sin configurar. Lo que hizo fue crear la carpeta oculta <code>.git</code>, el «álbum» del capítulo 6. Git escribe las rutas con barras normales (<code>/</code>) incluso en Windows; es solo su costumbre.</p>
+<p>Fíjate en la palabra <b>empty</b>, vacío: el álbum existe, pero no tiene ninguna foto. Tus tres archivos siguen en la mesa, sin guardar. Compruébalo:</p>
+<pre class="ps">Get-ChildItem -Force</pre>
+<p>Ahora aparece una línea nueva, <code>d--h--  .git</code>. La <code>h</code> significa <i>hidden</i>, oculta. En el Explorador de Windows no la verás a menos que actives <i>Vista → Mostrar → Elementos ocultos</i>, y está bien que sea así: no hay nada que tocar ahí dentro.</p>
+
+<div class="caja concepto"><b>git init se hace una sola vez por proyecto</b> Un proyecto se inicializa una vez en toda su vida. Si ejecutas <code>git init</code> otra vez en la misma carpeta, Git responde <i>Reinitialized existing Git repository</i> y no borra nada, pero no tiene sentido hacerlo. Y nunca lo ejecutes dentro de una subcarpeta de un proyecto que ya es repositorio (por ejemplo dentro de <code>Totito\src</code>): tendrías un repositorio dentro de otro, y Git se confunde.</div>
+
+<h2>Paso 2: git status — preguntar cómo está todo</h2>
+<pre class="ps">git status</pre>
+<pre class="salida">On branch main
+
+No commits yet
+
+Untracked files:
+  (use "git add &lt;file&gt;..." to include in what will be committed)
+	.gitignore
+	README.md
+	pom.xml
+
+nothing added to commit but untracked files present (use "git add" to track)</pre>
+<p><code>git status</code> es el comando que más vas a usar en tu vida con Git. No cambia nada; solo informa. Leámoslo línea por línea:</p>
+<table class="tabla">
+<tr><th>Línea</th><th>Traducción</th><th>Qué significa</th></tr>
+<tr><td><code>On branch main</code></td><td>En la rama main</td><td>HEAD apunta a <code>main</code>. Es <code>main</code> y no <code>master</code> gracias a <code>init.defaultBranch</code> (capítulo 7).</td></tr>
+<tr><td><code>No commits yet</code></td><td>Aún no hay commits</td><td>El álbum está vacío.</td></tr>
+<tr><td><code>Untracked files:</code></td><td>Archivos sin seguimiento</td><td>Git ve estos archivos pero nunca los ha guardado.</td></tr>
+<tr><td><code>(use "git add &lt;file&gt;..." …)</code></td><td>usa «git add &lt;archivo&gt;» para incluirlos en lo que se va a guardar</td><td>Git siempre sugiere el siguiente paso entre paréntesis. Léelo: casi siempre es lo que necesitas.</td></tr>
+<tr><td><code>nothing added to commit…</code></td><td>no hay nada preparado para el commit, pero hay archivos sin seguimiento</td><td>La bandeja está vacía.</td></tr>
+</table>
+<p>Ahora fíjate en lo que <b>no</b> aparece:</p>
+<ul>
+<li><b><code>target</code> no aparece</b> porque el <code>.gitignore</code> tiene la línea <code>target/</code>. ¡Tu <code>.gitignore</code> ya está trabajando! Si quieres comprobar qué regla ignora algo, usa <code>git check-ignore -v target</code>, que responde con la línea exacta: <code>.gitignore:1:target/	target</code> (archivo, número de línea, regla, y lo ignorado).</li>
+<li><b><code>src</code>, <code>herramientas</code> y <code>recursos</code> no aparecen</b> porque están vacías. <b>Git no guarda carpetas vacías</b>: solo guarda archivos, y las carpetas existen para Git solo porque contienen archivos. Cuando en el capítulo 29 crees <code>src\Tablero.java</code>, la carpeta <code>src</code> aparecerá sola (y lo mismo las otras dos, en los capítulos 32 y 64). (En otros proyectos verás un truco: poner dentro un archivo vacío llamado <code>.gitkeep</code> para forzar que la carpeta se guarde. Aquí no hace falta).</li>
+</ul>
+
+<div class="caja consejo"><b>La versión corta</b> <code>git status -s</code> (<i>short</i>, corto) da el mismo informe en una línea por archivo. Los archivos sin seguimiento salen con <code>??</code> delante. En el capítulo 9 verás todos los códigos.</div>
+
+<h2>Paso 3: git add — poner los archivos en la bandeja</h2>
+<pre class="ps">git add pom.xml .gitignore README.md</pre>
+<p><code>git add</code> copia el estado actual de esos archivos al área de preparación. Puedes nombrar varios archivos separados por espacios. No muestra nada si sale bien. Pregunta de nuevo:</p>
+<pre class="ps">git status</pre>
+<pre class="salida">On branch main
+
+No commits yet
+
+Changes to be committed:
+  (use "git rm --cached &lt;file&gt;..." to unstage)
+	new file:   .gitignore
+	new file:   README.md
+	new file:   pom.xml</pre>
+<p>«Cambios que se van a guardar en el commit». Cada archivo dice <i>new file</i>, archivo nuevo. La pista entre paréntesis te dice cómo sacar un archivo de la bandeja si te equivocaste (<i>unstage</i>, quitar de preparación). En Windows, NetBeans muestra estos archivos en verde, el color de «nuevo para Git».</p>
+
+<h3>¿Y git add . ?</h3>
+<p>Verás muchísimo el comando <code>git add .</code> (con un punto). El punto significa «la carpeta actual», así que agrega <b>todo</b> lo que haya cambiado en la carpeta y sus subcarpetas, respetando el <code>.gitignore</code>. Es cómodo, pero tiene un riesgo: agrega también lo que no esperabas (un archivo de prueba, una nota personal, un archivo de configuración de NetBeans como <code>nb-configuration.xml</code> si se creó). Por eso, para el primer commit, es mejor nombrar los archivos uno por uno: sabes exactamente qué entra. Si usas <code>git add .</code>, haz <b>siempre</b> un <code>git status</code> antes del commit para revisar la lista.</p>
+
+<div class="caja concepto"><b>El aviso LF/CRLF</b> Si alguno de los archivos se creó con finales de línea de Linux, al hacer <code>git add</code> verás <i>warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it</i>. Como viste en el capítulo 7, es solo Git avisando de la traducción de finales de línea. No es un error.</div>
+
+<h2>Paso 4: git commit — sacar la primera foto</h2>
+<pre class="ps">git commit -m "Estructura inicial del proyecto Totito"</pre>
+<pre class="salida">[main (root-commit) b49d01a] Estructura inicial del proyecto Totito
+ 3 files changed, 51 insertions(+)
+ create mode 100644 .gitignore
+ create mode 100644 README.md
+ create mode 100644 pom.xml</pre>
+<p>Primero, el comando:</p>
+<ul>
+<li><code>git commit</code>: toma todo lo que hay en la bandeja y lo guarda como un commit nuevo en el repositorio.</li>
+<li><code>-m</code>: viene de <i>message</i>. Lo que sigue entre comillas es el mensaje del commit. Sin <code>-m</code>, Git abriría el editor que configuraste en el capítulo 7 para que lo escribas ahí.</li>
+<li><code>"Estructura inicial del proyecto Totito"</code>: el mensaje. Describe qué contiene esta foto. Va entre comillas porque tiene espacios. Es el primer mensaje del plan de commits del libro.</li>
+</ul>
+<p>Ahora la respuesta de Git:</p>
+<table class="tabla">
+<tr><th>Parte</th><th>Qué significa</th></tr>
+<tr><td><code>[main</code></td><td>El commit se hizo en la rama <code>main</code>, que ahora apunta a él.</td></tr>
+<tr><td><code>(root-commit)</code></td><td>Commit raíz: el primero, el único sin padre.</td></tr>
+<tr><td><code>b49d01a]</code></td><td>El hash abreviado del commit. <b>El tuyo será distinto</b>, porque depende de tu nombre, la fecha y la hora exacta.</td></tr>
+<tr><td><code>3 files changed, 51 insertions(+)</code></td><td>Tres archivos cambiaron y se agregaron 51 líneas en total (el número depende de cómo escribiste tus archivos).</td></tr>
+<tr><td><code>create mode 100644 .gitignore</code></td><td>Se creó el archivo con «modo 100644»: un archivo normal, no ejecutable. Es un detalle heredado de Linux que puedes ignorar.</td></tr>
+</table>
+<p>Pregunta otra vez cómo está todo:</p>
+<pre class="ps">git status</pre>
+<pre class="salida">On branch main
+nothing to commit, working tree clean</pre>
+<p>«Nada que guardar, el directorio de trabajo está limpio». Significa que la mesa, la bandeja y la última foto son idénticas. Es el estado de calma al que vuelves después de cada commit.</p>
+
+<div class="caja hito"><b>Hito</b> El Totito tiene historia. A partir de ahora, nada de lo que guardes con un commit se puede perder por un error en tu carpeta: siempre podrás volver a esta foto.</div>
+
+<h2>Paso 5: git log — mirar el historial</h2>
+<pre class="ps">git log</pre>
+<pre class="salida">commit b49d01a6c3c1c9f4020c112a1e7653865b27f213 (HEAD -&gt; main)
+Author: Ana López &lt;12345678+ana-lopez@users.noreply.github.com&gt;
+Date:   Mon Oct 12 14:31:34 2026 -0600
+
+    Estructura inicial del proyecto Totito</pre>
+<ul>
+<li><code>commit b49d01a6…</code>: el hash completo, los 40 caracteres.</li>
+<li><code>(HEAD -&gt; main)</code>: «usted está aquí». HEAD apunta a <code>main</code>, y <code>main</code> apunta a este commit.</li>
+<li><code>Author</code>: tu nombre y correo, tal como los configuraste.</li>
+<li><code>Date</code>: fecha y hora, con la zona horaria (<code>-0600</code> es la de Guatemala, seis horas menos que la hora universal).</li>
+<li>Debajo, con sangría, el mensaje.</li>
+</ul>
+<p>Cuando haya muchos commits, <code>git log</code> ocupará más de una pantalla y Git lo mostrará con un paginador: verás <code>:</code> o <code>(END)</code> al final de la pantalla. Avanza con la barra espaciadora o las flechas y <b>sal pulsando la tecla q</b> (de <i>quit</i>). Mucha gente cree que la terminal se trabó: solo hay que pulsar <code>q</code>.</p>
+<p>La forma que usarás casi siempre es la versión de una línea por commit:</p>
+<pre class="ps">git log --oneline</pre>
+<pre class="salida">b49d01a (HEAD -&gt; main) Estructura inicial del proyecto Totito</pre>
+<p>Y para ver qué archivos entraron en un commit concreto:</p>
+<pre class="ps">git show --stat HEAD</pre>
+<p><code>show</code> muestra un commit; <code>HEAD</code> significa «el commit donde estoy»; <code>--stat</code> resume qué archivos cambió y cuántas líneas, en lugar de mostrar todo el contenido.</p>
+
+<h2>Paso 6: crear el repositorio en GitHub y subirlo</h2>
+<p>Hasta aquí todo está solo en tu PC. Ahora vas a crear el repositorio <code>totito</code> en tu cuenta de GitHub, conectarlo con tu carpeta y subir el commit. Con <code>gh</code> es un solo comando:</p>
+<pre class="ps">gh repo create totito --private --source . --remote origin --push</pre>
+<p>Desarmemos cada pieza:</p>
+<table class="tabla">
+<tr><th>Pieza</th><th>Qué hace</th></tr>
+<tr><td><code>gh repo create</code></td><td>Crea un repositorio nuevo en GitHub. <code>gh</code> sabe en qué cuenta gracias a <code>gh auth login</code>.</td></tr>
+<tr><td><code>totito</code></td><td>El nombre del repositorio. Quedará en <code>https://github.com/tu-usuario/totito</code>. Usa minúsculas y guiones; nada de espacios ni tildes.</td></tr>
+<tr><td><code>--private</code></td><td>Repositorio privado: solo tú (y quienes invites) pueden verlo. La alternativa es <code>--public</code>. Hay que elegir una de las dos.</td></tr>
+<tr><td><code>--source .</code></td><td>«Usa como origen el repositorio local que está en <code>.</code>», es decir, en la carpeta actual. Sin esta opción, <code>gh</code> crearía un repositorio vacío en GitHub sin relación con tu carpeta.</td></tr>
+<tr><td><code>--remote origin</code></td><td>Agrega a tu repositorio local un <b>remoto</b> llamado <code>origin</code> que apunta al repositorio nuevo de GitHub. <code>origin</code> es el nombre que se usa por convención para «la copia principal en internet».</td></tr>
+<tr><td><code>--push</code></td><td>Después de crearlo, sube tus commits (hace un <code>git push</code>).</td></tr>
+</table>
+<p>Si quieres, puedes agregar una descripción que se verá en la página del repositorio: <code>--description "Juego del Totito en Java con interfaz neon"</code>. La respuesta será parecida a esta:</p>
+<pre class="salida">✓ Created repository ana-lopez/totito on GitHub
+  https://github.com/ana-lopez/totito
+✓ Added remote https://github.com/ana-lopez/totito.git
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (5/5), 1.10 KiB | 1.10 MiB/s, done.
+Total 5 (delta 0), reused 0 (delta 0), pack-reused 0
+To https://github.com/ana-lopez/totito.git
+ * [new branch]      HEAD -&gt; main
+branch 'main' set up to track 'origin/main'.
+✓ Pushed commits to https://github.com/ana-lopez/totito.git</pre>
+<ul>
+<li><i>Created repository</i>: el repositorio existe en GitHub.</li>
+<li><i>Added remote</i>: tu repositorio local ya conoce a <code>origin</code>.</li>
+<li>Las líneas <i>Enumerating / Counting / Compressing / Writing objects</i> son Git empaquetando y enviando las fotos. Los «objetos» son las piezas internas de cada commit (archivos, carpetas y el commit mismo).</li>
+<li><code>* [new branch] HEAD -&gt; main</code>: se creó la rama <code>main</code> en GitHub con tu commit.</li>
+<li><i>branch 'main' set up to track 'origin/main'</i>: tu <code>main</code> local queda «emparejada» con la <code>main</code> de GitHub. Desde ahora basta con escribir <code>git push</code> o <code>git pull</code>, sin decir a dónde.</li>
+</ul>
+
+<h3>Público o privado</h3>
+<table class="tabla">
+<tr><th></th><th>Privado (<code>--private</code>)</th><th>Público (<code>--public</code>)</th></tr>
+<tr><td>Quién lo ve</td><td>Solo tú y tus colaboradores</td><td>Todo el mundo, incluso sin cuenta</td></tr>
+<tr><td>Quién puede cambiarlo</td><td>Solo tú y tus colaboradores</td><td>También solo tú y tus colaboradores (los demás pueden copiarlo y proponer cambios)</td></tr>
+<tr><td>Ventajas</td><td>Puedes equivocarte tranquilo mientras aprendes</td><td>Sirve como portafolio; otros pueden aprender de él; algunas funciones de GitHub solo son gratis en públicos (como proteger ramas, capítulo 10)</td></tr>
+<tr><td>Riesgo</td><td>Ninguno especial</td><td>Si subes por error algo sensible, lo ve cualquiera</td></tr>
+</table>
+<p>La recomendación del libro: empieza <b>privado</b> y, cuando llegues a la versión 1.0.0 y tengas un README bonito (capítulo 10), hazlo público para enseñarlo. Se cambia en la página del repositorio: <b>Settings → General</b>, al final, en la zona roja <b>Danger Zone → Change repository visibility</b>. También se puede con <code>gh repo edit --visibility public</code> (las versiones nuevas de <code>gh</code> piden añadir <code>--accept-visibility-change-consequences</code> para confirmar que entiendes lo que haces).</p>
+
+<h3>Comprobar la conexión</h3>
+<pre class="ps">git remote -v
+git status</pre>
+<pre class="salida">origin	https://github.com/ana-lopez/totito.git (fetch)
+origin	https://github.com/ana-lopez/totito.git (push)
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean</pre>
+<p><code>git remote -v</code> (de <i>verbose</i>, detallado) lista los remotos con su dirección: una para traer (<i>fetch</i>) y otra para enviar (<i>push</i>), normalmente iguales. Y <code>git status</code> tiene una línea nueva: <i>Your branch is up to date with 'origin/main'</i>, «tu rama está al día con la de GitHub». Esta línea te dirá en el futuro si tienes commits sin subir (<i>ahead</i>, adelante) o si hay commits en GitHub que no has bajado (<i>behind</i>, atrás).</p>
+
+<h2>Paso 7: ver tu repositorio en el navegador</h2>
+<pre class="ps">gh repo view --web</pre>
+<p>Abre la página del repositorio en el navegador (<code>--web</code>). Sin <code>--web</code>, <code>gh repo view</code> muestra el nombre, la descripción y el README directamente en la terminal. En la página verás:</p>
+<ul>
+<li>Arriba, <code>ana-lopez / totito</code> y una etiqueta <b>Private</b>.</li>
+<li>La lista de archivos: <code>.gitignore</code>, <code>README.md</code>, <code>pom.xml</code>. No están <code>target</code> ni las carpetas vacías, por las razones que ya conoces.</li>
+<li>Encima de la lista, tu nombre, el mensaje del último commit, su hash abreviado y un contador <b>1 Commit</b>. Al hacer clic en él ves el historial, igual que con <code>git log</code>.</li>
+<li>Debajo de la lista, tu <code>README.md</code> convertido en una página con formato: los <code>#</code> de Markdown se vuelven títulos. Por eso todo proyecto debe tener un buen README; en el capítulo 10 aprenderás a escribirlo.</li>
+</ul>
+
+<div class="caja hito"><b>Hito</b> El Totito está en GitHub. Aunque tu computadora se dañara mañana, el proyecto y su historial están a salvo en tu cuenta.</div>
+
+<h3>La otra forma: crear el repositorio en la página</h3>
+<p>Si algún día no tienes <code>gh</code> a mano, el mismo resultado se consigue en tres pasos. Te lo muestro porque es lo que verás en muchos tutoriales:</p>
+<ol>
+<li>En GitHub, el botón <b>+</b> (arriba a la derecha) → <b>New repository</b>. Nombre <code>totito</code>, privado, y <b>sin</b> marcar «Add a README», «.gitignore» ni licencia (ya tienes esos archivos; si GitHub los crea, tendrás dos historias distintas que juntar).</li>
+<li>Conecta tu carpeta con ese repositorio y sube:</li>
+</ol>
+<pre class="ps">git remote add origin https://github.com/tu-usuario/totito.git
+git push -u origin main</pre>
+<p><code>git remote add origin URL</code> registra el remoto con el nombre <code>origin</code>. <code>git push -u origin main</code> sube la rama <code>main</code> a <code>origin</code>; la <code>-u</code> (de <i>upstream</i>, «corriente arriba») es la que deja emparejadas las dos ramas, lo mismo que hizo <code>gh</code> con <i>set up to track</i>. Solo hace falta la primera vez.</p>
+
+<h2>El plan de commits del libro</h2>
+<p>Ya tienes el primer commit. A lo largo del libro irás haciendo uno al final de cada paso importante, siempre con el mismo mensaje que el libro, para que tu historial quede ordenado y sea fácil de comparar con el proyecto de referencia. Este es el plan completo:</p>
+<table class="tabla">
+<tr><th>Cap.</th><th>Qué se sube</th><th>Mensaje del commit</th><th>Rama</th></tr>
+<tr><td>5 y 8</td><td><code>pom.xml</code>, <code>.gitignore</code>, <code>README.md</code> (creados en el 5; guardados en este capítulo)</td><td><code>Estructura inicial del proyecto Totito</code></td><td><code>main</code></td></tr>
+<tr><td>8</td><td>Primer <code>push</code> y repositorio en GitHub</td><td>—</td><td><code>main</code></td></tr>
+<tr><td>29</td><td><code>src/Tablero.java</code></td><td><code>Tablero: estado y reglas del juego</code></td><td><code>main</code></td></tr>
+<tr><td>30</td><td><code>src/Jugador.java</code></td><td><code>Jugador: nombre y ficha</code></td><td><code>main</code></td></tr>
+<tr><td>31</td><td><code>src/IA_Minimax.java</code></td><td><code>IA con el algoritmo Minimax</code></td><td><code>main</code></td></tr>
+<tr><td>32</td><td><code>herramientas/PruebaConsola.java</code></td><td><code>Prueba de la logica en consola</code></td><td><code>main</code></td></tr>
+<tr><td>33</td><td><code>src/JuegoMain.java</code></td><td><code>Primera ventana jugable (Swing basico)</code> + etiqueta <code>v0.1.0</code></td><td><code>main</code></td></tr>
+<tr><td>38–61</td><td>Un archivo (o dos) de la interfaz por capítulo</td><td>Un commit por capítulo: <code>Partida: turnos y marcador</code>, <code>Navegacion: contrato entre pantallas</code>, <code>Tema: paleta de colores y fuentes</code>, …</td><td><code>interfaz-neon</code></td></tr>
+<tr><td>61</td><td>Pull request <code>interfaz-neon</code> → <code>main</code>, fusión</td><td>etiqueta <code>v1.0.0</code></td><td><code>main</code></td></tr>
+<tr><td>64</td><td><code>recursos/totito.ico</code>, <code>recursos/totito.png</code>, <code>herramientas/GeneradorIcono.java</code></td><td><code>Icono del programa</code></td><td><code>main</code></td></tr>
+<tr><td>67</td><td>Release <code>v1.0.0</code> en GitHub con el instalador</td><td>—</td><td>—</td></tr>
+</table>
+<p>Cuando termines el libro, <code>git log --oneline --graph</code> te mostrará algo así (simplificado; tus hashes serán otros y entre los commits de la rama habrá uno por cada capítulo):</p>
+<pre class="salida">* c28494a (HEAD -&gt; main, origin/main) Icono del programa
+*   fbc8a23 (tag: v1.0.0) Merge pull request #1 from ana-lopez/interfaz-neon
+|\
+| * df83b47 PanelPrincipal y TotitoApp ...
+| * ...      (un commit por cada capitulo 38-61)
+| * 0c99a50 Tema: paleta de colores y fuentes
+| * 6937d80 Partida: turnos y marcador
+|/
+* 9b2f904 (tag: v0.1.0) Primera ventana jugable (Swing basico)
+* d35cecb Prueba de la logica en consola
+* f5927fe IA con el algoritmo Minimax
+* 7c59777 Jugador: nombre y ficha
+* 9271596 Tablero: estado y reglas del juego
+* b49d01a Estructura inicial del proyecto Totito</pre>
+<p>Cómo leer el dibujo: cada <code>*</code> es un commit; las líneas <code>|</code>, <code>\</code> y <code>/</code> muestran las ramas. Se lee de abajo hacia arriba en el tiempo. Ves la línea recta de la lógica en <code>main</code>, la rama <code>interfaz-neon</code> que sale de la v0.1.0 y vuelve a <code>main</code> en el commit de fusión, y las etiquetas <code>v0.1.0</code> y <code>v1.0.0</code> marcando las dos versiones.</p>
+
+<h3>Por qué un commit por paso</h3>
+<ul>
+<li><b>El historial se vuelve un índice del libro.</b> Cada commit corresponde a un capítulo. Si dentro de un año quieres repasar cómo se hizo la IA, buscas el commit «IA con el algoritmo Minimax» y ves exactamente qué se agregó.</li>
+<li><b>Si algo se rompe, sabes dónde.</b> Si el juego compilaba en el capítulo 44 y en el 45 dejó de compilar, el problema está en el último commit, no en cualquier parte de 30 archivos. <code>git diff</code> te muestra justo lo que cambió (capítulo 9).</li>
+<li><b>Puedes volver atrás sin miedo.</b> Si un capítulo te sale mal y quieres empezarlo de cero, regresas al commit del capítulo anterior (capítulo 9 explica cómo hacerlo con seguridad).</li>
+<li><b>Los commits pequeños son fáciles de entender y revisar.</b> Un commit que agrega un solo archivo explicado en un solo capítulo se entiende de un vistazo; uno que agrega quince archivos de golpe, no.</li>
+<li><b>Las etiquetas marcan los logros.</b> <code>v0.1.0</code> es «el juego funciona en una ventana sencilla»; <code>v1.0.0</code> es «el juego terminado». Puedes volver a cualquiera de los dos en cualquier momento.</li>
+<li><b>La rama protege lo que ya funciona.</b> Toda la Parte VII se hace en <code>interfaz-neon</code>: mientras construyes 24 archivos de interfaz, <code>main</code> sigue teniendo un juego que funciona.</li>
+<li><b>Es como se trabaja en la vida real.</b> En cualquier empresa te pedirán commits pequeños con buenos mensajes, ramas para cada tarea y pull requests. El Totito es tu entrenamiento.</li>
+</ul>
+
+<div class="caja concepto"><b>¿Por qué los mensajes del plan no llevan tildes?</b> Verás «logica» y «basico» sin tilde. Es la misma decisión que tomamos con los comentarios del código: evitar que una consola antigua o un programa mal configurado muestre caracteres raros. Git maneja tildes sin problema, y en tus propios proyectos puedes usarlas; en el Totito las evitamos para que tu historial coincida letra por letra con el del libro.</div>
+
+<h3>Cómo se verá la caja de Git en cada capítulo</h3>
+<p>Al final de los capítulos que agregan un archivo encontrarás una caja como esta, con los comandos exactos. Siempre siguen el mismo patrón: revisar, preparar, guardar y subir.</p>
+<div class="caja git"><b>Git</b> Ejemplo de la caja del capítulo 30:
+<pre class="ps">git status
+git add src\Jugador.java
+git commit -m "Jugador: nombre y ficha"
+git push</pre>
+</div>
+<p>En las cajas de Git las rutas se escriben con la barra invertida de Windows (<code>src\Jugador.java</code>), como en el resto de comandos de PowerShell. Git también acepta la barra normal (<code>src/Jugador.java</code>), que es la que verás en tutoriales de Linux y macOS: las dos funcionan.</p>
+
+<div class="caja git"><b>Git</b> Lo que hiciste en este capítulo, todo junto:
+<pre class="ps">cd $HOME\Proyectos\Totito
+git init -b main
+git status
+git add pom.xml .gitignore README.md
+git commit -m "Estructura inicial del proyecto Totito"
+git log --oneline
+gh repo create totito --private --source . --remote origin --push
+gh repo view --web</pre>
+</div>
+
+<h2>Problemas típicos y su solución</h2>
+<table class="tabla">
+<tr><th>Mensaje</th><th>Qué pasó</th><th>Solución</th></tr>
+<tr><td><code>fatal: not a git repository (or any of the parent directories): .git</code></td><td>«No es un repositorio de Git (ni ninguna carpeta superior)». Estás en otra carpeta o no hiciste <code>git init</code></td><td><code>cd $HOME\Proyectos\Totito</code> y, si hace falta, <code>git init</code></td></tr>
+<tr><td><i>Author identity unknown</i></td><td>No configuraste <code>user.name</code> y <code>user.email</code></td><td>Haz el paso 4 del capítulo 7 y repite el commit</td></tr>
+<tr><td><code>error: src refspec main does not match any</code></td><td>Intentaste hacer <code>push</code> antes del primer commit: la rama <code>main</code> todavía no existe</td><td>Haz primero el commit</td></tr>
+<tr><td><code>error: remote origin already exists.</code></td><td>Ya habías agregado el remoto <code>origin</code></td><td>Revisa con <code>git remote -v</code>; si la dirección está mal, corrígela con <code>git remote set-url origin URL</code></td></tr>
+<tr><td><code>Name already exists on this account</code> (al crear el repo)</td><td>Ya tienes un repositorio llamado <code>totito</code> en GitHub (quizás de un intento anterior)</td><td>Si está vacío o era una prueba, bórralo en su página (<b>Settings → Danger Zone → Delete this repository</b>) y repite; o conéctalo con <code>git remote add origin …</code> y <code>git push -u origin main</code></td></tr>
+<tr><td><code>git status</code> muestra cientos de archivos de <code>Documents</code>, <code>Downloads</code>…</td><td>Hiciste <code>git init</code> en tu carpeta personal</td><td>Ve a <code>cd $HOME</code> y borra solo esa carpeta oculta con <code>Remove-Item -Recurse -Force .git</code>. <b>Fíjate bien en que estás en <code>$HOME</code> y no en <code>Totito</code></b>: tus documentos no se tocan, solo desaparece el repositorio equivocado</td></tr>
+<tr><td>La terminal muestra <code>:</code> o <code>(END)</code> y «no responde»</td><td>Estás en el paginador de <code>git log</code></td><td>Pulsa <code>q</code></td></tr>
+</table>
+
+<h2>Resumen</h2>
+<ul>
+<li><code>git init -b main</code> crea la carpeta oculta <code>.git</code> y convierte la carpeta del proyecto en un repositorio. Se hace una vez, en la carpeta correcta.</li>
+<li><code>git status</code> informa el estado de todo y sugiere el siguiente paso; el <code>.gitignore</code> ya hace que <code>target</code> no aparezca, y las carpetas vacías como <code>src</code> no existen para Git.</li>
+<li><code>git add archivo</code> pone cambios en la bandeja; nombrar los archivos es más seguro que <code>git add .</code>.</li>
+<li><code>git commit -m "mensaje"</code> guarda la foto; <code>git log --oneline</code> muestra el historial (sal del paginador con <code>q</code>).</li>
+<li><code>gh repo create totito --private --source . --remote origin --push</code> crea el repositorio en GitHub, lo conecta como <code>origin</code> y sube los commits; <code>gh repo view --web</code> lo abre en el navegador.</li>
+<li>El plan de commits del libro hace un commit por paso, usa la rama <code>interfaz-neon</code> para la interfaz, un pull request para juntarla y las etiquetas <code>v0.1.0</code> y <code>v1.0.0</code> para las versiones.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> Estos siete pasos son los mismos para cualquier proyecto nuevo, de cualquier lenguaje:
+<ul>
+<li><b>Una página web</b>: crea la carpeta, escribe un <code>.gitignore</code> (por ejemplo con <code>node_modules/</code> si usas Node.js), <code>git init</code>, primer commit con «Estructura inicial…», <code>gh repo create mi-web --public --source . --remote origin --push</code>. Pública, porque quieres enseñarla.</li>
+<li><b>Un proyecto que ya existía sin Git</b> (por ejemplo, los ejercicios de la universidad): entra a su carpeta y haz exactamente lo mismo. Git empieza a guardar desde hoy; lo anterior queda como la primera foto.</li>
+<li><b>Tus apuntes o un trabajo escrito en Markdown</b>: un repositorio privado te da respaldo en la nube e historial de cada cambio, gratis.</li>
+<li><b>Planear los commits antes de empezar</b>: igual que el plan del libro, antes de un proyecto grande escribe en tu README la lista de pasos; cada paso terminado será un commit, y los hitos (primera versión que funciona, versión completa) serán etiquetas.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b><ol>
+<li>Ejecuta <code>git log</code> y señala en la salida: el hash completo, la rama a la que apunta HEAD, tu correo y la zona horaria. ¿Coinciden con lo que configuraste en el capítulo 7?</li>
+<li>Abre <code>README.md</code> con el Bloc de notas (<code>notepad README.md</code>), agrega al final una línea «Proyecto del libro Java desde cero con el Totito», guarda y ejecuta <code>git status</code> y <code>git status -s</code>. ¿Qué palabra usa Git para el archivo? Después haz <code>git add README.md</code>, <code>git commit -m "README: mencionar el libro"</code> y <code>git push</code>, y comprueba en la página de GitHub que el contador dice 2 commits. Pista: este commit extra no está en el plan, y no pasa nada; tu historial puede tener más commits que el del libro.</li>
+<li>Crea un archivo de prueba <code>notas.txt</code> en la carpeta del proyecto (<code>notepad notas.txt</code>, escribe cualquier cosa y guarda). Ejecuta <code>git status</code>. Ahora agrega una línea <code>notas.txt</code> al final del <code>.gitignore</code> y vuelve a ejecutar <code>git status</code>. ¿Qué cambió? Para terminar, quita esa línea del <code>.gitignore</code> y borra el archivo con <code>Remove-Item notas.txt</code>.</li>
+<li>Ejecuta <code>git check-ignore -v target</code> y <code>git check-ignore -v src\Prueba.class</code> (aunque ese archivo no exista). Explica qué línea del <code>.gitignore</code> responde en cada caso.</li>
+<li>(Reto) Ejecuta <code>gh repo view</code> sin <code>--web</code> y luego <code>gh repo view --json name,visibility,url</code>. ¿Qué te muestra cada uno? Pista: la segunda forma devuelve datos en formato JSON, útil para scripts.</li>
+</ol></div>
+</section>

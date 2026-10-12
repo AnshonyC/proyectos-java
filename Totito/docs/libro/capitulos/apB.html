@@ -1,0 +1,131 @@
+<section class="capitulo" id="apB">
+<h1><span class="num">Apéndice B</span>Chuleta de Git y gh</h1>
+<p class="entrada">Los comandos de Git y de GitHub CLI del libro, ordenados por el momento del trabajo en que se usan, con los que deshacen cosas marcados según su riesgo.</p>
+<p>Todos se ejecutan desde la carpeta del repositorio (<code>$HOME\Proyectos\Totito</code>). Lo que va entre <code>&lt;</code> y <code>&gt;</code> se reemplaza por tu valor.</p>
+
+<h2>Configurar (una sola vez por computadora)</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>git config --global user.name "Tu Nombre"</code></td><td>El nombre que firmará tus commits (capítulo 7).</td></tr>
+<tr><td><code>git config --global user.email "tu@correo.com"</code></td><td>El correo de los commits. Usa el de tu cuenta de GitHub (o la dirección <i>noreply</i> que GitHub te da) para que los commits aparezcan a tu nombre.</td></tr>
+<tr><td><code>git config --global init.defaultBranch main</code></td><td>Que los repositorios nuevos empiecen con la rama <code>main</code>.</td></tr>
+<tr><td><code>git config --global core.autocrlf true</code></td><td>Convierte los saltos de línea de Windows y Unix de forma automática (el instalador de Git para Windows suele dejarlo así).</td></tr>
+<tr><td><code>git config --global pull.rebase false</code></td><td>Que <code>git pull</code> una las ramas con un <i>merge</i> cuando hayan divergido (evita el error «Need to specify how to reconcile divergent branches»).</td></tr>
+<tr><td><code>git config --global --list</code></td><td>Muestra toda tu configuración.</td></tr>
+<tr><td><code>gh auth login</code></td><td>Conecta GitHub CLI con tu cuenta (GitHub.com → HTTPS → autenticar Git con tus credenciales de GitHub → navegador).</td></tr>
+<tr><td><code>gh auth status</code></td><td>Comprueba con qué cuenta estás conectado.</td></tr>
+</table>
+
+<h2>Empezar un repositorio</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>git init</code></td><td>Convierte la carpeta actual en un repositorio (crea la carpeta oculta <code>.git</code>).</td></tr>
+<tr><td><code>git init -b main</code></td><td>Igual, con la rama principal llamada <code>main</code> aunque no hayas configurado <code>init.defaultBranch</code>.</td></tr>
+<tr><td><code>gh repo create totito --public --source=. --remote=origin --push</code></td><td>Crea el repositorio en GitHub, lo conecta como <code>origin</code> y sube lo que ya tiene commits (capítulo 8). Usa <code>--private</code> para uno privado.</td></tr>
+<tr><td><code>git clone &lt;url&gt;</code> · <code>gh repo clone &lt;usuario&gt;/&lt;repo&gt;</code></td><td>Descarga una copia completa de un repositorio existente.</td></tr>
+<tr><td><code>git remote -v</code></td><td>Muestra a qué repositorio remoto está conectado.</td></tr>
+<tr><td><code>git remote add origin &lt;url&gt;</code></td><td>Conecta un remoto a mano (si no usaste <code>gh repo create</code>).</td></tr>
+</table>
+
+<h2>El ciclo de cada día</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>git status</code></td><td>Qué cambió, qué está preparado y en qué rama estás. Úsalo antes y después de todo.</td></tr>
+<tr><td><code>git diff</code></td><td>Los cambios que aún <b>no</b> preparaste, línea por línea.</td></tr>
+<tr><td><code>git diff --staged</code></td><td>Los cambios ya preparados: lo que entrará en el próximo commit.</td></tr>
+<tr><td><code>git add &lt;archivo&gt;</code></td><td>Prepara un archivo para el commit (lo pasa al área de preparación, capítulo 6).</td></tr>
+<tr><td><code>git add .</code> · <code>git add -A</code></td><td>Prepara todo lo de la carpeta actual / todo el repositorio, incluidos los archivos borrados.</td></tr>
+<tr><td><code>git commit -m "Mensaje en imperativo"</code></td><td>Guarda una foto de lo preparado con un mensaje (capítulo 9).</td></tr>
+<tr><td><code>git log --oneline</code></td><td>El historial, un commit por línea.</td></tr>
+<tr><td><code>git log --oneline --graph --all</code></td><td>El historial con las ramas dibujadas.</td></tr>
+<tr><td><code>git show &lt;commit&gt;</code></td><td>Qué cambió en un commit concreto (los primeros 7 caracteres del identificador bastan).</td></tr>
+<tr><td><code>git push</code></td><td>Sube los commits nuevos de la rama actual a GitHub.</td></tr>
+<tr><td><code>git pull</code></td><td>Trae y une los cambios de GitHub a tu rama.</td></tr>
+<tr><td><code>git fetch</code></td><td>Trae la información de GitHub sin tocar tus archivos (para mirar antes de unir).</td></tr>
+</table>
+
+<h2>Ramas</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>git branch</code></td><td>Lista las ramas; la actual lleva <code>*</code>.</td></tr>
+<tr><td><code>git switch -c interfaz-neon</code></td><td>Crea una rama y se cambia a ella (capítulo 9).</td></tr>
+<tr><td><code>git switch main</code></td><td>Se cambia a una rama existente.</td></tr>
+<tr><td><code>git push -u origin interfaz-neon</code></td><td>Sube una rama nueva y la deja enlazada; después basta <code>git push</code>.</td></tr>
+<tr><td><code>git merge interfaz-neon</code></td><td>Une esa rama con la actual.</td></tr>
+<tr><td><code>git merge --abort</code></td><td>Cancela un merge con conflictos y deja todo como estaba.</td></tr>
+<tr><td><code>git branch -d &lt;rama&gt;</code></td><td>Borra una rama ya unida. (Con <code>-D</code> la borra aunque no esté unida: cuidado.)</td></tr>
+</table>
+<p>Cuando hay un conflicto, Git marca el archivo así (es la salida real de un conflicto provocado a propósito):</p>
+<pre class="texto">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+linea de uno
+=======
+linea de dos
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; f8f3c8cd9ba757f2a6c3fd0af6c911648238d3d8</pre>
+<p>Arriba está tu versión, abajo la que llega. Edita el archivo para dejar el resultado correcto, borra las tres líneas de marcas y termina con <code>git add &lt;archivo&gt;</code> y <code>git commit</code> (capítulo 9).</p>
+
+<h2>Guardar a un lado y etiquetar</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>git stash</code></td><td>Guarda tus cambios sin commit «en un cajón» y deja la carpeta limpia.</td></tr>
+<tr><td><code>git stash pop</code></td><td>Saca del cajón lo último guardado.</td></tr>
+<tr><td><code>git stash list</code></td><td>Lo que hay en el cajón.</td></tr>
+<tr><td><code>git tag -a v1.0.0 -m "Totito 1.0.0"</code></td><td>Pone una etiqueta con mensaje en el commit actual (capítulos 9 y 67).</td></tr>
+<tr><td><code>git tag</code></td><td>Lista las etiquetas.</td></tr>
+<tr><td><code>git push origin v1.0.0</code> · <code>git push --tags</code></td><td>Sube una etiqueta / todas. <code>git push</code> a secas no sube etiquetas.</td></tr>
+</table>
+
+<h2>Deshacer, de menos a más peligroso</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th><th>Riesgo</th></tr>
+<tr><td><code>git restore --staged &lt;archivo&gt;</code></td><td>Saca un archivo del área de preparación. Tus cambios siguen en el archivo.</td><td>Ninguno</td></tr>
+<tr><td><code>git commit --amend -m "Mensaje corregido"</code></td><td>Corrige el último commit (mensaje o archivos olvidados). Solo si <b>aún no</b> hiciste push.</td><td>Bajo</td></tr>
+<tr><td><code>git revert &lt;commit&gt;</code></td><td>Crea un commit nuevo que deshace otro. Es la forma segura de deshacer algo que ya está en GitHub.</td><td>Bajo</td></tr>
+<tr><td><code>git reset --soft HEAD~1</code></td><td>Deshace el último commit pero conserva sus cambios preparados. Solo si no hiciste push.</td><td>Medio</td></tr>
+<tr><td><code>git restore &lt;archivo&gt;</code></td><td>Descarta los cambios no guardados de un archivo y lo deja como en el último commit. <b>Lo descartado no se recupera.</b></td><td>Alto</td></tr>
+<tr><td><code>git reset --hard HEAD</code></td><td>Descarta <b>todos</b> los cambios sin commit del repositorio.</td><td>Muy alto</td></tr>
+<tr><td><code>git push --force</code></td><td>Reemplaza la historia de GitHub por la tuya. En una rama compartida borra el trabajo ajeno. No lo uses en <code>main</code>.</td><td>Muy alto</td></tr>
+</table>
+<div class="caja consejo"><b>Antes de un comando peligroso</b> Haz <code>git status</code> y <code>git stash</code> (o un commit en una rama aparte). Mientras algo tenga commit, Git casi siempre puede recuperarlo; lo que nunca tuvo commit, no.</div>
+
+<h2>Archivos que no se suben</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>.gitignore</code></td><td>Archivo con los patrones que Git ignora (<code>target/</code>, <code>out/</code>, <code>dist/</code>…, capítulo 5).</td></tr>
+<tr><td><code>git check-ignore -v &lt;archivo&gt;</code></td><td>Dice qué línea del <code>.gitignore</code> ignora ese archivo.</td></tr>
+<tr><td><code>git rm --cached &lt;archivo&gt;</code></td><td>Deja de seguir un archivo que se subió por error, sin borrarlo de tu disco. Agrégalo luego al <code>.gitignore</code>.</td></tr>
+</table>
+
+<h2>GitHub CLI (gh)</h2>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>gh repo view --web</code></td><td>Abre el repositorio en el navegador.</td></tr>
+<tr><td><code>gh browse</code></td><td>Igual; con un archivo, <code>gh browse src/Tablero.java</code>, abre ese archivo.</td></tr>
+<tr><td><code>gh pr create --base main --head interfaz-neon --title "…" --body "…"</code></td><td>Abre un Pull Request (capítulos 10 y 61). Sin <code>--title</code> ni <code>--body</code>, te los pregunta.</td></tr>
+<tr><td><code>gh pr list</code> · <code>gh pr view &lt;n&gt;</code></td><td>Lista los PR / muestra uno. Con <code>--web</code>, en el navegador.</td></tr>
+<tr><td><code>gh pr checkout &lt;n&gt;</code></td><td>Baja la rama de un PR para probarlo.</td></tr>
+<tr><td><code>gh pr merge &lt;n&gt; --merge</code></td><td>Une el PR con un commit de merge (también <code>--squash</code> o <code>--rebase</code>). Después: <code>git switch main</code> y <code>git pull</code>.</td></tr>
+<tr><td><code>gh issue create --title "…" --body "…"</code></td><td>Crea un issue (una tarea o un error anotado).</td></tr>
+<tr><td><code>gh issue list</code> · <code>gh issue close &lt;n&gt;</code></td><td>Lista issues / cierra uno. Un commit con <code>Fixes #3</code> en el mensaje lo cierra solo al llegar a <code>main</code>.</td></tr>
+<tr><td><code>gh release create v1.0.0 dist\instalador\Totito-1.0.0.exe --title "Totito 1.0.0" --notes "…"</code></td><td>Publica una Release con el instalador adjunto (capítulo 67). Si la etiqueta no existe, la crea.</td></tr>
+<tr><td><code>gh release list</code> · <code>gh release view v1.0.0</code></td><td>Lista las Releases / muestra una.</td></tr>
+<tr><td><code>gh repo fork &lt;dueño&gt;/&lt;repo&gt; --clone</code></td><td>Hace un fork y lo descarga, para contribuir a un proyecto ajeno (capítulo 69).</td></tr>
+</table>
+
+<h2>El plan de commits del Totito</h2>
+<table class="tabla">
+<tr><th>Cap.</th><th>Qué se sube</th><th>Mensaje</th></tr>
+<tr><td>5</td><td><code>pom.xml</code>, <code>.gitignore</code>, <code>README.md</code></td><td><code>Estructura inicial del proyecto Totito</code></td></tr>
+<tr><td>8</td><td>Primer push y repositorio en GitHub</td><td>—</td></tr>
+<tr><td>29</td><td><code>src/Tablero.java</code></td><td><code>Tablero: estado y reglas del juego</code></td></tr>
+<tr><td>30</td><td><code>src/Jugador.java</code></td><td><code>Jugador: nombre y ficha</code></td></tr>
+<tr><td>31</td><td><code>src/IA_Minimax.java</code></td><td><code>IA con el algoritmo Minimax</code></td></tr>
+<tr><td>32</td><td><code>herramientas/PruebaConsola.java</code></td><td><code>Prueba de la logica en consola</code></td></tr>
+<tr><td>33</td><td><code>src/JuegoMain.java</code></td><td><code>Primera ventana jugable (Swing basico)</code> + etiqueta <code>v0.1.0</code></td></tr>
+<tr><td>38–61</td><td>Rama <code>interfaz-neon</code>, un commit por capítulo</td><td><code>Partida: turnos y marcador</code>, <code>Tema: paleta de colores</code>, …</td></tr>
+<tr><td>61</td><td>Pull Request <code>interfaz-neon</code> → <code>main</code>, merge</td><td>Etiqueta <code>v1.0.0</code></td></tr>
+<tr><td>64</td><td><code>recursos/totito.ico</code> y <code>.png</code>, <code>herramientas/GeneradorIcono.java</code></td><td><code>Icono del programa</code></td></tr>
+<tr><td>67</td><td>Release <code>v1.0.0</code> en GitHub con el instalador</td><td>—</td></tr>
+</table>
+<div class="caja aplica"></div>
+<div class="caja ejercicio"></div>
+</section>

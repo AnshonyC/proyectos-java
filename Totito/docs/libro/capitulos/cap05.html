@@ -1,0 +1,416 @@
+<section class="capitulo" id="cap05">
+<h1><span class="num">Capítulo 5</span>Crear el proyecto Totito</h1>
+<p class="entrada">En este capítulo nace el Totito: creas su carpeta y sus subcarpetas, escribes los tres archivos que lo definen (<code>pom.xml</code>, <code>.gitignore</code> y <code>README.md</code>) entendiendo cada línea, lo abres en NetBeans, recorres la interfaz del editor y haces la primera compilación. Todavía no hay juego, pero sí hay un proyecto real, con la misma estructura que tendrá cuando esté terminado.</p>
+
+<h2>Qué es un proyecto y por qué empezar por aquí</h2>
+<p>Un programa no es un solo archivo: el Totito terminado tiene 29 archivos de código Java, tres utilidades, dos imágenes y varios archivos de configuración. Un <b>proyecto</b> es la carpeta que reúne todo eso, organizado de forma que tanto las personas como las herramientas sepan dónde está cada cosa: dónde está el código, qué versión de Java usar, cómo se llama el programa, qué clase lo arranca y qué archivos no hay que guardar en el historial.</p>
+<p>Empezar por la estructura, antes que por el código, es lo que se hace en cualquier empresa: es como trazar los cimientos y las habitaciones de una casa antes de poner muebles. Si la estructura está bien desde el principio, cada archivo que agregues después tendrá su sitio, y las herramientas (NetBeans, Maven, Git, jpackage) funcionarán sin sorpresas.</p>
+
+<h2>Paso 1: las carpetas</h2>
+<p>Abre PowerShell y escribe:</p>
+<pre class="ps">cd $HOME\Proyectos
+New-Item -ItemType Directory -Force Totito
+cd Totito
+New-Item -ItemType Directory -Force src, herramientas, recursos
+ls</pre>
+<p>Ya conoces estos comandos del capítulo 3. La novedad es la cuarta línea: <code>New-Item</code> acepta varias rutas separadas por comas, así que crea las tres carpetas de una vez. El <code>ls</code> final debería mostrar:</p>
+<pre class="salida">
+    Directorio: C:\Users\ana\Proyectos\Totito
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d-----        12/10/2026     11:02                herramientas
+d-----        12/10/2026     11:02                recursos
+d-----        12/10/2026     11:02                src</pre>
+<p>A partir de ahora, <b>todos los comandos del proyecto se ejecutan desde esta carpeta</b>, <code>$HOME\Proyectos\Totito</code>. Si cierras PowerShell, al volver a abrirlo empieza por <code>cd $HOME\Proyectos\Totito</code>. Cada carpeta tiene un motivo:</p>
+<table class="tabla">
+<tr><th>Carpeta</th><th>Qué contendrá</th><th>Por qué aparte</th></tr>
+<tr><td><code>src</code></td><td>El código del juego: <code>Tablero.java</code>, <code>Partida.java</code>, <code>PantallaMenu.java</code>… Todo lo que forma parte del programa que se instala.</td><td><i>src</i> es la abreviatura de <i>source</i>, «código fuente». Es lo que Maven compila y mete en el <code>.jar</code> final.</td></tr>
+<tr><td><code>herramientas</code></td><td>Programas auxiliares que te ayudan a construir el juego, pero que no son el juego: <code>PruebaConsola.java</code> (capítulo 32), <code>VistaPrevia.java</code> (capítulo 56) y <code>GeneradorIcono.java</code> (capítulo 64).</td><td>Si estuvieran en <code>src</code>, viajarían dentro del programa instalado sin servirle de nada al jugador. Separarlos mantiene limpio el producto final.</td></tr>
+<tr><td><code>recursos</code></td><td>Archivos que no son código: el icono <code>totito.ico</code> y la imagen <code>totito.png</code> (capítulo 64).</td><td>Los usa el empaquetador para fabricar el instalador; no forman parte del código.</td></tr>
+</table>
+<p>Hay dos carpetas más que aparecerán solas y que <b>no debes crear</b>: <code>target</code>, donde Maven deja el resultado de cada compilación (la verás al final de este capítulo), y <code>dist</code>, donde dejarás el programa empaquetado en la Parte VIII.</p>
+<div class="caja concepto"><b>Separar lo que se escribe de lo que se genera.</b> En un proyecto hay archivos que escribes tú (el código, la configuración) y archivos que fabrica una herramienta a partir de ellos (las clases compiladas, el <code>.jar</code>, el instalador). Los primeros son valiosos y se guardan en Git; los segundos se pueden volver a fabricar en cualquier momento y no se guardan. Por eso viven en carpetas separadas (<code>target</code>, <code>dist</code>), fáciles de borrar e ignorar. Esta idea aparece en cualquier proyecto de software, en cualquier lenguaje.</div>
+
+<h2>Paso 2: qué es Maven</h2>
+<p>Antes de escribir el primer archivo, necesitas saber para quién lo escribes. <b>Maven</b> es una <b>herramienta de construcción</b> (<i>build tool</i>): un programa que sabe convertir un proyecto Java en un programa terminado. Construir implica varios pasos (borrar lo viejo, compilar cada archivo, empaquetarlo todo en un <code>.jar</code>…) y Maven los hace siempre igual, en el orden correcto, en cualquier computadora. NetBeans lo trae incluido: cuando pulses <i>Clean and Build</i>, NetBeans le pasará el trabajo a Maven.</p>
+<p>Maven lee un único archivo de configuración, el <b><code>pom.xml</code></b>. POM significa <i>Project Object Model</i>, «modelo del proyecto»: es la ficha de identidad del proyecto y el conjunto de instrucciones para construirlo. Si una carpeta tiene un <code>pom.xml</code>, NetBeans la reconoce como proyecto Maven. Sin él, es solo una carpeta.</p>
+<p>¿Por qué usar Maven y no simplemente el compilador <code>javac</code>? Para un archivo suelto, <code>javac</code> basta (lo usarás en el capítulo 11). Pero en un proyecto real, Maven aporta tres cosas: <b>repetibilidad</b> (todos construyen igual, con las mismas versiones), <b>convención</b> (cualquier programador Java del mundo que vea un <code>pom.xml</code> sabe cómo construir tu proyecto) y <b>automatización</b> (sabe descargar lo que necesita, empaquetar y mucho más). Es el estándar de la industria, junto con su pariente Gradle.</p>
+
+<h2>Paso 3: el <code>pom.xml</code></h2>
+<h3>Crear el archivo</h3>
+<p>Desde la carpeta del proyecto:</p>
+<pre class="ps">New-Item -ItemType File pom.xml
+notepad pom.xml</pre>
+<p>La primera línea crea el archivo vacío; la segunda lo abre en el Bloc de notas. Crear el archivo antes de abrirlo evita una trampa clásica: si guardas un archivo nuevo desde el Bloc de notas, a veces le agrega <code>.txt</code> al final y terminas con <code>pom.xml.txt</code>, que Maven no reconoce. Escribe (o copia) exactamente este contenido, guarda con <b>Ctrl+S</b> y cierra el Bloc de notas:</p>
+<pre class="texto">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;Totito&lt;/artifactId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+    &lt;packaging&gt;jar&lt;/packaging&gt;
+    &lt;properties&gt;
+        &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+        &lt;!-- Funciona con JDK 17 o mas nuevo. --&gt;
+        &lt;maven.compiler.release&gt;17&lt;/maven.compiler.release&gt;
+        &lt;!-- Clase que arranca el juego (boton Run de NetBeans). --&gt;
+        &lt;exec.mainClass&gt;TotitoApp&lt;/exec.mainClass&gt;
+    &lt;/properties&gt;
+    &lt;build&gt;
+        &lt;!-- El codigo vive en src/ (sin paquetes), no en src/main/java. --&gt;
+        &lt;sourceDirectory&gt;src&lt;/sourceDirectory&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.13.0&lt;/version&gt;
+            &lt;/plugin&gt;
+            &lt;plugin&gt;
+                &lt;!-- Deja el .jar ejecutable con doble clic o con java -jar. --&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.4.2&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;archive&gt;
+                        &lt;manifest&gt;
+                            &lt;mainClass&gt;TotitoApp&lt;/mainClass&gt;
+                        &lt;/manifest&gt;
+                    &lt;/archive&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/project&gt;</pre>
+<p>Son 39 líneas. La segunda es muy larga: escríbela entera en un solo renglón. Los espacios del principio de cada línea (la <b>sangría</b>) no son obligatorios para Maven, pero hacen que se vea qué está dentro de qué; respétalos. Comprueba que se guardó bien:</p>
+<pre class="ps">ls
+cat pom.xml</pre>
+<p>En la lista debe aparecer <code>pom.xml</code> (no <code>pom.xml.txt</code>) con un tamaño de unos 1700 bytes, y <code>cat</code> debe mostrar el contenido completo.</p>
+
+<h3>Lo mínimo de XML para leerlo</h3>
+<p>El <code>pom.xml</code> está escrito en <b>XML</b> (<i>eXtensible Markup Language</i>), un formato de texto para guardar datos organizados. Con cuatro ideas lo lees entero:</p>
+<ul>
+<li><b>Etiquetas.</b> Una palabra entre <code>&lt;</code> y <code>&gt;</code>. <code>&lt;version&gt;</code> es una <b>etiqueta de apertura</b> y <code>&lt;/version&gt;</code>, con la barra, la <b>etiqueta de cierre</b>. Lo que hay entre ambas es el valor: <code>&lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;</code> significa «la versión es 1.0-SNAPSHOT». El conjunto se llama <b>elemento</b>.</li>
+<li><b>Anidación.</b> Un elemento puede contener otros, como cajas dentro de cajas. <code>&lt;properties&gt;</code> contiene tres elementos; <code>&lt;build&gt;</code> contiene <code>&lt;plugins&gt;</code>, que contiene dos <code>&lt;plugin&gt;</code>. Lo que se abre dentro de algo debe cerrarse dentro de ese algo, antes de que este se cierre.</li>
+<li><b>Atributos.</b> Datos extra dentro de la etiqueta de apertura, con la forma <code>nombre="valor"</code>, como en la línea 2.</li>
+<li><b>Comentarios.</b> Todo lo que va entre <code>&lt;!--</code> y <code>--&gt;</code> es una nota para personas; Maven lo ignora.</li>
+</ul>
+<p>XML <b>distingue mayúsculas de minúsculas</b>: <code>&lt;artifactId&gt;</code> y <code>&lt;artifactid&gt;</code> son etiquetas distintas. Y es estricto: una etiqueta mal cerrada hace que todo el archivo sea inválido. Es una buena preparación para Java, que es igual de exigente.</p>
+
+<h3>El <code>pom.xml</code>, línea por línea</h3>
+<p><b>Línea 1</b> — <code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;</code></p>
+<p>La <b>declaración XML</b>: anuncia «esto es un documento XML, versión 1.0, y su texto está guardado en UTF-8». Va siempre en la primera línea, sin nada antes (ni siquiera un espacio o una línea en blanco). No es una etiqueta que haya que cerrar; los signos <code>&lt;?</code> y <code>?&gt;</code> la distinguen.</p>
+
+<p><b>Línea 2</b> — <code>&lt;project xmlns=… xsi:schemaLocation=…&gt;</code></p>
+<p>Abre el elemento raíz, <code>&lt;project&gt;</code>, que contiene todo lo demás y se cierra en la línea 39. Sus atributos dicen a qué «vocabulario» pertenecen las etiquetas: <code>xmlns</code> (<i>XML namespace</i>, «espacio de nombres») indica que son las del POM de Maven versión 4.0.0, y <code>xsi:schemaLocation</code> indica dónde está publicado el <b>esquema</b>, un documento que describe qué etiquetas son válidas y dónde. No hace falta entender cada dirección: no son páginas que Maven visite al compilar, sino nombres únicos. Gracias a ellas, NetBeans puede ofrecerte autocompletado y marcarte errores mientras editas el POM. Se copia siempre igual, en todos los proyectos Maven.</p>
+
+<p><b>Línea 3</b> — <code>&lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;</code></p>
+<p>La versión del <i>formato</i> del POM (no de tu programa). Desde hace muchos años es siempre <code>4.0.0</code>. Es obligatoria: sin ella Maven no sabe cómo leer el resto.</p>
+
+<p><b>Líneas 4 a 6</b> — las coordenadas del proyecto</p>
+<pre class="texto">    &lt;groupId&gt;com.mycompany&lt;/groupId&gt;
+    &lt;artifactId&gt;Totito&lt;/artifactId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;</pre>
+<p>Estas tres líneas son la identidad del proyecto, sus <b>coordenadas</b>. En Maven, todo (tu proyecto, cada librería, cada plugin) se identifica con estos tres datos, como una dirección postal de tres partes:</p>
+<ul>
+<li><b><code>groupId</code></b>: quién lo hace, el «grupo» u organización. Por convención se escribe como un dominio de internet al revés: si tu empresa fuera <code>miempresa.com.gt</code>, el <code>groupId</code> sería <code>gt.com.miempresa</code>. Al revés, porque así se ordena de lo general a lo particular, igual que las rutas de carpetas. <code>com.mycompany</code> («mi compañía») es el valor que NetBeans pone por defecto en los proyectos nuevos; el Totito lo conserva y el libro también, para que todo coincida.</li>
+<li><b><code>artifactId</code></b>: el nombre del producto. Maven llama <i>artefacto</i> a lo que produce un proyecto. Es <code>Totito</code>, y es parte del nombre del archivo final: <code>Totito-1.0-SNAPSHOT.jar</code>. NetBeans también lo usa como nombre del proyecto.</li>
+<li><b><code>version</code></b>: la versión del artefacto. El sufijo <code>-SNAPSHOT</code> («instantánea») es una convención de Maven que significa «versión en desarrollo, todavía cambiando». En este libro no la tocarás: el <code>.jar</code> se llamará siempre <code>Totito-1.0-SNAPSHOT.jar</code> y los comandos de empaquetado del capítulo 65 cuentan con ese nombre. Los números de versión que verá el público (<code>v0.1.0</code>, <code>v1.0.0</code>) se ponen con etiquetas de Git y en el instalador, como verás en los capítulos 9 y 67.</li>
+</ul>
+
+<p><b>Línea 7</b> — <code>&lt;packaging&gt;jar&lt;/packaging&gt;</code></p>
+<p>Qué tipo de artefacto produce el proyecto. Un <b><code>.jar</code></b> (<i>Java ARchive</i>) es un archivo comprimido, como un <code>.zip</code>, que contiene las clases compiladas del programa y una ficha descriptiva. Es la forma estándar de distribuir un programa Java (capítulo 63). Otros valores posibles son <code>war</code>, para aplicaciones web, o <code>pom</code>, para proyectos que agrupan otros.</p>
+
+<p><b>Líneas 8 a 14</b> — las propiedades</p>
+<pre class="texto">    &lt;properties&gt;
+        &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+        &lt;!-- Funciona con JDK 17 o mas nuevo. --&gt;
+        &lt;maven.compiler.release&gt;17&lt;/maven.compiler.release&gt;
+        &lt;!-- Clase que arranca el juego (boton Run de NetBeans). --&gt;
+        &lt;exec.mainClass&gt;TotitoApp&lt;/exec.mainClass&gt;
+    &lt;/properties&gt;</pre>
+<p><code>&lt;properties&gt;</code> es una lista de ajustes con nombre y valor que leen Maven y sus plugins. Cada etiqueta interior es el nombre de un ajuste:</p>
+<ul>
+<li><b><code>project.build.sourceEncoding</code> = <code>UTF-8</code></b> (línea 9). Indica en qué <b>codificación</b> están guardados los archivos de código. Una codificación es la tabla que convierte letras en bytes; UTF-8 incluye todos los caracteres de todos los idiomas, incluidas tildes, eñes y signos como «¡» y «¿». Sin esta línea, Maven en Windows podría leer tus archivos con una codificación antigua y el texto «¡Ganó Luis!» aparecería en pantalla como <code>Â¡GanÃ³ Luis!</code>. Es lo mismo que hace la opción <code>-encoding UTF-8</code> de <code>javac</code> que verás en el capítulo 11.</li>
+<li><b>El comentario de la línea 10</b> explica la línea siguiente: es una buena costumbre comentar los valores cuyo motivo no es obvio. Fíjate en que está escrito sin tildes («mas»), por la razón del capítulo 1.</li>
+<li><b><code>maven.compiler.release</code> = <code>17</code></b> (línea 11). Le dice al compilador: «genera un programa que funcione en Java 17 o más nuevo, y no me dejes usar nada que no exista en Java 17». Tú tienes el JDK 21, que sabe compilar para versiones anteriores. ¿Por qué 17 y no 21? Para que el Totito funcione también en computadoras que tengan Java 17, otra versión LTS muy extendida. Y la segunda mitad de la frase es la importante: si por error usaras algo que solo existe en Java 21, el compilador te lo diría en lugar de dejarte crear un programa que fallaría en Java 17.</li>
+<li><b>El comentario de la línea 12</b> anuncia la línea 13.</li>
+<li><b><code>exec.mainClass</code> = <code>TotitoApp</code></b> (línea 13). Todo programa Java empieza por una clase que tiene un método especial llamado <code>main</code> (capítulo 11). Esta propiedad le dice a NetBeans cuál es esa clase cuando pulsas <i>Run Project</i>. <code>TotitoApp</code> todavía no existe: la escribirás en el capítulo 61. Hasta entonces, para ejecutar una clase concreta usarás <i>Run File</i> (<b>Shift+F6</b>), que ejecuta el archivo que tienes abierto; lo verás en los capítulos 32 y 33.</li>
+</ul>
+
+<p><b>Línea 15</b> — <code>&lt;build&gt;</code></p>
+<p>Abre la sección que dice <i>cómo</i> construir el proyecto. Se cierra en la línea 38.</p>
+
+<p><b>Líneas 16 y 17</b> — dónde está el código</p>
+<pre class="texto">        &lt;!-- El codigo vive en src/ (sin paquetes), no en src/main/java. --&gt;
+        &lt;sourceDirectory&gt;src&lt;/sourceDirectory&gt;</pre>
+<p>Esta línea merece atención, porque es la decisión de diseño más importante del archivo. Maven sigue el principio de <b>convención sobre configuración</b>: si colocas cada cosa donde Maven espera, no hace falta configurar nada. Y Maven espera el código en <code>src\main\java</code>, con las pruebas en <code>src\test\java</code>, normalmente organizado además en <b>paquetes</b> (subcarpetas como <code>src\main\java\gt\com\miempresa\totito\</code>).</p>
+<p>El Totito se aparta de esa convención a propósito y lo dice aquí: <code>&lt;sourceDirectory&gt;src&lt;/sourceDirectory&gt;</code> significa «el código está directamente en la carpeta <code>src</code>». Los motivos:</p>
+<ul>
+<li><b>Sencillez para aprender.</b> Todas las clases quedan en una sola carpeta, sin paquetes. Tu atención va al código, no a navegar carpetas anidadas.</li>
+<li><b>Funciona igual sin Maven.</b> El comando <code>javac -encoding UTF-8 -d out src\*.java</code> compila todo el juego sin NetBeans ni Maven, porque todos los <code>.java</code> están en el mismo sitio.</li>
+<li><b>Así nació el proyecto.</b> El código original del Totito estaba en <code>src</code>, y con esta línea no hubo que moverlo.</li>
+</ul>
+<p>Como el código no tiene paquetes, en NetBeans las clases aparecerán en <i>Source Packages → &lt;default package&gt;</i> («paquete por defecto»). Para un proyecto de aprendizaje del tamaño del Totito es perfectamente válido. En proyectos grandes y profesionales se usan la convención de Maven y los paquetes, que ayudan a organizar cientos de clases y evitan choques de nombres; el capítulo 69 te cuenta cómo dar ese paso.</p>
+<div class="caja cuidado"><b>No pongas nada que no sea código en <code>src</code>.</b> Maven compila todo lo que encuentre ahí. Si dejas en <code>src</code> una copia vieja de una clase (por ejemplo, <code>Tablero - copia.java</code>), Maven intentará compilarla y fallará con errores confusos. Las copias de seguridad van fuera del proyecto, o mejor aún, en Git.</div>
+
+<p><b>Línea 18</b> — <code>&lt;plugins&gt;</code></p>
+<p>Abre la lista de plugins. Un <b>plugin</b> es un complemento que hace un trabajo concreto. Maven por sí solo casi no sabe hacer nada: compilar lo hace el plugin de compilación, empaquetar lo hace el plugin de jar, borrar lo hace el plugin de limpieza, y así. En esta lista no se declaran todos los plugins que se usan (Maven ya tiene unos por defecto), sino solo los que queremos <b>configurar</b> o cuya <b>versión</b> queremos fijar.</p>
+
+<p><b>Líneas 19 a 23</b> — el plugin de compilación</p>
+<pre class="texto">            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.13.0&lt;/version&gt;
+            &lt;/plugin&gt;</pre>
+<p>Fíjate en que el plugin se identifica con las mismas tres coordenadas que tu proyecto: <code>groupId</code> (los plugins oficiales son de <code>org.apache.maven.plugins</code>), <code>artifactId</code> (<code>maven-compiler-plugin</code>, el que compila) y <code>version</code>. Es el mismo sistema de direcciones para todo.</p>
+<p>Este bloque no configura nada; solo fija la versión <code>3.13.0</code>. ¿Para qué? Si no se indica, Maven usa una versión por defecto que depende de la versión de Maven instalada, y algunas de esas versiones por defecto son tan antiguas que no entienden el ajuste <code>maven.compiler.release</code> de la línea 11. Fijar la versión también garantiza que el proyecto se construya igual en tu computadora, en la de otra persona y dentro de cinco años: es una práctica recomendada en cualquier proyecto Maven.</p>
+
+<p><b>Líneas 24 a 36</b> — el plugin de jar, con su configuración</p>
+<pre class="texto">            &lt;plugin&gt;
+                &lt;!-- Deja el .jar ejecutable con doble clic o con java -jar. --&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.4.2&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;archive&gt;
+                        &lt;manifest&gt;
+                            &lt;mainClass&gt;TotitoApp&lt;/mainClass&gt;
+                        &lt;/manifest&gt;
+                    &lt;/archive&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;</pre>
+<p>El <code>maven-jar-plugin</code> es el que fabrica el <code>.jar</code>, fijado en su versión <code>3.4.2</code> por la misma razón que el anterior. Este sí lleva <code>&lt;configuration&gt;</code>: una sección con los ajustes propios del plugin. Leída de afuera hacia adentro: en la configuración, para el <b>archivo</b> <code>.jar</code> (<code>archive</code>), en su <b>manifiesto</b> (<code>manifest</code>), la <b>clase principal</b> (<code>mainClass</code>) es <code>TotitoApp</code>.</p>
+<p>El <b>manifiesto</b> es una pequeña ficha de texto que todo <code>.jar</code> lleva dentro, en <code>META-INF\MANIFEST.MF</code>. Con esta configuración, el plugin escribe en ella la línea <code>Main-Class: TotitoApp</code>. Esa línea es la que permite abrir el juego con doble clic sobre el <code>.jar</code>, o con <code>java -jar target\Totito-1.0-SNAPSHOT.jar</code>: Java lee el manifiesto, ve qué clase arranca el programa y la ejecuta. Sin ella, Java respondería «no hay ningún atributo de manifiesto principal». Así se ve el manifiesto que genera este POM:</p>
+<pre class="salida">Manifest-Version: 1.0
+Created-By: Maven JAR Plugin 3.4.2
+Build-Jdk-Spec: 21
+Main-Class: TotitoApp</pre>
+<p>El capítulo 63 explica el <code>.jar</code> y su manifiesto a fondo.</p>
+<p>¿Por qué <code>TotitoApp</code> aparece dos veces (líneas 13 y 32)? Porque la usan dos herramientas distintas: la línea 13 la lee NetBeans para el botón <i>Run</i> (que ejecuta las clases compiladas sin fabricar el <code>.jar</code>), y la línea 32 la lee el plugin de jar para el manifiesto. Si algún día cambiaras la clase principal, habría que cambiar las dos. En los ejercicios verás cómo evitar esa repetición.</p>
+
+<p><b>Líneas 37 a 39</b> — los cierres</p>
+<p><code>&lt;/plugins&gt;</code>, <code>&lt;/build&gt;</code> y <code>&lt;/project&gt;</code> cierran, en orden inverso, lo que se abrió en las líneas 18, 15 y 2. Es como cerrar cajas anidadas: primero la de adentro. Si falta uno de estos cierres, el archivo entero es inválido.</p>
+<div class="caja consejo"><b>Copia el POM, pero entiéndelo.</b> En la práctica, nadie escribe un <code>pom.xml</code> de memoria: se parte de una plantilla (NetBeans crea una al hacer <i>File → New Project</i>) o de otro proyecto. Lo que sí hacen los buenos programadores es saber qué hace cada línea, para poder cambiarla con confianza. Esa es la meta de esta sección.</div>
+
+<h2>Paso 4: el <code>.gitignore</code></h2>
+<p>Git, la herramienta de historial que conocerás en la Parte II, guarda en el historial los archivos que le indiques. El archivo <b><code>.gitignore</code></b> es la lista de lo que Git debe <b>ignorar</b>: archivos que no deben guardarse nunca. Crea el archivo y ábrelo:</p>
+<pre class="ps">New-Item -ItemType File .gitignore
+notepad .gitignore</pre>
+<p>El nombre empieza con un punto y no tiene nada antes: se llama literalmente <code>.gitignore</code>. Escribe este contenido, guarda y cierra:</p>
+<pre class="texto">target/
+out/
+dist/
+*.class
+nbproject/private/
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini</pre>
+<p>Cada línea es un <b>patrón</b>: una regla que describe nombres de archivo. Una barra al final (<code>target/</code>) significa «la carpeta con este nombre y todo lo que contiene»; un asterisco (<code>*.class</code>) es el mismo comodín que en PowerShell, «cualquier texto». Línea por línea:</p>
+<table class="tabla">
+<tr><th>Patrón</th><th>Qué ignora</th><th>Por qué</th></tr>
+<tr><td><code>target/</code></td><td>La carpeta donde Maven deja las clases compiladas y el <code>.jar</code>.</td><td>Todo lo de ahí se regenera con un <i>Clean and Build</i>. Guardarlo llenaría el historial de archivos que cambian en cada compilación.</td></tr>
+<tr><td><code>out/</code></td><td>La carpeta donde deja las clases el comando <code>javac -d out</code>.</td><td>Igual que <code>target</code>, pero para cuando compiles sin Maven (capítulo 11).</td></tr>
+<tr><td><code>dist/</code></td><td>El programa empaquetado: la carpeta portable y el instalador (capítulos 65 y 66).</td><td>Pesan decenas de megabytes y se fabrican a partir del código. El instalador se publica en GitHub de otra forma, como <i>Release</i> (capítulo 67).</td></tr>
+<tr><td><code>*.class</code></td><td>Cualquier clase compilada, esté donde esté.</td><td>Red de seguridad por si alguna vez compilas en otra carpeta. Un <code>.class</code> es un archivo generado, nunca se escribe a mano.</td></tr>
+<tr><td><code>nbproject/private/</code></td><td>Ajustes privados de NetBeans.</td><td>Guardan rutas de tu computadora y preferencias personales que no le sirven a nadie más. Aparecen sobre todo en proyectos no-Maven, pero conviene tenerlo previsto.</td></tr>
+<tr><td><code>.idea/</code></td><td>La configuración del editor IntelliJ IDEA.</td><td>Si algún día abres el proyecto con otro editor (o lo hace otra persona), su configuración personal no debe mezclarse con el proyecto.</td></tr>
+<tr><td><code>.vscode/</code></td><td>La configuración de Visual Studio Code.</td><td>Mismo motivo.</td></tr>
+<tr><td><code>Thumbs.db</code></td><td>La caché de miniaturas que Windows crea en carpetas con imágenes.</td><td>Es un archivo del sistema, no del proyecto. Aparecería en <code>recursos</code> en cuanto vieras el icono en el Explorador.</td></tr>
+<tr><td><code>desktop.ini</code></td><td>Ajustes de cómo el Explorador muestra una carpeta.</td><td>También es de Windows, no del proyecto.</td></tr>
+</table>
+<p>La regla general detrás de esta lista: <b>en Git va lo que escribes tú y lo que necesita cualquier persona para construir el proyecto; no va lo que se genera, lo personal ni lo del sistema operativo.</b> El capítulo 10 añade otra categoría que nunca debe subirse: contraseñas y claves.</p>
+<p>NetBeans puede crear, en la raíz del proyecto, archivos como <code>nbactions.xml</code> o <code>nb-configuration.xml</code> si cambias ciertas opciones del proyecto. Esos sí se pueden guardar en Git: describen cómo se ejecuta el proyecto y le sirven a cualquiera que lo abra con NetBeans.</p>
+
+<h2>Paso 5: el <code>README.md</code></h2>
+<p>El <b>README</b> («léeme») es la carta de presentación del proyecto: lo primero que lee cualquier persona que lo encuentra, y lo que GitHub muestra en la página principal de tu repositorio. También es para ti dentro de seis meses, cuando no recuerdes cómo se ejecutaba. Crea el archivo:</p>
+<pre class="ps">New-Item -ItemType File README.md
+notepad README.md</pre>
+<p>Y escribe esto (puedes cambiar el texto a tu gusto):</p>
+<pre class="texto"># Totito
+
+Juego del Totito (tres en raya) en Java, con interfaz neón hecha en Swing.
+Proyecto construido paso a paso con el libro «Java desde cero con el Totito».
+
+## Requisitos
+
+- JDK 17 o más nuevo (el libro usa Eclipse Temurin 21).
+- Apache NetBeans (opcional: también se compila con Maven o con javac).
+
+## Cómo ejecutarlo
+
+1. En NetBeans: *File → Open Project* y elegir la carpeta `Totito`.
+2. *Run → Clean and Build Project* (Shift+F11).
+3. *Run → Run Project* (F6).
+
+## Estado
+
+En construcción: estructura inicial del proyecto.</pre>
+<p>La extensión <code>.md</code> significa <b>Markdown</b>, un formato de texto con unas pocas marcas sencillas que GitHub convierte en una página con formato:</p>
+<table class="tabla">
+<tr><th>Escribes</th><th>Se ve como</th></tr>
+<tr><td><code># Totito</code></td><td>Un título grande (un <code>#</code> = nivel 1).</td></tr>
+<tr><td><code>## Requisitos</code></td><td>Un subtítulo (dos <code>##</code> = nivel 2).</td></tr>
+<tr><td><code>- texto</code></td><td>Una viñeta de lista.</td></tr>
+<tr><td><code>1. texto</code></td><td>Un elemento de lista numerada.</td></tr>
+<tr><td><code>*texto*</code></td><td>Texto en cursiva. Con dos asteriscos, <code>**texto**</code>, en negrita.</td></tr>
+<tr><td><code>`Totito`</code></td><td>Texto en letra de código (entre acentos graves).</td></tr>
+</table>
+<p>Una línea en blanco separa los párrafos. Lo bueno de Markdown es que, incluso sin convertir, se lee bien como texto plano. Irás completando este README a lo largo del libro, a medida que el Totito crezca.</p>
+
+<h2>Paso 6: comprobar la estructura</h2>
+<pre class="ps">ls -Force</pre>
+<pre class="salida">
+    Directorio: C:\Users\ana\Proyectos\Totito
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d-----        12/10/2026     11:02                herramientas
+d-----        12/10/2026     11:02                recursos
+d-----        12/10/2026     11:02                src
+-a----        12/10/2026     11:20             93 .gitignore
+-a----        12/10/2026     11:14           1748 pom.xml
+-a----        12/10/2026     11:26            567 README.md</pre>
+<p>Los tamaños pueden variar unos bytes (según los saltos de línea o si cambiaste el README), pero los nombres deben ser exactamente esos. En forma de árbol, el proyecto queda así:</p>
+<pre class="texto">Totito\
+├── herramientas\      (vacía por ahora)
+├── recursos\          (vacía por ahora)
+├── src\               (vacía por ahora)
+├── .gitignore
+├── pom.xml
+└── README.md</pre>
+
+<h2>Paso 7: abrir el proyecto en NetBeans</h2>
+<ol>
+<li>Abre NetBeans.</li>
+<li>Elige <i>File → Open Project…</i> (Archivo → Abrir proyecto), o presiona <b>Ctrl+Shift+O</b>.</li>
+<li>En la ventana que aparece, navega hasta <code>C:\Users\&lt;tu-usuario&gt;\Proyectos</code>. Verás la carpeta <code>Totito</code> con un icono especial: NetBeans ya detectó que tiene un <code>pom.xml</code> y que es un proyecto Maven.</li>
+<li>Haz clic <b>una vez</b> sobre <code>Totito</code> (no entres en ella) y pulsa <b>Open Project</b>.</li>
+</ol>
+<p>El proyecto aparece en el panel de la izquierda. La primera vez, NetBeans puede tardar un poco: indexa el proyecto (lo analiza para poder ayudarte después) y quizá descargue piezas de Maven; verás una barra de progreso en la esquina inferior derecha. Si muestra un aviso de que el proyecto tiene problemas (<i>project problems</i>) por plugins que faltan, haz clic derecho en el proyecto, elige <i>Resolve Project Problems…</i> y luego <i>Resolve</i>: lo arregla descargándolos.</p>
+<div class="caja cuidado"><b>Si NetBeans no reconoce la carpeta como proyecto,</b> el problema casi siempre está en el <code>pom.xml</code>: o se llama <code>pom.xml.txt</code> (compruébalo con <code>ls</code> en PowerShell), o no está directamente dentro de <code>Totito</code>, o tiene un error de XML. En este último caso, ábrelo en el Bloc de notas y compáralo línea por línea con el del libro.</div>
+
+<h2>Recorrido por NetBeans</h2>
+<p>NetBeans es un programa grande y al principio abruma. No necesitas conocerlo entero: estas son las partes que usarás durante el libro. Para orientarte, el Apéndice C reúne los atajos de teclado.</p>
+<h3>Projects: la vista lógica del proyecto</h3>
+<p>El panel <b>Projects</b> (Proyectos; <b>Ctrl+1</b>), arriba a la izquierda, muestra el proyecto <code>Totito</code> organizado por su <i>significado</i>, no por sus carpetas. Al desplegarlo verás nodos como:</p>
+<ul>
+<li><b>Source Packages</b> (paquetes de código fuente): el código, es decir, la carpeta <code>src</code> que indicaste en <code>sourceDirectory</code>. Mientras <code>src</code> esté vacía, puede que este nodo no aparezca todavía o aparezca vacío. Desde el capítulo 29 verás aquí <i>&lt;default package&gt;</i> con tus clases, y es donde harás clic derecho → <i>New → Java Class…</i> para crearlas.</li>
+<li><b>Dependencies</b> (dependencias): librerías externas que el proyecto usa. El Totito no usa ninguna: todo lo que necesita viene con Java.</li>
+<li><b>Project Files</b> (archivos del proyecto): ahí está el <code>pom.xml</code>. Doble clic para abrirlo en el editor.</li>
+</ul>
+<h3>Files: la vista real de las carpetas</h3>
+<p>Junto a la pestaña <i>Projects</i> está <b>Files</b> (Archivos; <b>Ctrl+2</b>). Muestra la carpeta del proyecto tal como es en el disco, igual que el Explorador: aquí sí verás <code>herramientas</code>, <code>recursos</code>, <code>.gitignore</code> y <code>README.md</code>, que la vista <i>Projects</i> no muestra porque no son código. Usarás <i>Files</i> para abrir las utilidades de <code>herramientas</code> y para ver la carpeta <code>target</code>.</p>
+<h3>El editor</h3>
+<p>El área grande del centro es el <b>editor</b>. Cada archivo abierto tiene su pestaña arriba. Abre el <code>pom.xml</code> con doble clic y observa que NetBeans colorea el XML: etiquetas de un color, valores de otro, comentarios en gris. Si borras a propósito un <code>&gt;</code>, verás aparecer una marca roja en el margen; deshazlo con <b>Ctrl+Z</b>. Con el código Java, el editor hará mucho más: te avisará de errores al momento, completará nombres con <b>Ctrl+Espacio</b> y dará formato con <b>Alt+Shift+F</b>.</p>
+<h3>Navigator: el esquema del archivo</h3>
+<p>El panel <b>Navigator</b> (Navegador; <b>Ctrl+7</b>), normalmente abajo a la izquierda, muestra la estructura del archivo que tienes abierto. Con el <code>pom.xml</code> verás el árbol de elementos (<code>project</code>, <code>properties</code>, <code>build</code>…). Con una clase Java mostrará sus métodos y variables, y será la forma más rápida de saltar a una parte concreta de un archivo largo.</p>
+<h3>Output: lo que dicen las herramientas</h3>
+<p>El panel <b>Output</b> (Salida; <b>Ctrl+4</b>), abajo, muestra los mensajes de Maven cuando compilas y lo que tu programa escribe cuando lo ejecutas. Es el equivalente a la terminal dentro de NetBeans. Cuando algo falle, la explicación estará ahí; si el error es de compilación, los nombres de archivo con número de línea son enlaces: haz clic y NetBeans te lleva a la línea.</p>
+<h3>Menús y barra de herramientas</h3>
+<p>Los menús que más usarás: <i>File</i> (archivo: abrir y guardar), <i>Edit</i> (editar: copiar, buscar), <i>Source</i> (código: formatear, comentar), <i>Refactor</i> (reorganizar: renombrar algo en todo el proyecto), <i>Run</i> (ejecutar y compilar), <i>Debug</i> (depurar, capítulo 62), <i>Team</i> (Git; el libro usa Git desde PowerShell) y <i>Window</i> (ventanas: abrir y cerrar paneles). En la barra de herramientas, los botones principales son el <b>martillo</b> (<i>Build</i>, compilar), el <b>martillo con escoba</b> (<i>Clean and Build</i>, limpiar y compilar) y el <b>triángulo verde</b> (<i>Run</i>, ejecutar).</p>
+<div class="caja consejo"><b>Si cierras un panel sin querer,</b> ábrelo de nuevo desde el menú <i>Window</i>, o usa <i>Window → Reset Windows</i> para devolver toda la ventana a su distribución original. Es el botón de pánico de NetBeans y no borra nada de tu proyecto.</div>
+
+<h3>Comprobar la codificación UTF-8</h3>
+<p>Como el <code>pom.xml</code> declara <code>UTF-8</code>, NetBeans lo usa para leer y guardar los archivos del proyecto. Compruébalo: clic derecho sobre el proyecto <code>Totito</code> → <i>Properties</i> (Propiedades) → categoría <i>Sources</i>. El campo <i>Encoding</i> debe decir <b>UTF-8</b>. No lo cambies desde ahí: si lo hicieras, NetBeans modificaría tu <code>pom.xml</code>. Pulsa <i>Cancel</i>.</p>
+<p>Además, en <i>Help → About</i> la línea <i>System</i> debería incluir <code>UTF-8</code> (lo viste en el capítulo 4). Con el JDK 21 es lo normal. Si en tu caso dijera otra cosa (por ejemplo <code>Cp1252</code>) y más adelante vieras tildes rotas en el panel Output, la solución es agregar <code>-J-Dfile.encoding=UTF-8</code> dentro de la línea <code>netbeans_default_options</code> del archivo <code>netbeans.conf</code> de NetBeans (en <code>C:\Program Files\NetBeans-25\netbeans\etc\</code>), editándolo con el Bloc de notas abierto como administrador. Probablemente no lo necesites.</p>
+
+<h2>Paso 8: el primer Clean and Build</h2>
+<p>Ahora vas a pedirle a Maven que construya el proyecto, aunque todavía no haya código. Parece no tener sentido, pero sirve para comprobar que el <code>pom.xml</code> está bien escrito, que NetBeans encuentra el JDK y que Maven puede descargar lo que necesita. Si algo de eso falla, mejor descubrirlo ahora que con 29 clases escritas.</p>
+<p>Elige <i>Run → Clean and Build Project</i> (Ejecutar → Limpiar y construir proyecto) o presiona <b>Shift+F11</b>. También puedes hacer clic derecho en el proyecto y elegir <i>Clean and Build</i>. Mira el panel Output. La primera vez aparecerán muchas líneas de descargas (<i>Downloading… Downloaded…</i>): Maven está bajando de internet los plugins del POM. Las siguientes veces ya los tendrá guardados y será mucho más rápido. Al final verás algo parecido a esto:</p>
+<pre class="salida">Scanning for projects...
+
+------------------------&lt; com.mycompany:Totito &gt;------------------------
+Building Totito 1.0-SNAPSHOT
+  from pom.xml
+--------------------------------[ jar ]---------------------------------
+
+--- clean:3.2.0:clean (default-clean) @ Totito ---
+
+--- resources:3.3.1:resources (default-resources) @ Totito ---
+skip non existing resourceDirectory C:\Users\ana\Proyectos\Totito\src\main\resources
+
+--- compiler:3.13.0:compile (default-compile) @ Totito ---
+Nothing to compile - all classes are up to date.
+
+--- resources:3.3.1:testResources (default-testResources) @ Totito ---
+skip non existing resourceDirectory C:\Users\ana\Proyectos\Totito\src\test\resources
+
+--- compiler:3.13.0:testCompile (default-testCompile) @ Totito ---
+No sources to compile
+
+--- surefire:3.2.5:test (default-test) @ Totito ---
+No tests to run.
+
+--- jar:3.4.2:jar (default-jar) @ Totito ---
+JAR will be empty - no content was marked for inclusion!
+Building jar: C:\Users\ana\Proyectos\Totito\target\Totito-1.0-SNAPSHOT.jar
+
+--- install:3.1.2:install (default-install) @ Totito ---
+Installing C:\Users\ana\Proyectos\Totito\pom.xml to C:\Users\ana\.m2\repository\com\mycompany\Totito\1.0-SNAPSHOT\Totito-1.0-SNAPSHOT.pom
+Installing C:\Users\ana\Proyectos\Totito\target\Totito-1.0-SNAPSHOT.jar to C:\Users\ana\.m2\repository\com\mycompany\Totito\1.0-SNAPSHOT\Totito-1.0-SNAPSHOT.jar
+------------------------------------------------------------------------
+BUILD SUCCESS
+------------------------------------------------------------------------
+Total time:  3.412 s</pre>
+<p>Los números de versión de algunos plugins y algunas líneas pueden ser distintos según la versión de Maven que trae NetBeans. Lo que importa es la última parte: <b><code>BUILD SUCCESS</code></b>, «construcción exitosa». Lee la salida de arriba abajo, porque cuenta exactamente lo que pasó:</p>
+<ul>
+<li><b>Scanning for projects / Building Totito 1.0-SNAPSHOT</b>: Maven leyó tu POM y reconoció las coordenadas <code>com.mycompany:Totito</code>, versión <code>1.0-SNAPSHOT</code>, empaquetado <code>jar</code>.</li>
+<li>Cada línea <code>--- plugin:versión:objetivo ---</code> es un paso, ejecutado por su plugin (<code>compiler</code> es el <code>maven-compiler-plugin</code>, <code>jar</code> el <code>maven-jar-plugin</code>, y así). Los pasos forman el <b>ciclo de vida</b> de Maven, siempre en este orden: <b>clean</b> (borrar <code>target</code>), <b>resources</b> (copiar archivos que no son código; no hay, por eso lo salta), <b>compile</b> (compilar con el plugin 3.13.0 que fijaste), tres pasos de <b>pruebas automáticas</b> (<code>testResources</code>, <code>testCompile</code> y <code>test</code>; el Totito no tiene, el capítulo 69 te las presenta), <b>jar</b> (empaquetar con el 3.4.2) e <b>install</b>. <i>Clean and Build</i> equivale a pedirle a Maven «<code>clean</code>» y luego «<code>install</code>», que incluye todos los pasos anteriores.</li>
+<li><b>Nothing to compile</b>: no hay ninguna clase todavía, así que no hay nada que compilar. Correcto.</li>
+<li><b>JAR will be empty</b>: es un <b>aviso</b> (no un error): «el <code>.jar</code> va a quedar vacío». Lógico, porque no hay clases. Desaparecerá en cuanto escribas la primera, en el capítulo 29.</li>
+<li><b>Installing … .m2\repository</b>: el paso <code>install</code> copia el <code>.jar</code> a una carpeta de tu usuario, <code>C:\Users\&lt;tu-usuario&gt;\.m2\repository</code>, el <b>repositorio local</b> de Maven. Ahí guarda también los plugins que descargó, para no volver a bajarlos. Es una caché: si alguna vez se daña, se puede borrar y Maven la vuelve a llenar.</li>
+</ul>
+<p>Ahora mira el panel <i>Files</i>: apareció la carpeta <code>target</code>, con el <code>Totito-1.0-SNAPSHOT.jar</code> recién fabricado y algunas carpetas de trabajo de Maven. Es exactamente la carpeta que tu <code>.gitignore</code> excluye: todo lo que hay ahí se acaba de generar y se puede regenerar con otro <i>Clean and Build</i>.</p>
+<div class="caja hito"><b>Hito</b> El proyecto Totito existe: tiene su estructura, su <code>pom.xml</code>, su <code>.gitignore</code> y su <code>README.md</code>, NetBeans lo reconoce y Maven lo construye con <code>BUILD SUCCESS</code>. Desde aquí, cada clase que escribas se compilará con este mismo botón.</div>
+
+<h3>Si sale <code>BUILD FAILURE</code></h3>
+<p>Lee el Output buscando las líneas que empiezan con <code>[ERROR]</code> o <code>[FATAL]</code>. Los casos más comunes:</p>
+<table class="tabla">
+<tr><th>Mensaje (fragmento)</th><th>Causa</th><th>Solución</th></tr>
+<tr><td><code>Non-parseable POM … end tag name &lt;/artifactid&gt; must be the same as start tag &lt;artifactId&gt; from line 5 … @ line 5, column 36</code></td><td>Un error de XML: aquí, una etiqueta cerrada con otra mayúscula.</td><td>El mensaje dice la línea y la columna exactas. Ve a esa línea en el editor de NetBeans (<b>Ctrl+G</b> salta a una línea) y corrígela.</td></tr>
+<tr><td><code>Could not transfer artifact …</code> o <code>Could not resolve …</code></td><td>Maven no pudo descargar un plugin: sin internet, o una red que bloquea la descarga.</td><td>Comprueba la conexión y repite el <i>Clean and Build</i>.</td></tr>
+<tr><td><code>release version 17 not supported</code></td><td>NetBeans está usando un JDK anterior al 17.</td><td>Revisa en <i>Help → About</i> qué Java usa NetBeans y repasa el capítulo 4.</td></tr>
+<tr><td><code>Unknown packaging</code> o <code>Malformed POM</code></td><td>Un valor mal escrito (por ejemplo, <code>&lt;packaging&gt;jat&lt;/packaging&gt;</code>).</td><td>Compara el POM línea por línea con el del libro.</td></tr>
+</table>
+
+<h2>Paso 9: guardar el primer avance en Git</h2>
+<div class="caja git"><b>Git</b> Según el plan de commits del libro, el primer <i>commit</i> (una fotografía del proyecto en el historial) guarda estos tres archivos con el mensaje «Estructura inicial del proyecto Totito». <b>Todavía no lo hagas:</b> Git necesita configurarse primero (capítulo 7) y antes conviene entender qué es un commit (capítulo 6). En el capítulo 8 volverás a esta misma carpeta y ejecutarás exactamente esto:
+<pre class="ps">cd $HOME\Proyectos\Totito
+git init -b main
+git add pom.xml .gitignore README.md
+git commit -m "Estructura inicial del proyecto Totito"</pre>
+Fíjate en que se guardan solo esos tres archivos: las carpetas vacías (<code>src</code>, <code>herramientas</code>, <code>recursos</code>) no se guardan, porque Git solo registra archivos, y <code>target</code> queda fuera gracias al <code>.gitignore</code>. Las carpetas entrarán en el historial cuando tengan su primer archivo.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>El proyecto vive en <code>$HOME\Proyectos\Totito</code>, con <code>src</code> (código del juego), <code>herramientas</code> (utilidades que no van en el programa) y <code>recursos</code> (icono). <code>target</code> y <code>dist</code> se generan solas.</li>
+<li>Maven construye el proyecto siguiendo el <code>pom.xml</code>: coordenadas (<code>groupId</code>, <code>artifactId</code>, <code>version</code>), empaquetado <code>jar</code>, propiedades y plugins.</li>
+<li><code>sourceEncoding</code> UTF-8 protege las tildes; <code>release</code> 17 garantiza que el juego funcione en Java 17 o más nuevo; <code>exec.mainClass</code> y el <code>mainClass</code> del manifiesto indican que <code>TotitoApp</code> arranca el juego.</li>
+<li><code>sourceDirectory</code> = <code>src</code> se aparta de la convención <code>src/main/java</code> para tener todas las clases juntas, sin paquetes (<i>&lt;default package&gt;</i>).</li>
+<li>Fijar las versiones de los plugins hace que la construcción sea igual en cualquier computadora.</li>
+<li>El <code>.gitignore</code> excluye lo generado (<code>target</code>, <code>out</code>, <code>dist</code>, <code>.class</code>), lo personal de cada editor y los archivos de Windows.</li>
+<li>El <code>README.md</code>, en Markdown, presenta el proyecto en GitHub.</li>
+<li>En NetBeans: <i>Projects</i>, <i>Files</i>, editor, <i>Navigator</i> y <i>Output</i>; <i>Clean and Build</i> (<b>Shift+F11</b>) debe terminar en <code>BUILD SUCCESS</code>.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> Todo proyecto, de cualquier tamaño, empieza igual:
+<ul>
+<li><b>Cualquier proyecto Java con Maven:</b> una API con Spring Boot o una aplicación de escritorio de inventario tienen un <code>pom.xml</code> con la misma forma: coordenadas, propiedades, y una sección <code>&lt;dependencies&gt;</code> donde se agregan librerías (por ejemplo, un conector de base de datos), que se identifican con las mismas tres coordenadas que viste en los plugins.</li>
+<li><b>Proyectos en otros lenguajes:</b> Node.js tiene su <code>package.json</code>, Python su <code>pyproject.toml</code>, .NET su <code>.csproj</code>. Cambia el formato, pero la idea es la misma: un archivo que dice qué es el proyecto, con qué versión se construye y qué necesita.</li>
+<li><b>El <code>.gitignore</code> de cualquier repositorio:</b> la regla «lo escrito sí, lo generado y lo personal no» sirve igual para un sitio web (ignorar <code>node_modules/</code>), un proyecto de Python (<code>__pycache__/</code>) o un documento de LaTeX (los <code>.aux</code> y <code>.log</code>).</li>
+<li><b>Organizar cualquier trabajo en carpetas:</b> separar originales, auxiliares y entregables (por ejemplo, en un proyecto de diseño: <code>fuentes</code>, <code>bocetos</code>, <code>exportados</code>) evita entregar un borrador por error.</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>En el panel <i>Files</i> de NetBeans, despliega <code>target</code> y describe qué contiene. Después haz solo <i>Run → Clean Project</i> (sin <i>Build</i>) y observa qué le pasa a <code>target</code>. Vuelve a hacer <i>Clean and Build</i> para dejarlo como estaba.</li>
+<li>En el <code>pom.xml</code>, cambia a propósito <code>&lt;/artifactId&gt;</code> por <code>&lt;/artifactid&gt;</code>, guarda y haz <i>Clean and Build</i>. Lee el mensaje de error y localiza la línea y la columna que indica. Corrige y comprueba que vuelve el <code>BUILD SUCCESS</code>.</li>
+<li>Agrega al README una sección <code>## Autor</code> con tu nombre y una sección <code>## Qué estoy aprendiendo</code> con una lista de tres viñetas. Pista: cada viñeta empieza con <code>- </code> y hay una línea en blanco antes de cada título.</li>
+<li>Explica con tus palabras, en tu cuaderno, qué pasaría si el <code>.gitignore</code> no tuviera la línea <code>target/</code>. ¿Y si no tuviera <code>dist/</code>? Piensa en el tamaño del historial y en qué archivos cambiarían en cada compilación.</li>
+<li>Reto: Maven permite usar el valor de una propiedad en otro lugar del POM escribiendo <code>${nombre}</code>. Cambia la línea 32 a <code>&lt;mainClass&gt;${exec.mainClass}&lt;/mainClass&gt;</code> para que la clase principal se escriba en un solo sitio. Haz <i>Clean and Build</i>: debe seguir dando <code>BUILD SUCCESS</code>. Pista: para el resto del libro, vuelve a dejar el POM como estaba, así coincidirá con el de los capítulos siguientes.</li>
+</ol>
+</div>
+</section>

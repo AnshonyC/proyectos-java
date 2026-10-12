@@ -1,0 +1,692 @@
+<section class="capitulo" id="cap20">
+<h1><span class="num">Capítulo 20</span>Constructores, this, static y final</h1>
+<p class="entrada">En los capítulos 18 y 19 creaste objetos con <code>new</code> y los protegiste con <code>private</code>. Ahora vas a entender las cuatro palabras que deciden <b>cómo nace</b> un objeto, <b>cómo se nombra a sí mismo</b>, <b>qué comparte con los demás</b> y <b>qué ya no puede cambiar</b>: el constructor, <code>this</code>, <code>static</code> y <code>final</code>. Aparecen en casi todos los archivos del Totito; después de este capítulo vas a poder leer cualquiera de sus primeras líneas sin dudar.</p>
+
+<h2>Por qué importan estas cuatro palabras</h2>
+<p>Abre mentalmente <code>Partida.java</code> (lo escribirás en el capítulo 38). Sus primeras líneas de contenido son estas:</p>
+<pre class="java">public static final char FICHA_INICIAL = 'X';
+
+private final Tablero tablero = new Tablero();
+private final Jugador[] jugadores;
+private final Modo modo;
+private final IA_Minimax ia;
+private final int[] victorias = new int[2];
+private int empates;
+
+private int turno;
+private Estado estado;
+private Jugador ganador;
+
+public Partida(Jugador jugador1, Jugador jugador2, Modo modo) {
+    ...
+    this.jugadores = new Jugador[]{jugador1, jugador2};
+    this.modo = modo;
+    ...
+}</pre>
+<p>En esas pocas líneas hay un <code>static</code>, seis <code>final</code>, varios <code>this</code> y un constructor. Cada una de esas palabras es una <b>decisión de diseño</b>, no un adorno: dice si el dato es de la partida o de todas las partidas, si puede cambiar durante el juego o no, y cuándo y cómo se llena. Quien sabe leerlas entiende la clase antes de leer sus métodos. Vamos una por una.</p>
+
+<h2>1. El constructor: el momento en que nace un objeto</h2>
+
+<h3>La idea</h3>
+<p>Piensa en la inscripción de un alumno en un colegio. Nadie entra a la lista de alumnos sin llenar el formulario: nombre, fecha de nacimiento, grado. El formulario existe para que <b>ningún alumno quede a medias</b>, sin nombre o sin grado. El <b>constructor</b> es ese formulario: un bloque de código especial que Java ejecuta <b>una sola vez</b>, justo cuando el objeto nace, para dejarlo completo y listo para usarse.</p>
+
+<h3>Cómo se escribe</h3>
+<p>El constructor más sencillo del Totito es el de <code>Jugador</code> (capítulo 30):</p>
+<pre class="java">public Jugador(String nombre, char ficha) {
+    this.nombre = nombre;
+    this.ficha = ficha;
+}</pre>
+<p>Símbolo por símbolo:</p>
+<ul>
+<li><code>public</code>: cualquiera puede crear jugadores (capítulo 19).</li>
+<li><code>Jugador</code>: el constructor se llama <b>exactamente igual que la clase</b>, con la misma mayúscula. Así lo reconoce Java.</li>
+<li><b>No hay tipo de retorno</b>: ni <code>void</code>, ni <code>int</code>, nada. Un método normal dice qué devuelve; el constructor no devuelve nada por su cuenta, porque quien entrega el objeto terminado es <code>new</code>.</li>
+<li><code>(String nombre, char ficha)</code>: los <b>parámetros</b>, igual que en un método (capítulo 16). Son los datos del «formulario».</li>
+<li><code>{ … }</code>: el cuerpo. Aquí se copian los parámetros a los atributos del objeto.</li>
+<li><code>this.nombre = nombre;</code>: «el <code>nombre</code> de <b>este</b> objeto recibe el valor del parámetro <code>nombre</code>». Lo de <code>this</code> lo explicamos a fondo en la sección 2.</li>
+</ul>
+<p>Y se usa así, por ejemplo en <code>PantallaConfiguracion.comenzar()</code> (capítulo 58):</p>
+<pre class="java">new Jugador(jugador1.getNombre(), fichaJugador1)</pre>
+
+<div class="caja cuidado"><b>Si le pones void, deja de ser constructor</b> Escribir <code>public void Jugador(String nombre, char ficha)</code> compila sin error… pero ya no es un constructor: es un <b>método</b> normal que, por casualidad, se llama igual que la clase. Entonces <code>new Jugador("Ana", 'X')</code> falla, porque el constructor con dos parámetros ya no existe. Es uno de los errores más desconcertantes para quien empieza: el constructor nunca lleva tipo de retorno.</div>
+
+<h3>Qué pasa exactamente al escribir new</h3>
+<p>Cuando Java ejecuta <code>new Jugador("Ana", 'X')</code> ocurren cinco cosas, siempre en este orden:</p>
+<ol>
+<li><b>Reserva memoria</b> en el montón (el <i>heap</i>, capítulo 18) para un objeto <code>Jugador</code>: espacio para un <code>String</code> y un <code>char</code>.</li>
+<li><b>Pone valores por defecto</b> en todos los atributos: <code>null</code> en <code>nombre</code> y el carácter 0 en <code>ficha</code>.</li>
+<li><b>Ejecuta las inicializaciones escritas en la declaración</b>, como <code>private final Tablero tablero = new Tablero();</code> en <code>Partida</code>.</li>
+<li><b>Ejecuta el cuerpo del constructor</b>, con los argumentos <code>"Ana"</code> y <code>'X'</code>.</li>
+<li><b>Devuelve la referencia</b> al objeto ya terminado, que normalmente guardas en una variable.</li>
+</ol>
+<p>El paso 3 explica por qué en <code>Partida</code> algunos atributos se llenan en la misma línea donde se declaran (<code>tablero</code>, <code>victorias</code>) y otros dentro del constructor (<code>jugadores</code>, <code>modo</code>, <code>ia</code>): los primeros <b>no dependen de nada</b> que llegue de fuera, siempre son «un tablero nuevo» y «dos contadores en cero»; los segundos dependen de los parámetros, así que solo se pueden llenar cuando el constructor ya los recibió. Es la regla práctica: <b>si el valor inicial es siempre el mismo, en la declaración; si depende de parámetros, en el constructor.</b></p>
+
+<h3>El constructor por defecto</h3>
+<p>¿Y si una clase no tiene ningún constructor escrito? Entonces Java le regala uno invisible, sin parámetros y con el cuerpo vacío: el <b>constructor por defecto</b>. Gracias a él, <code>new Lampara()</code> funciona aunque nadie lo haya escrito. Pruébalo:</p>
+<pre class="java">public class DemoValoresPorDefecto {
+
+    public static void main(String[] args) {
+        Lampara lampara = new Lampara();   // nadie escribio un constructor... y funciona
+        System.out.println("watts     = " + lampara.watts);
+        System.out.println("brillo    = " + lampara.brillo);
+        System.out.println("encendida = " + lampara.encendida);
+        System.out.println("letra     = " + (int) lampara.letra + " (el caracter numero 0, invisible)");
+        System.out.println("marca     = " + lampara.marca);
+    }
+}
+
+class Lampara {
+    int watts;          // numero entero
+    double brillo;      // numero con decimales
+    boolean encendida;  // verdadero o falso
+    char letra;         // un caracter
+    String marca;       // un objeto (referencia)
+}</pre>
+<p>Guárdalo como <code>DemoValoresPorDefecto.java</code> en tu carpeta de prácticas y ejecútalo. Java 11 o superior compila en memoria y ejecuta un archivo de un solo paso; la clase que tiene <code>main</code> debe ser la <b>primera</b> del archivo, y debajo pueden ir otras clases sin <code>public</code>:</p>
+<pre class="ps">cd $HOME\Proyectos\Practicas
+java DemoValoresPorDefecto.java</pre>
+<pre class="salida">watts     = 0
+brillo    = 0.0
+encendida = false
+letra     = 0 (el caracter numero 0, invisible)
+marca     = null</pre>
+<p>Ahí ves los <b>valores por defecto</b> de los atributos (paso 2 de la lista anterior):</p>
+<table class="tabla">
+<tr><th>Tipo del atributo</th><th>Valor por defecto</th></tr>
+<tr><td><code>int</code>, <code>long</code>, <code>short</code>, <code>byte</code></td><td><code>0</code></td></tr>
+<tr><td><code>double</code>, <code>float</code></td><td><code>0.0</code></td></tr>
+<tr><td><code>boolean</code></td><td><code>false</code></td></tr>
+<tr><td><code>char</code></td><td>el carácter número 0 (invisible)</td></tr>
+<tr><td>cualquier objeto (<code>String</code>, <code>Tablero</code>, arreglos…)</td><td><code>null</code></td></tr>
+</table>
+<p>En el Totito el constructor por defecto se ve en las herramientas: <code>PruebaConsola</code>, <code>VistaPrevia</code> y <code>GeneradorIcono</code> no escriben constructor porque solo tienen <code>main</code> y nadie crea objetos de ellas. También hay atributos que confían en el valor por defecto a propósito: en <code>Partida</code>, <code>private int empates;</code> no se inicializa porque el marcador debe empezar en 0, y en <code>TarjetaJugador</code>, <code>private boolean esComputadora;</code> empieza en <code>false</code> porque toda tarjeta nace siendo de un humano.</p>
+
+<div class="caja cuidado"><b>Al escribir un constructor, el regalo desaparece</b> En cuanto escribes <b>cualquier</b> constructor, Java deja de crear el de por defecto. Con la clase <code>Jugador</code> de arriba, esto no compila:
+<pre class="java">Jugador nadie = new Jugador();            // error: ya no existe el constructor vacio</pre>
+<pre class="salida">DemoSinConstructorVacio.java:5: error: constructor Jugador in class Jugador cannot be applied to given types;
+        Jugador nadie = new Jugador();            // error: ya no existe el constructor vacio
+                        ^
+  required: String,char
+  found:    no arguments
+  reason: actual and formal argument lists differ in length
+1 error
+error: compilation failed</pre>
+El mensaje se lee así: «el constructor de <code>Jugador</code> <i>requiere</i> (<i>required</i>) un <code>String</code> y un <code>char</code>, y <i>encontré</i> (<i>found</i>) cero argumentos». Y esto es <b>bueno</b>: un jugador sin nombre ni ficha no tiene sentido en el Totito, y el compilador te impide crearlo. El constructor es la primera línea de defensa de las invariantes que viste en el capítulo 19.</div>
+
+<h3>Un constructor que trabaja: Tablero</h3>
+<p>Un constructor puede hacer más que copiar parámetros. El de <code>Tablero</code> (capítulo 29) no recibe nada, pero prepara la matriz y la vacía:</p>
+<pre class="java">public Tablero() {
+    casillas = new char[3][3];
+    reiniciar();
+}</pre>
+<p>Fíjate en la llamada a <code>reiniciar()</code>. Ese mismo método se usa al terminar una partida para empezar otra. El constructor lo <b>reutiliza</b> en vez de repetir los dos <code>for</code> que llenan el tablero de <code>VACIA</code>. ¿Qué pasaría si el constructor tuviera su propia copia de esos bucles? Funcionaría hoy, pero el día que cambiaras la forma de vaciar el tablero tendrías que acordarte de cambiarla en dos sitios. <code>Partida</code> hace lo mismo: su constructor termina con <code>reiniciar();</code>, que pone el estado en <code>EN_CURSO</code> y elige quién empieza.</p>
+<p>Un constructor también puede <b>negarse</b> a crear el objeto si los datos no sirven. El de <code>Partida</code> empieza así:</p>
+<pre class="java">if (jugador1.getFicha() == jugador2.getFicha()) {
+    throw new IllegalArgumentException("Los dos jugadores no pueden usar la misma ficha");
+}</pre>
+<p>Si los dos jugadores tienen la misma ficha, el objeto <b>nunca llega a existir</b>: Java lanza una excepción (capítulo 26) y <code>new</code> no devuelve nada. Así es imposible que en el programa circule una partida «X contra X».</p>
+
+<div class="caja consejo"><b>En otros programas</b> El constructor es donde se garantiza que un objeto nace válido. Una <code>CuentaBancaria</code> exige el titular y arranca con saldo 0 en la declaración; un <code>Producto</code> rechaza un precio negativo con una excepción; una <code>Cita</code> médica exige fecha y paciente. Si un dato es obligatorio, va como parámetro del constructor; si no, puede tener un valor inicial fijo.</div>
+
+<h2>2. this: «yo mismo»</h2>
+
+<h3>La idea</h3>
+<p>En un salón de clases, cuando cada alumno dice «mi cuaderno», todos usan la misma palabra y sin embargo cada uno se refiere a <b>su</b> cuaderno. La palabra <code>this</code> es ese «mi»: dentro de un método o constructor, <code>this</code> es una referencia al objeto que está ejecutando el código en ese momento. Si hay cien jugadores, el mismo código del constructor de <code>Jugador</code> se ejecuta cien veces, y cada vez <code>this</code> apunta a un objeto distinto.</p>
+
+<h3>Uso 1: distinguir el atributo del parámetro</h3>
+<p>En el constructor de <code>Jugador</code> hay dos cosas llamadas <code>nombre</code>: el atributo del objeto y el parámetro. Dentro del constructor, el nombre suelto se refiere al <b>parámetro</b>, porque es la variable más cercana (se dice que el parámetro <b>hace sombra</b> al atributo). Para alcanzar el atributo hay que decir <code>this.nombre</code>: el punto significa «el <code>nombre</code> que pertenece a <code>this</code>».</p>
+<p>Mira lo que pasa si se te olvida:</p>
+<pre class="java">public class DemoSombra {
+
+    public static void main(String[] args) {
+        Mascota olvidadiza = new Mascota("Firulais");
+        System.out.println("Nombre guardado: " + olvidadiza.getNombre());
+    }
+}
+
+class Mascota {
+
+    private String nombre;
+
+    public Mascota(String nombre) {
+        nombre = nombre;   // sin this: el parametro se asigna a si mismo
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+}</pre>
+<pre class="salida">Nombre guardado: null</pre>
+<p>Compila sin un solo error y, sin embargo, el nombre se perdió: la línea <code>nombre = nombre;</code> copió el parámetro en sí mismo y el atributo se quedó con su valor por defecto, <code>null</code>. Es un error silencioso clásico. Con <code>this.nombre = nombre;</code> queda resuelto. (Si además el atributo fuera <code>final</code>, como en el <code>Jugador</code> real, el compilador sí avisaría de que nunca se le asignó valor: otra ventaja de <code>final</code>, que verás en la sección 6.)</p>
+
+<div class="caja consejo"><b>¿Por qué no ponerle otro nombre al parámetro?</b> Podrías escribir <code>Jugador(String n, char f)</code> y <code>nombre = n;</code> sin <code>this</code>. Funciona, pero <code>n</code> y <code>f</code> no dicen nada a quien usa la clase, y NetBeans muestra los nombres de los parámetros al autocompletar. La costumbre de Java es usar el mismo nombre y <code>this.</code>, y es la que sigue todo el Totito.</div>
+
+<h3>Uso 2: pasarse a sí mismo como argumento</h3>
+<p><code>this</code> es una referencia como cualquier otra, así que se puede entregar a otro objeto. En el constructor de <code>PanelPrincipal</code> (capítulo 61):</p>
+<pre class="java">pantallaJuego = new PantallaJuego(this);
+pantallaResultado = new PantallaResultado(this);
+add(new PantallaMenu(this), MENU);</pre>
+<p>Cada pantalla necesita a «alguien» a quien pedirle «llévame al menú». Ese alguien es el propio <code>PanelPrincipal</code>, que se presenta diciendo <code>this</code>: «yo soy tu navegación». Y en <code>cartas.show(this, MENU)</code> le dice al <code>CardLayout</code> «muestra la carta <code>MENU</code> dentro de <b>mí</b>». Cómo puede un <code>PanelPrincipal</code> pasar por <code>Navegacion</code> lo verás en el capítulo 24.</p>
+
+<h3>Uso 3: leer los atributos de otro objeto de la misma clase</h3>
+<p>En <code>Tablero.obtenerCopia()</code>:</p>
+<pre class="java">copia.casillas[fila][columna] = this.casillas[fila][columna];</pre>
+<p>Aquí <code>this</code> no es obligatorio (sin él significaría lo mismo), pero <b>aclara</b> la lectura: a la izquierda, las casillas de la copia; a la derecha, las mías. Cuando hay dos objetos de la misma clase en juego, poner <code>this.</code> evita confusiones.</p>
+
+<h3>Uso 4 y 5: this(...) y return this</h3>
+<p>Hay dos usos más: <code>this(...)</code> para llamar a otro constructor de la misma clase (sección 3) y <code>return this;</code> para encadenar llamadas (sección 4). Y uno que verás en el capítulo 25: <code>this::cerrar</code>, que en <code>TotitoApp</code> entrega «mi método cerrar» a otro objeto.</p>
+
+<div class="caja concepto"><b>Dónde no existe this</b> <code>this</code> solo tiene sentido cuando hay un objeto ejecutando el código. En un método <code>static</code> (sección 5) no lo hay, así que <code>this</code> no se puede usar ahí.</div>
+
+<h2>3. Sobrecarga de constructores y this(...)</h2>
+
+<h3>La idea</h3>
+<p>En una cafetería puedes pedir «un café», y te dan el tamaño mediano de siempre, o pedir «un café grande». Es el mismo producto con un detalle por defecto o con el detalle que tú indicas. Una clase puede tener <b>varios constructores</b>, siempre que se distingan por sus parámetros (cuántos, de qué tipo, en qué orden). A eso se le llama <b>sobrecarga de constructores</b>, la misma idea que la sobrecarga de métodos del capítulo 16.</p>
+
+<h3>Dónde está en el Totito: Tarjeta</h3>
+<p>La caja de cristal (capítulo 43) se puede crear de dos maneras:</p>
+<pre class="java">public Tarjeta(Color color) {
+    this(color, 30);
+}
+
+public Tarjeta(Color color, int arco) {
+    this.color = color;
+    this.arco = arco;
+    setOpaque(false);
+    setAlignmentX(CENTER_ALIGNMENT);
+}</pre>
+<p>El segundo constructor es el <b>completo</b>: recibe el color y el redondeo de las esquinas (<code>arco</code>) y hace todo el trabajo. El primero es un <b>atajo</b>: solo pide el color y le pasa el trabajo al completo con el arco «de siempre», 30 píxeles. La línea clave, símbolo por símbolo:</p>
+<ul>
+<li><code>this</code> seguido de paréntesis: «llama a otro constructor de esta misma clase». No es <code>this.algo</code>, es <code>this(...)</code>.</li>
+<li><code>(color, 30)</code>: los argumentos. Java elige el constructor cuya lista de parámetros encaja: un <code>Color</code> y un <code>int</code>, o sea, el segundo.</li>
+<li><code>;</code>: es una instrucción más.</li>
+</ul>
+<p>Así se usan los dos en el juego:</p>
+<pre class="java">Tarjeta tarjeta = new Tarjeta(Tema.MORADO);        // PantallaMenu: arco de 30
+super(color, 26);                                   // TarjetaJugador: arco de 26</pre>
+<p>(La segunda línea usa <code>super(...)</code>, el primo de <code>this(...)</code> que llama al constructor de la clase padre; lo verás en el capítulo 22.)</p>
+
+<div class="caja cuidado"><b>this(...) va en la primera línea</b> La llamada a otro constructor tiene que ser la <b>primera instrucción</b> del cuerpo. Java exige que el objeto termine de construirse en un solo lugar antes de hacer cualquier otra cosa. Si pones algo antes, el compilador se queja con un error que dice que la llamada al constructor debe ser la primera instrucción. Después de <code>this(...)</code> sí puedes escribir más código.</div>
+
+<h3>Míralo funcionar</h3>
+<pre class="java">public class DemoConstructores {
+
+    public static void main(String[] args) {
+        Caja normal = new Caja("morado");
+        Caja cuadrada = new Caja("rosa", 4);
+        System.out.println(normal.describir());
+        System.out.println(cuadrada.describir());
+    }
+}
+
+class Caja {
+
+    private final String color;
+    private final int arco;
+
+    /** Constructor corto: usa el arco "de siempre". */
+    public Caja(String color) {
+        this(color, 30);
+        System.out.println("  (constructor corto termino)");
+    }
+
+    /** Constructor completo: aqui vive la logica de verdad. */
+    public Caja(String color, int arco) {
+        System.out.println("  constructor completo: color=" + color + ", arco=" + arco);
+        this.color = color;
+        this.arco = arco;
+    }
+
+    public String describir() {
+        return "Caja " + color + " con esquinas de " + arco + " px";
+    }
+}</pre>
+<pre class="salida">  constructor completo: color=morado, arco=30
+  (constructor corto termino)
+  constructor completo: color=rosa, arco=4
+Caja morado con esquinas de 30 px
+Caja rosa con esquinas de 4 px</pre>
+<p>Sigue el orden de las líneas: para la caja morada, primero corre el constructor completo (llamado desde <code>this(color, 30)</code>) y <b>después</b> el resto del constructor corto. Para la rosa, Java eligió directamente el de dos parámetros.</p>
+
+<h3>Qué pasaría sin this(...)</h3>
+<p>Tendrías que copiar las cuatro líneas del constructor completo dentro del corto. Hoy serían cuatro; mañana, cuando <code>Tarjeta</code> necesite una línea más (un borde, un cursor), habría que recordar agregarla en los dos. Tarde o temprano uno de los dos queda desactualizado y aparecen tarjetas que se comportan distinto según cómo se crearon. Con <code>this(...)</code> la lógica vive en <b>un solo lugar</b>.</p>
+<p>La misma idea se aplica a los métodos: <code>Dibujo.trazoNeon</code> tiene una versión de cuatro parámetros que llama a la de cinco con intensidad <code>1f</code>:</p>
+<pre class="java">public static void trazoNeon(Graphics2D g, Shape figura, Color color, float grosor) {
+    trazoNeon(g, figura, color, grosor, 1f);
+}</pre>
+
+<div class="caja consejo"><b>En otros programas</b> <code>Producto(String nombre)</code> que llama a <code>Producto(nombre, 0.0)</code> para productos aún sin precio; <code>Alumno(String nombre)</code> que llama a <code>Alumno(nombre, "Primero básico")</code>; <code>Enemigo(int x, int y)</code> en un juego, que llama a <code>Enemigo(x, y, 100)</code> con la vida completa. Siempre el mismo patrón: un constructor completo y atajos que le delegan.</div>
+
+<h2>4. Constructores privados y métodos de fábrica</h2>
+
+<h3>La idea</h3>
+<p>En un restaurante no entras a la cocina a combinar tú los ingredientes: pides «el combo 1» o «el desayuno chapín» del menú, y la cocina sabe qué lleva cada uno. Los <b>métodos de fábrica</b> son ese menú: métodos <code>static</code> con nombres claros que crean el objeto por ti con la combinación correcta. Y para que nadie se meta a la cocina, el constructor se hace <code>private</code>.</p>
+
+<h3>Dónde está en el Totito: BotonNeon</h3>
+<p>El constructor de <code>BotonNeon</code> (capítulo 44) recibe siete datos:</p>
+<pre class="java">private BotonNeon(String texto, Iconos.Icono icono, Color color, Color colorFinal,
+                  Estilo estilo, int ancho, int alto) {</pre>
+<p>Es <code>private</code>: <b>solo el código de la propia clase</b> puede escribir <code>new BotonNeon(...)</code>. Desde fuera, los botones se piden por el menú:</p>
+<pre class="java">/** Boton grande del menu principal. */
+public static BotonNeon menu(String texto, Iconos.Icono icono, Color color) {
+    return new BotonNeon(texto, icono, color, color, Estilo.MENU, 384, 88);
+}
+
+/** Pildora rellena con un degradado de "desde" a "hasta". */
+public static BotonNeon pildora(String texto, Iconos.Icono icono, Color desde, Color hasta, int ancho, int alto) {
+    return new BotonNeon(texto, icono, desde, hasta, Estilo.PILDORA, ancho, alto);
+}
+
+/** Pildora oscura con borde morado. */
+public static BotonNeon contorno(String texto, Iconos.Icono icono, int ancho, int alto) {
+    return new BotonNeon(texto, icono, Tema.MORADO, Tema.MORADO, Estilo.CONTORNO, ancho, alto);
+}
+
+/** Boton cuadrado sin texto. Ponerle setToolTipText para que se entienda. */
+public static BotonNeon icono(Iconos.Icono icono, Color color) {
+    return new BotonNeon("", icono, color, color, Estilo.ICONO, 58, 58);
+}</pre>
+<p>Analicemos <code>menu</code>:</p>
+<ul>
+<li><code>public static</code>: se llama a través de la clase, sin tener todavía ningún botón: <code>BotonNeon.menu(...)</code>. (Por qué hace falta <code>static</code> aquí lo entenderás en la sección 5: aún no existe un objeto al que pedírselo.)</li>
+<li><code>BotonNeon</code>: el tipo que devuelve, un botón.</li>
+<li><code>menu</code>: el nombre dice <b>qué clase de botón</b> obtienes. Eso no lo puede hacer un constructor, que siempre se llama como la clase.</li>
+<li><code>return new BotonNeon(texto, icono, color, color, Estilo.MENU, 384, 88);</code>: la fábrica sí puede usar el constructor privado, porque está dentro de la clase. Rellena ella sola los cuatro datos que el botón de menú siempre lleva igual: el color final es el mismo color, el estilo es <code>MENU</code> y el tamaño es 384 × 88.</li>
+</ul>
+<p>Y así se ve desde <code>PantallaMenu</code> (capítulo 56):</p>
+<pre class="java">BotonNeon jugar = BotonNeon.menu("Jugar", Iconos.JUGAR, Tema.ROSA);</pre>
+<p>Una línea que se lee casi en español: «un botón de menú que dice Jugar, con el icono de jugar, en rosa».</p>
+
+<h3>Qué pasaría sin fábricas</h3>
+<p>Con el constructor público, cada pantalla escribiría:</p>
+<pre class="java">new BotonNeon("Jugar", Iconos.JUGAR, Tema.ROSA, Tema.ROSA, BotonNeon.Estilo.MENU, 384, 88)</pre>
+<p>Siete argumentos en los que es fácil equivocarse: intercambiar ancho y alto, olvidar repetir el color, poner 380 en un botón y 384 en otro. Los números 384 y 88 estarían repetidos en tres sitios, y cambiar el tamaño de los botones del menú significaría buscarlos todos. Con la fábrica, el diseño de «un botón de menú» vive en <b>un solo método</b>.</p>
+
+<h3>Fábricas que hacen trabajo extra: Rotulo</h3>
+<p><code>Rotulo</code> (capítulo 46) también tiene el constructor privado y tres fábricas: <code>titulo</code>, <code>seccion</code> y <code>leyenda</code>. La de sección hace algo que un constructor no podría hacer tan claramente: crea el objeto, le ajusta un dato y después lo entrega.</p>
+<pre class="java">public static Rotulo seccion(String texto, String subtitulo, int ancho) {
+    Rotulo r = new Rotulo(Tipo.SECCION, texto, Tema.fuenteEspaciada(Font.BOLD, 17f, 0.3f),
+            Tema.LAVANDA, Tema.LAVANDA, ancho, subtitulo == null ? 28 : 48);
+    r.subtitulo = subtitulo;
+    return r;
+}</pre>
+<p>Fíjate en <code>subtitulo == null ? 28 : 48</code>: la fábrica decide la altura según haya o no subtítulo. Quien la usa no tiene que saberlo.</p>
+
+<h3>Métodos que devuelven this: encadenar</h3>
+<p>Rotulo agrega otro truco. Sus métodos <code>conIcono</code> y <code>conSubrayado</code> modifican el rótulo y terminan con <code>return this;</code>:</p>
+<pre class="java">public Rotulo conIcono(Iconos.Icono icono, Color color) {
+    this.icono = icono;
+    this.colorIcono = color;
+    return this;
+}</pre>
+<p>Como devuelven el mismo objeto, se pueden encadenar, uno detrás del otro, en una sola expresión. Así lo hace <code>PantallaInstrucciones</code> (capítulo 57):</p>
+<pre class="java">tarjeta.add(Rotulo.titulo("Cómo jugar", 36f, Tema.TEXTO, Tema.LAVANDA, ANCHO_PASOS, 70)
+        .conIcono(Iconos.LIBRO, Tema.ROSA)
+        .conSubrayado(Tema.ROSA, Tema.AZUL));</pre>
+<p>Se lee de arriba abajo: un título «Cómo jugar», <b>con</b> icono de libro, <b>con</b> subrayado rosa-azul. Cada punto llama a un método sobre lo que devolvió el anterior, que siempre es el mismo rótulo. A este estilo se le llama <b>interfaz fluida</b>.</p>
+
+<h3>Tu propia fábrica</h3>
+<pre class="java">public class DemoFabrica {
+
+    public static void main(String[] args) {
+        Boton jugar = Boton.menu("Jugar");
+        Boton volver = Boton.contorno("Volver", 300, 52);
+        Boton cerrar = Boton.icono("X").conAyuda("Cerrar el juego");
+        System.out.println(jugar);
+        System.out.println(volver);
+        System.out.println(cerrar);
+        // Boton raro = new Boton("Hola", "?", 1, 1);   // no compila: el constructor es privado
+    }
+}
+
+class Boton {
+
+    private final String texto;
+    private final String estilo;
+    private final int ancho;
+    private final int alto;
+    private String ayuda = "";
+
+    private Boton(String texto, String estilo, int ancho, int alto) {
+        this.texto = texto;
+        this.estilo = estilo;
+        this.ancho = ancho;
+        this.alto = alto;
+    }
+
+    public static Boton menu(String texto) {
+        return new Boton(texto, "MENU", 384, 88);
+    }
+
+    public static Boton contorno(String texto, int ancho, int alto) {
+        return new Boton(texto, "CONTORNO", ancho, alto);
+    }
+
+    public static Boton icono(String simbolo) {
+        return new Boton(simbolo, "ICONO", 58, 58);
+    }
+
+    /** Devuelve el mismo boton para poder encadenar llamadas. */
+    public Boton conAyuda(String ayuda) {
+        this.ayuda = ayuda;
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return estilo + " \"" + texto + "\" " + ancho + "x" + alto
+                + (ayuda.isEmpty() ? "" : " (ayuda: " + ayuda + ")");
+    }
+}</pre>
+<pre class="salida">MENU "Jugar" 384x88
+CONTORNO "Volver" 300x52
+ICONO "X" 58x58 (ayuda: Cerrar el juego)</pre>
+<p>El método <code>toString</code> con <code>@Override</code> es el texto que Java usa cuando imprimes el objeto; lo verás en los capítulos 22 y 23. Si quitas las barras <code>//</code> de la línea comentada, el compilador te dirá que <code>Boton(...)</code> tiene acceso privado: justo lo que querías.</p>
+
+<div class="caja consejo"><b>En otros programas</b> El propio Java está lleno de fábricas: <code>List.of("a", "b")</code>, <code>LocalDate.of(2026, 10, 12)</code>, <code>Integer.valueOf("42")</code>, <code>BorderFactory.createEmptyBorder(...)</code> (que el Totito usa en sus pantallas). En una tienda: <code>Descuento.porcentaje(10)</code> y <code>Descuento.fijo(25)</code>, dos fábricas que crean el mismo tipo de objeto con significados distintos que un constructor con un <code>double</code> no podría expresar. En un banco: <code>Cuenta.deAhorro(titular)</code> y <code>Cuenta.monetaria(titular)</code>. Este patrón tiene nombre, <b>Factory Method</b>, y lo retomarás en el capítulo 27.</div>
+
+<h2>5. static: lo que es de la clase, no de cada objeto</h2>
+
+<h3>La idea</h3>
+<p>En un aula, cada alumno tiene <b>su</b> cuaderno: lo que escribe uno no aparece en el de otro. Pero hay <b>un solo pizarrón</b>, compartido por todos. Lo que pertenece a cada objeto (el cuaderno) es un miembro <b>de instancia</b>; lo que pertenece a la clase y es uno solo para todos (el pizarrón) es un miembro <b><code>static</code></b>. La palabra viene de «estático» porque existe desde que la clase se carga y no nace ni muere con cada objeto.</p>
+
+<h3>Campos static: Tablero.VACIA</h3>
+<pre class="java">public static final char VACIA = ' ';</pre>
+<p>Palabra por palabra:</p>
+<ul>
+<li><code>public</code>: cualquier clase puede leerla.</li>
+<li><code>static</code>: hay <b>una sola</b> <code>VACIA</code>, de la clase <code>Tablero</code>, no una por tablero. Aunque la IA cree miles de copias del tablero al pensar, la constante no se multiplica.</li>
+<li><code>final</code>: no se puede cambiar (sección 6).</li>
+<li><code>char VACIA = ' '</code>: es un carácter, el espacio en blanco.</li>
+</ul>
+<p>Como es de la clase, se usa con el <b>nombre de la clase</b>, sin crear ningún objeto: <code>Tablero.VACIA</code>. Así aparece en <code>IA_Minimax</code>, <code>Partida</code>, <code>PanelTablero</code> y <code>PruebaConsola</code>:</p>
+<pre class="java">if (tablero.obtenerCasilla(fila, columna) == Tablero.VACIA) {</pre>
+<p>Si <code>VACIA</code> no fuera <code>static</code>, para leerla necesitarías un tablero concreto (<code>tablero.VACIA</code>), lo cual no tiene sentido: «qué significa casilla vacía» es una regla del juego, no un dato de un tablero en particular.</p>
+<p>Lo mismo pasa con toda la paleta del juego en <code>Tema</code> (capítulo 40):</p>
+<pre class="java">public static final Color ROSA = new Color(0xFF, 0x3B, 0xD4);</pre>
+<p>Hay un solo rosa para todo el programa, y cualquier componente lo pide con <code>Tema.ROSA</code>. Otras constantes del Totito: <code>Partida.FICHA_INICIAL</code>, <code>PanelPrincipal.ANCHO</code> y <code>ALTO</code>, <code>CampoTexto.MAXIMO</code>, <code>Tarjeta.MARGEN</code>.</p>
+
+<h3>Métodos static: herramientas que no necesitan un objeto</h3>
+<p>Un método <code>static</code> se llama con el nombre de la clase y trabaja <b>solo con lo que recibe</b> por parámetros (y con otros miembros <code>static</code>). Ejemplo de <code>Tema</code>:</p>
+<pre class="java">public static Color conAlfa(Color color, int alfa) {
+    return new Color(color.getRed(), color.getGreen(), color.getBlue(),
+            Math.max(0, Math.min(255, alfa)));
+}</pre>
+<p>Para hacer un color más transparente no hace falta ningún «objeto tema»: entra un color y un número, sale otro color. Por eso se llama <code>Tema.conAlfa(Tema.MORADO, 40)</code>. Igual que <code>Math.max</code>, que usas sin crear ningún «objeto matemáticas».</p>
+<p>Un caso más interesante es <code>Partida.buscarLineaGanadora</code>:</p>
+<pre class="java">public static int[] buscarLineaGanadora(Tablero tablero) {</pre>
+<p>Está dentro de <code>Partida</code> porque trata de las reglas del juego, pero es <code>static</code> porque <b>no usa nada de una partida concreta</b>: ni turnos, ni jugadores, ni marcador; solo el tablero que recibe. Y eso tiene una consecuencia práctica muy concreta: <code>PanelTablero.mostrar</code> la llama así:</p>
+<pre class="java">lineaGanadora = Partida.buscarLineaGanadora(tablero);</pre>
+<p>El tablero de ejemplo de la pantalla de instrucciones <b>no tiene ninguna partida detrás</b> (se crea un <code>Tablero</code> suelto en <code>PantallaInstrucciones.tableroDeEjemplo()</code>). Si el método no fuera <code>static</code>, habría que inventar una <code>Partida</code> con dos jugadores falsos solo para preguntar dónde está la raya. Al ser <code>static</code>, basta con el tablero.</p>
+
+<h3>main es static, y por eso</h3>
+<p>Ahora entiendes por fin el <code>static</code> de <code>public static void main(String[] args)</code> (capítulo 11). Cuando arranca el programa, <b>todavía no existe ningún objeto</b>: Java necesita un método al que se pueda llamar con solo el nombre de la clase. Por eso <code>main</code> es <code>static</code>, y lo primero que hace casi siempre es crear objetos: <code>new TotitoApp()</code>.</p>
+
+<h3>La regla de oro de static</h3>
+<p>Un método <code>static</code> no tiene <code>this</code>, así que <b>no puede tocar los atributos de instancia</b> directamente: ¿de cuál de todos los objetos serían? Si lo intentas:</p>
+<pre class="java">public class DemoContextoEstatico {
+
+    private String nombre = "Ana";
+
+    public static void main(String[] args) {
+        System.out.println(nombre);
+    }
+}</pre>
+<pre class="salida">DemoContextoEstatico.java:6: error: non-static variable nombre cannot be referenced from a static context
+        System.out.println(nombre);
+                           ^
+1 error
+error: compilation failed</pre>
+<p>«La variable no estática <code>nombre</code> no se puede usar desde un contexto estático». Es el error más común de quien empieza: escribe todo en <code>main</code> y luego quiere usar un atributo. La solución es crear un objeto (<code>new DemoContextoEstatico().nombre</code>) o, si de verdad es un dato compartido, hacerlo <code>static</code>. Lo contrario sí está permitido: un método de instancia puede usar cosas <code>static</code> sin problema, como hace <code>Tablero.reiniciar()</code> con <code>VACIA</code>.</p>
+
+<h3>Un contador compartido</h3>
+<p>Los campos <code>static</code> que <b>sí cambian</b> son menos comunes, pero conviene verlos una vez para entender la diferencia entre «uno por objeto» y «uno para todos»:</p>
+<pre class="java">public class DemoStatic {
+
+    public static void main(String[] args) {
+        System.out.println("Inicio de main. Tickets creados: " + Ticket.getCreados());
+        Ticket a = new Ticket("Ana");
+        Ticket b = new Ticket("Luis");
+        Ticket c = new Ticket("Marta");
+        System.out.println(a.describir());
+        System.out.println(b.describir());
+        System.out.println(c.describir());
+        System.out.println("Tickets creados: " + Ticket.getCreados());
+        System.out.println("Precio con IVA de 100: " + Ticket.conIva(100.0));
+        System.out.println("Moneda: " + Ticket.MONEDA);
+    }
+}
+
+class Ticket {
+
+    /** Constante: una sola, compartida, que nunca cambia. */
+    public static final String MONEDA = "GTQ";
+    /** Contador compartido por TODOS los tickets. */
+    private static int creados = 0;
+    /** Se calcula una vez, cuando Java carga la clase. */
+    private static final double IVA = calcularIva();
+
+    /** De cada ticket: su propio numero y su propio cliente. */
+    private final int numero;
+    private final String cliente;
+
+    public Ticket(String cliente) {
+        creados++;
+        this.numero = creados;
+        this.cliente = cliente;
+    }
+
+    private static double calcularIva() {
+        System.out.println("  [Java carga la clase Ticket y calcula el IVA]");
+        return 0.12;
+    }
+
+    public static int getCreados() {
+        return creados;
+    }
+
+    public static double conIva(double monto) {
+        return Math.round(monto * (1 + IVA) * 100) / 100.0;   // redondeado a centavos
+    }
+
+    public String describir() {
+        return "Ticket #" + numero + " de " + cliente;
+    }
+}</pre>
+<pre class="salida">  [Java carga la clase Ticket y calcula el IVA]
+Inicio de main. Tickets creados: 0
+Ticket #1 de Ana
+Ticket #2 de Luis
+Ticket #3 de Marta
+Tickets creados: 3
+Precio con IVA de 100: 112.0
+Moneda: GTQ</pre>
+<p>Tres cosas para observar:</p>
+<ol>
+<li><code>creados</code> es uno solo: cada constructor lo incrementa, y por eso cada ticket recibe un número distinto. En cambio <code>numero</code> y <code>cliente</code> son de cada ticket.</li>
+<li>La línea entre corchetes salió <b>antes</b> de «Inicio de main». ¿Por qué? Para imprimir esa frase, Java primero tiene que calcular <code>Ticket.getCreados()</code>; como es la primera vez que se usa la clase <code>Ticket</code>, la <b>carga</b> en ese momento, y al cargarla inicializa sus campos <code>static</code>, en el orden en que están escritos: <code>MONEDA</code>, <code>creados</code> y luego <code>IVA</code>, que llama a <code>calcularIva()</code>. Esa inicialización ocurre <b>una sola vez</b> en toda la ejecución.</li>
+<li><code>conIva</code> es <code>static</code> porque solo necesita el monto y la constante <code>IVA</code>.</li>
+</ol>
+
+<h3>Inicialización estática en el Totito: la fuente del juego</h3>
+<p>En <code>Tema</code> hay dos líneas seguidas que usan justo ese mecanismo:</p>
+<pre class="java">private static final List&lt;String&gt; FAMILIAS = Arrays.asList(
+        "Nunito", "Poppins", "Montserrat", "Segoe UI", "Helvetica Neue",
+        "Ubuntu", "Arial", "Liberation Sans", "DejaVu Sans");
+
+private static final String FAMILIA = elegirFamilia();</pre>
+<p><code>elegirFamilia()</code> le pregunta al sistema operativo qué fuentes tiene instaladas y elige la primera de la lista que exista. Esa pregunta es <b>lenta</b> (el sistema revisa cientos de fuentes). Como <code>FAMILIA</code> es <code>static final</code>, se hace <b>una sola vez</b>, cuando se carga <code>Tema</code>, y luego todas las llamadas a <code>Tema.fuente(...)</code> (hay decenas por cada repintado de la pantalla) usan el resultado guardado. Si fuera un cálculo dentro de <code>fuente()</code>, el juego le preguntaría al sistema operativo por las fuentes cada vez que dibuja un texto.</p>
+<p>Y el <b>orden</b> importa más de lo que parece. Mira qué pasa si se invierten esas dos declaraciones:</p>
+<pre class="java">import java.util.Arrays;
+import java.util.List;
+
+public class DemoOrdenEstatico {
+
+    public static void main(String[] args) {
+        System.out.println("Bien ordenado:  " + TemaBien.FAMILIA);
+        System.out.println("Mal ordenado:   " + TemaMal.FAMILIA);
+    }
+}
+
+class TemaBien {
+    private static final List&lt;String&gt; FAMILIAS = Arrays.asList("Nunito", "Arial");
+    static final String FAMILIA = elegir();      // FAMILIAS ya tiene valor
+
+    private static String elegir() {
+        try {
+            for (String familia : FAMILIAS) {
+                return familia;                  // la primera de la lista
+            }
+        } catch (RuntimeException e) {
+            // si algo falla, la generica
+        }
+        return "SansSerif";
+    }
+}
+
+class TemaMal {
+    static final String FAMILIA = elegir();      // se ejecuta ANTES de la linea de abajo
+    private static final List&lt;String&gt; FAMILIAS = Arrays.asList("Nunito", "Arial");
+
+    private static String elegir() {
+        try {
+            for (String familia : FAMILIAS) {    // FAMILIAS todavia es null
+                return familia;
+            }
+        } catch (RuntimeException e) {
+            // el NullPointerException cae aqui, en silencio
+        }
+        return "SansSerif";
+    }
+}</pre>
+<pre class="salida">Bien ordenado:  Nunito
+Mal ordenado:   SansSerif</pre>
+<p>En <code>TemaMal</code>, cuando se calcula <code>FAMILIA</code>, la lista <code>FAMILIAS</code> todavía tiene su valor por defecto, <code>null</code>. Recorrer <code>null</code> provoca un <code>NullPointerException</code>, que el <code>catch</code> atrapa en silencio, y el programa termina usando la fuente genérica <b>sin avisar</b>. El juego seguiría funcionando, pero se vería con otra letra y nadie sabría por qué. Por eso en <code>Tema</code> la lista va primero. (El <code>try</code>/<code>catch</code> lo estudiarás en el capítulo 26.)</p>
+
+<div class="caja cuidado"><b>static que cambia = variable global</b> Un campo <code>static</code> que no es <code>final</code> lo puede modificar cualquier parte del programa, en cualquier momento: es una <b>variable global</b>, y los errores que provoca son difíciles de rastrear («¿quién cambió esto?»). Fíjate en un dato: en todo el Totito <b>no hay ni un solo campo <code>static</code> que cambie</b>; todos son <code>static final</code>. El marcador, por ejemplo, vive en cada <code>Partida</code> (<code>victorias</code>, <code>empates</code>) y no en un contador global. Usa <code>static</code> para constantes y para métodos-herramienta; para datos que cambian, usa objetos.</div>
+
+<h2>6. Clases de utilidades: solo static, y nadie puede crearlas</h2>
+<p>Algunas clases del Totito son puras cajas de herramientas: todo lo que tienen es <code>static</code>. <code>Dibujo</code> (capítulo 41) empieza así:</p>
+<pre class="java">public final class Dibujo {
+
+    private Dibujo() {
+    }</pre>
+<p>Un constructor <b>privado y vacío</b>. Parece no hacer nada, y esa es su función: impedir que alguien escriba <code>new Dibujo()</code>. Un objeto <code>Dibujo</code> no tendría sentido: no guarda ningún dato; sus métodos (<code>preparar</code>, <code>trazoNeon</code>, <code>dibujarFicha</code>…) se usan como <code>Dibujo.trazoNeon(...)</code>. Si no estuviera ese constructor, Java regalaría el de por defecto (público), y alguien podría crear objetos <code>Dibujo</code> inútiles, o confundirse pensando que hace falta uno para dibujar. <code>Tema</code> e <code>Iconos</code> siguen el mismo patrón. La palabra <code>final</code> delante de <code>class</code> la verás en la sección siguiente.</p>
+<p>El JDK hace exactamente lo mismo con <code>Math</code> (de donde sale el <code>Math.max</code> que usa <code>Tema.conAlfa</code>) y con <code>Arrays</code> (el <code>Arrays.asList</code> de <code>Tema</code> y el <code>java.util.Arrays.fill</code> de <code>PanelTablero</code>): no puedes hacer <code>new Math()</code>.</p>
+
+<div class="caja consejo"><b>En otros programas</b> Una clase <code>Formatos</code> con <code>Formatos.moneda(123.5)</code> que devuelve <code>"Q123.50"</code>; una clase <code>Validaciones</code> con <code>Validaciones.esCorreo(texto)</code> y <code>Validaciones.esDpiValido(numero)</code>; una clase <code>Fechas</code> con <code>Fechas.edad(fechaNacimiento)</code> para el sistema de una escuela. Si un método solo transforma lo que recibe en lo que devuelve, sin recordar nada, es un buen candidato a herramienta <code>static</code>.</div>
+
+<h2>7. final: «esto ya no cambia»</h2>
+
+<h3>La idea</h3>
+<p>Hay cosas que se escriben con lápiz y cosas que se escriben con pluma. El número de DPI de una persona se escribe con pluma: una vez asignado, no cambia. La edad, en cambio, se escribe con lápiz. <code>final</code> es la pluma de Java: un valor <code>final</code> se asigna <b>exactamente una vez</b>, y el compilador vigila que nadie lo intente cambiar después.</p>
+
+<h3>final en atributos</h3>
+<p>En <code>Jugador</code>:</p>
+<pre class="java">private final String nombre;
+private final char ficha;</pre>
+<p>Un jugador no cambia de nombre ni de ficha en medio de la partida. Con <code>final</code>, eso deja de ser una costumbre y se vuelve una <b>garantía</b>: el compilador exige que cada atributo <code>final</code> reciba valor <b>una vez</b>, ya sea en su declaración o en <b>todos</b> los constructores, y prohíbe cualquier asignación posterior. Si algún día un constructor nuevo se olvida de asignar <code>nombre</code>, el programa no compila. Así es como <code>Jugador</code> se vuelve <b>inmutable</b> (capítulo 19).</p>
+<p>Lo más útil de <code>final</code> es lo que <b>comunica</b>. Vuelve a mirar los atributos de <code>Partida</code> del principio del capítulo:</p>
+<table class="tabla">
+<tr><th>Atributo</th><th>¿final?</th><th>Qué te dice</th></tr>
+<tr><td><code>tablero</code>, <code>jugadores</code>, <code>modo</code>, <code>ia</code>, <code>victorias</code></td><td>sí</td><td>Se fijan al crear la serie de partidas y la acompañan hasta el final.</td></tr>
+<tr><td><code>empates</code>, <code>turno</code>, <code>estado</code>, <code>ganador</code></td><td>no</td><td>Cambian durante el juego: son lo que hay que vigilar al buscar un error.</td></tr>
+</table>
+<p>Sin leer un solo método ya sabes qué partes de la partida se mueven. Un detalle curioso: <code>ia</code> es <code>final</code> aunque a veces valga <code>null</code>:</p>
+<pre class="java">this.ia = modo == Modo.CONTRA_IA ? new IA_Minimax(jugador2.getFicha(), jugador1.getFicha()) : null;</pre>
+<p><code>final</code> no prohíbe <code>null</code>; prohíbe <b>cambiar</b> el valor. En el modo de dos jugadores, <code>ia</code> es <code>null</code> para siempre, y eso es justo lo que se quiere.</p>
+
+<h3>Cuidado: final fija la referencia, no el objeto</h3>
+<p>Esta es la confusión más frecuente con <code>final</code>. En <code>Partida</code>:</p>
+<pre class="java">private final Tablero tablero = new Tablero();
+private final int[] victorias = new int[2];</pre>
+<p>y sin embargo, más abajo, se hace <code>tablero.reiniciar()</code> y <code>victorias[turno]++</code>. ¿No que eran <code>final</code>? Recuerda del capítulo 18 que una variable de objeto guarda una <b>referencia</b> (una flecha hacia el objeto). <code>final</code> congela <b>la flecha</b>: <code>tablero</code> apuntará siempre al mismo tablero, nunca a otro. Pero el tablero en sí puede cambiar por dentro. Es como una casa con dirección fija: la dirección no cambia, pero los muebles de adentro sí se pueden mover. Si quieres que el <b>contenido</b> tampoco cambie, la clase misma tiene que diseñarse inmutable, como <code>Jugador</code> (todos sus atributos <code>final</code> y de tipos que no cambian, y ningún método que los modifique).</p>
+
+<h3>final en variables locales</h3>
+<p>También se puede usar en una variable dentro de un método. Si intentas reasignarla:</p>
+<pre class="java">public class DemoFinal {
+
+    public static void main(String[] args) {
+        final int limite = 14;
+        limite = 20;
+        System.out.println(limite);
+    }
+}</pre>
+<pre class="salida">DemoFinal.java:5: error: cannot assign a value to final variable limite
+        limite = 20;
+        ^
+1 error
+error: compilation failed</pre>
+<p>«No se puede asignar un valor a la variable final <code>limite</code>». En el Totito aparece en <code>Dibujo.trazoNeon</code>: <code>final int capas = 6;</code>, que deja claro que el número de capas del halo no cambia durante el bucle. Y en <code>JuegoMain</code> (capítulo 33) hay un uso con un motivo técnico importante:</p>
+<pre class="java">final int f = fila;
+final int c = columna;
+boton.addActionListener((ActionEvent e) -> manejarClicCasilla(f, c));</pre>
+<p>La lambda (capítulo 25) se ejecutará mucho después, cuando el usuario haga clic, y Java solo le deja usar variables que no cambien. <code>fila</code> sí cambia (es la variable del <code>for</code>), así que se copia a <code>f</code>, que es <code>final</code>. Lo entenderás del todo en el capítulo 25.</p>
+
+<h3>Constantes: static + final</h3>
+<p>Juntas, las dos palabras forman una <b>constante</b>: un solo valor (<code>static</code>) que nunca cambia (<code>final</code>). Por convención se escriben en <code>MAYUSCULAS_CON_GUIONES_BAJOS</code>: <code>Tablero.VACIA</code>, <code>Tema.ROSA</code>, <code>PantallaJuego.PAUSA_IA_MS</code>. Así, cuando lees <code>PAUSA_IA_MS</code> en medio del código, sabes de inmediato que es una constante y dónde buscarla. Por qué conviene sacar los números sueltos a constantes con nombre lo verás en el capítulo 27.</p>
+
+<h3>final en clases y métodos</h3>
+<p><code>public final class Tema</code> significa que <b>nadie puede heredar</b> de <code>Tema</code>: no puede existir una clase <code>TemaOscuro extends Tema</code>. Para una clase de utilidades tiene todo el sentido: no hay nada que extender. <code>Dibujo</code> e <code>Iconos</code> también son <code>final</code>, y en el JDK lo es <code>String</code>, para que nadie pueda crear un «String falso» que se comporte distinto. Un <b>método</b> <code>final</code>, por su parte, no puede ser reemplazado por las clases hijas; el Totito no usa ninguno, pero lo entenderás bien cuando veas herencia y sobrescritura en los capítulos 22 y 23.</p>
+
+<table class="tabla">
+<tr><th>Dónde va <code>final</code></th><th>Qué prohíbe</th><th>Ejemplo del Totito</th></tr>
+<tr><td>Atributo</td><td>Asignarlo más de una vez</td><td><code>Jugador.nombre</code>, <code>Partida.tablero</code></td></tr>
+<tr><td>Variable local</td><td>Reasignarla</td><td><code>final int capas = 6;</code> en <code>Dibujo</code></td></tr>
+<tr><td><code>static final</code></td><td>Es una constante</td><td><code>Tablero.VACIA</code>, <code>Tema.ROSA</code></td></tr>
+<tr><td>Clase</td><td>Heredar de ella</td><td><code>final class Tema</code>, <code>Dibujo</code>, <code>Iconos</code></td></tr>
+<tr><td>Método</td><td>Sobrescribirlo en una hija</td><td>(no se usa en el Totito)</td></tr>
+</table>
+
+<div class="caja consejo"><b>Pon final por defecto</b> Una buena costumbre es declarar <code>final</code> todo atributo que no tengas un motivo claro para cambiar, y quitarlo solo cuando haga falta. Cuantas menos cosas cambian, menos lugares hay donde puede esconderse un error. El Totito lo hace así: de los nueve atributos de instancia de <code>Partida</code>, cinco son <code>final</code>, y los cuatro que no lo son son justo los que el juego necesita cambiar.</div>
+
+<h2>Todo junto: leer el principio de una clase</h2>
+<p>Con lo de este capítulo, el principio de <code>PantallaJuego</code> (capítulo 59) se lee de corrido:</p>
+<pre class="java">private static final int PAUSA_IA_MS = 450;
+private static final int PAUSA_RESULTADO_MS = 1200;
+
+private final Navegacion navegacion;
+private final PanelMarcador marcador = new PanelMarcador();
+private final Rotulo turno = Rotulo.titulo("", 26f, Tema.TEXTO, Tema.TEXTO, 590, 44);
+private final PanelTablero tablero = new PanelTablero(100);
+
+private Partida partida;
+private Timer pendiente;</pre>
+<ul>
+<li>Dos <b>constantes</b> privadas (<code>static final</code>): tiempos que no cambian y que solo usa esta pantalla.</li>
+<li>Cuatro atributos <b><code>final</code></b>: la navegación (llega por el constructor) y tres componentes que se crean en la propia declaración (uno de ellos con una <b>fábrica</b>, <code>Rotulo.titulo</code>). La pantalla siempre muestra el mismo marcador, el mismo letrero y el mismo tablero.</li>
+<li>Dos atributos que <b>cambian</b>: la partida que se está mostrando (cambia cada vez que empiezas una nueva) y el temporizador pendiente, que a veces es <code>null</code>.</li>
+</ul>
+<p>Y su constructor empieza con <code>super(navegacion);</code> (capítulo 22) seguido de <code>this.navegacion = navegacion;</code>. Ya no hay ninguna palabra misteriosa.</p>
+
+<h2>Resumen</h2>
+<ul>
+<li>El <b>constructor</b> se llama como la clase, no tiene tipo de retorno y se ejecuta una vez al hacer <code>new</code>; su trabajo es dejar el objeto completo y válido. Si no escribes ninguno, Java pone uno vacío; si escribes alguno, ese regalo desaparece.</li>
+<li><code>new</code> reserva memoria, pone valores por defecto (0, <code>false</code>, <code>null</code>), ejecuta las inicializaciones de los atributos y luego el cuerpo del constructor.</li>
+<li><code>this</code> es «el objeto que está ejecutando este código»: sirve para distinguir atributo de parámetro, para pasarse a otro objeto y para devolverse (<code>return this</code>).</li>
+<li>La <b>sobrecarga de constructores</b> con <code>this(...)</code> (primera línea) deja la lógica en un solo constructor completo; <code>Tarjeta(Color)</code> delega en <code>Tarjeta(Color, int)</code>.</li>
+<li>Un <b>constructor privado</b> con <b>métodos de fábrica</b> (<code>BotonNeon.menu</code>, <code>Rotulo.titulo</code>) da nombres claros a cada forma de crear el objeto y evita repetir datos.</li>
+<li><code>static</code> es de la clase, no de cada objeto: constantes como <code>Tablero.VACIA</code> y herramientas como <code>Tema.conAlfa</code> o <code>Partida.buscarLineaGanadora</code>. Un método <code>static</code> no tiene <code>this</code>. Los campos <code>static</code> se inicializan una vez, en orden, al cargar la clase.</li>
+<li>Las clases de utilidades (<code>Dibujo</code>, <code>Tema</code>, <code>Iconos</code>) tienen constructor privado y son <code>final</code>.</li>
+<li><code>final</code> se asigna una sola vez: en atributos comunica qué no cambia; en una referencia fija la flecha, no el contenido del objeto; en una clase impide heredarla.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Tienda</b>: <code>Producto</code> con <code>codigo</code> y <code>nombre</code> <code>final</code> (no cambian) y <code>precio</code> y <code>existencias</code> sin <code>final</code> (cambian); un constructor que rechaza precios negativos; una constante <code>static final double IVA = 0.12</code>.</li>
+<li><b>Escuela</b>: <code>Alumno</code> con dos constructores, <code>Alumno(nombre)</code> y <code>Alumno(nombre, grado)</code>, el primero delegando con <code>this(...)</code>; una clase de utilidades <code>Notas</code> con <code>Notas.promedio(int[] notas)</code> estático.</li>
+<li><b>Banco</b>: constructor privado y fábricas <code>Cuenta.deAhorro(titular)</code> y <code>Cuenta.monetaria(titular)</code>; el número de cuenta <code>final</code>; nada de saldos guardados en campos <code>static</code>, porque cada cuenta tiene el suyo.</li>
+<li><b>Otro juego</b>: en un Conecta 4, <code>static final int FILAS = 6, COLUMNAS = 7</code>; un <code>Tablero</code> cuyo constructor llama a <code>reiniciar()</code> como el del Totito; un método <code>static</code> que busca cuatro en línea recibiendo solo el tablero.</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Escribe una clase <code>Libro</code> con <code>titulo</code> y <code>autor</code> <code>final</code> y un constructor que los reciba. Desde <code>main</code>, intenta crear un libro con <code>new Libro()</code> y copia el mensaje de error del compilador. Explica con tus palabras qué dice <i>required</i> y qué dice <i>found</i>.</li>
+<li>Agrega a <code>Libro</code> un tercer atributo <code>paginas</code> y dos constructores: uno con los tres datos y otro solo con título y autor que delegue con <code>this(...)</code> poniendo 0 páginas. Pon un <code>System.out.println</code> en cada uno y comprueba en qué orden se ejecutan. Pista: es el mismo experimento que <code>DemoConstructores</code>.</li>
+<li>Crea una clase de utilidades <code>Conversor</code> (constructor privado, clase <code>final</code>) con un método estático <code>quetzalesADolares(double q)</code> y una constante <code>TIPO_DE_CAMBIO</code>. Úsala desde <code>main</code> sin crear ningún objeto. Luego intenta escribir <code>new Conversor()</code> y lee el error.</li>
+<li>Haz una clase <code>Pedido</code> con un contador <code>static</code> que dé a cada pedido un número correlativo (1, 2, 3…), como <code>Ticket</code>. Después explica por escrito por qué en un sistema real de una tienda ese número no debería guardarse en un campo <code>static</code>. Pista: piensa qué pasa al cerrar y volver a abrir el programa, o si hay dos cajas registradoras.</li>
+<li>Reto: diseña una clase <code>Mensaje</code> con constructor privado y tres fábricas, <code>Mensaje.exito(texto)</code>, <code>Mensaje.error(texto)</code> y <code>Mensaje.aviso(texto)</code>, más dos métodos encadenables <code>conTitulo(String)</code> y <code>conIcono(String)</code> que devuelvan <code>this</code>. Imprime un mensaje construido en una sola expresión encadenada, como hace <code>PantallaInstrucciones</code> con su <code>Rotulo</code>.</li>
+</ol>
+</div>
+</section>

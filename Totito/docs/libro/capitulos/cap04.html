@@ -1,0 +1,248 @@
+<section class="capitulo" id="cap04">
+<h1><span class="num">Capítulo 4</span>Instalar las herramientas</h1>
+<p class="entrada">En este capítulo instalas, con cuatro comandos de PowerShell, todo lo necesario para programar el Totito: el kit de desarrollo de Java, Git, el comando de GitHub y el editor NetBeans. Además vas a entender qué hace cada instalación por dentro (en especial PATH y JAVA_HOME), cómo comprobar que todo quedó bien y qué hacer si algo falla.</p>
+
+<h2>Qué vas a instalar y para qué</h2>
+<table class="tabla">
+<tr><th>Herramienta</th><th>Qué es</th><th>Lo usas por primera vez en</th></tr>
+<tr><td><b>JDK 21</b> (Eclipse Temurin)</td><td>El <i>Java Development Kit</i>, «kit de desarrollo de Java». Incluye <code>javac</code>, el compilador que traduce tu código, y <code>java</code>, el programa que lo ejecuta, más herramientas como <code>jshell</code>, <code>jar</code> y <code>jpackage</code>.</td><td>Capítulo 5 (compilar) y capítulo 11 (entender cómo funciona).</td></tr>
+<tr><td><b>Git</b></td><td>El sistema que guarda el historial de cambios del proyecto.</td><td>Capítulo 7.</td></tr>
+<tr><td><b>GitHub CLI</b> (<code>gh</code>)</td><td>El comando para usar GitHub (crear repositorios, publicar versiones) desde PowerShell.</td><td>Capítulo 7.</td></tr>
+<tr><td><b>Apache NetBeans 25</b></td><td>Un <i>entorno de desarrollo integrado</i> (IDE): editor de código que además compila, ejecuta, depura y avisa de errores mientras escribes. Trae incluido <b>Maven</b>, la herramienta que organiza la compilación del proyecto.</td><td>Capítulo 5.</td></tr>
+</table>
+<h3>¿Por qué Temurin y por qué la versión 21?</h3>
+<p>Java no es un único programa de una única empresa. El lenguaje es abierto, y varias organizaciones publican su propia «distribución» del JDK, todas compatibles entre sí: Oracle, Microsoft, Amazon, Eclipse… <b>Eclipse Temurin</b>, de la fundación Eclipse Adoptium, es gratuita para cualquier uso (también comercial), está muy probada y es una de las más usadas. Por eso la elegimos.</p>
+<p>Java saca una versión nueva cada seis meses, pero solo algunas son <b>LTS</b> (<i>Long-Term Support</i>, «soporte a largo plazo»): versiones que reciben correcciones de seguridad durante muchos años. <b>Java 21 es LTS</b>, así que es una base estable para aprender: lo que escribas hoy seguirá funcionando igual dentro de varios años. El proyecto Totito está configurado para funcionar con Java 17 o cualquier versión más nueva, así que el JDK 21 le sobra (verás por qué en el capítulo 5).</p>
+
+<h2>winget: el instalador de programas de Windows</h2>
+<p>Normalmente, para instalar un programa buscas su página web, descargas un instalador, lo abres y haces clic en «Siguiente» varias veces. <b>winget</b> (de <i>Windows Package Manager</i>, «administrador de paquetes de Windows») hace todo eso con un solo comando: sabe de dónde descargar cada programa, comprueba que la descarga no esté alterada y ejecuta el instalador con las opciones adecuadas. Piensa en él como una tienda de aplicaciones que se usa escribiendo.</p>
+<p>Cada programa del catálogo de winget es un <b>paquete</b> con un <b>identificador</b> (ID) único, con la forma <code>Editor.Producto</code>: <code>Git.Git</code>, <code>GitHub.cli</code>, <code>Apache.NetBeans</code>. El catálogo es público y lo revisan personas antes de aceptar cada paquete.</p>
+<h3>Comprobar que tienes winget</h3>
+<p>Abre PowerShell (capítulo 3) y escribe:</p>
+<pre class="ps">winget --version</pre>
+<pre class="salida">v1.29.380</pre>
+<p>Si ves un número de versión (el tuyo será distinto), lo tienes. Si en cambio ves esto:</p>
+<pre class="salida">winget : El término 'winget' no se reconoce como nombre de un cmdlet, función, archivo de script o programa ejecutable.</pre>
+<p>es que falta o está desactualizado el paquete que lo contiene, llamado <b>Instalador de aplicación</b> (<i>App Installer</i>). Para instalarlo:</p>
+<ol>
+<li>Abre la <b>Microsoft Store</b> desde el menú Inicio.</li>
+<li>Busca <b>Instalador de aplicación</b> (de Microsoft Corporation).</li>
+<li>Haz clic en <b>Obtener</b> o <b>Actualizar</b>.</li>
+<li>Cierra PowerShell, vuelve a abrirlo y repite <code>winget --version</code>.</li>
+</ol>
+<p>Si tu Windows es anterior a Windows 10 22H2, primero actualízalo (capítulo 2).</p>
+<h3>Buscar antes de instalar</h3>
+<p>Antes de instalar, conviene ver qué hay en el catálogo. Por ejemplo:</p>
+<pre class="ps">winget search Temurin</pre>
+<pre class="salida">Nombre                                     Id                              Versión
+--------------------------------------------------------------------------------------
+Eclipse Temurin JDK with Hotspot 21        EclipseAdoptium.Temurin.21.JDK  21.0.8.9
+Eclipse Temurin JRE with Hotspot 21        EclipseAdoptium.Temurin.21.JRE  21.0.8.9
+Eclipse Temurin JDK with Hotspot 17        EclipseAdoptium.Temurin.17.JDK  17.0.16.8
+...</pre>
+<p>Fíjate en que hay un <b>JDK</b> y un <b>JRE</b>. El JRE (<i>Java Runtime Environment</i>) solo sirve para <i>ejecutar</i> programas Java; el JDK además permite <i>crearlos</i>, porque incluye el compilador. Necesitas el JDK. Este es el motivo de que el libro te dé siempre el ID exacto: con nombres tan parecidos, es fácil instalar el equivocado.</p>
+<div class="caja consejo"><b>La primera vez, winget pide aceptar unos términos.</b> Al usar winget por primera vez puede preguntarte si aceptas los contratos de los orígenes de paquetes (el catálogo de la comunidad y la Microsoft Store), con una pregunta que se responde con <b>Y</b> (sí) o <b>N</b> (no). Escribe <code>Y</code> y presiona Enter. Solo lo pregunta una vez.</div>
+
+<h2>Instalar el JDK</h2>
+<pre class="ps">winget install --id EclipseAdoptium.Temurin.21.JDK -e</pre>
+<p>Desarmemos el comando, palabra por palabra:</p>
+<table class="tabla">
+<tr><th>Parte</th><th>Qué significa</th></tr>
+<tr><td><code>winget</code></td><td>El programa al que le hablas.</td></tr>
+<tr><td><code>install</code></td><td>La acción: instalar. Otras acciones son <code>search</code> (buscar), <code>list</code> (ver lo instalado), <code>upgrade</code> (actualizar) y <code>uninstall</code> (desinstalar).</td></tr>
+<tr><td><code>--id</code></td><td>Un parámetro que dice «lo que viene a continuación es un identificador de paquete», no un nombre aproximado. Los parámetros largos empiezan con dos guiones.</td></tr>
+<tr><td><code>EclipseAdoptium.Temurin.21.JDK</code></td><td>El ID: editor Eclipse Adoptium, producto Temurin, versión 21, el JDK (no el JRE).</td></tr>
+<tr><td><code>-e</code></td><td>Abreviatura de <code>--exact</code>: «busca exactamente este ID, respetando mayúsculas y minúsculas». Sin <code>-e</code>, winget busca IDs que <i>contengan</i> el texto, y si hay varios parecidos podría quejarse o elegir otro. Con <code>-e</code> no hay ambigüedad.</td></tr>
+</table>
+<p>Al presionar Enter verás algo parecido a esto (los textos exactos cambian con la versión de winget):</p>
+<pre class="salida">Se encontró Eclipse Temurin JDK with Hotspot 21 [EclipseAdoptium.Temurin.21.JDK] Versión 21.0.8.9
+Este paquete tiene una licencia concedida por su propietario.
+Microsoft no es responsable de los paquetes de terceros ni concede ninguna licencia para ellos.
+Descargando https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk_x64_windows_hotspot_21.0.8_9.msi
+  ██████████████████████████████   165 MB /  165 MB
+Se comprobó correctamente el hash del instalador
+Iniciando la instalación del paquete...
+Instalado correctamente</pre>
+<p>A mitad del proceso, Windows mostrará la ventana del <b>Control de cuentas de usuario</b> preguntando si permites que el instalador haga cambios. Comprueba que el editor sea Eclipse Adoptium y responde <b>Sí</b>. Si respondes No, la instalación se cancela (puedes repetir el comando).</p>
+<p>La línea «Se comprobó correctamente el hash del instalador» merece una explicación: un <b>hash</b> es una especie de huella digital de un archivo, calculada a partir de todo su contenido. El catálogo de winget guarda la huella del instalador original; al terminar la descarga, winget calcula la huella del archivo que recibió y las compara. Si alguien hubiera alterado el instalador, aunque fuera un solo byte, las huellas no coincidirían y winget se negaría a instalarlo.</p>
+<h3>Qué hizo el instalador del JDK por dentro</h3>
+<ul>
+<li><b>Copió el JDK</b> en una carpeta como <code>C:\Program Files\Eclipse Adoptium\jdk-21.0.8.9-hotspot\</code> (los números serán los de tu versión). Dentro hay una subcarpeta <code>bin</code> con <code>java.exe</code>, <code>javac.exe</code> y las demás herramientas.</li>
+<li><b>Agregó esa carpeta <code>bin</code> al PATH</b>, para que puedas escribir <code>java</code> desde cualquier carpeta.</li>
+<li><b>Creó la variable <code>JAVA_HOME</code></b>, que apunta a la carpeta del JDK.</li>
+<li><b>Asoció los archivos <code>.jar</code></b> con Java, para que se abran con doble clic (te servirá en el capítulo 63).</li>
+</ul>
+<p>Enseguida verás qué son PATH y JAVA_HOME y cómo comprobarlos. Antes, instala lo demás.</p>
+
+<h2>Instalar Git y GitHub CLI</h2>
+<pre class="ps">winget install --id Git.Git -e
+winget install --id GitHub.cli -e</pre>
+<p>Misma estructura: <code>Git.Git</code> es Git para Windows (el editor y el producto se llaman igual) y <code>GitHub.cli</code> es la herramienta de línea de comandos de GitHub, cuyo comando se llama <code>gh</code>. Fíjate en las mayúsculas: <code>GitHub.cli</code>, con <code>cli</code> en minúsculas. Con <code>-e</code>, una mayúscula de más o de menos hace que winget no encuentre el paquete.</p>
+<p>Git para Windows trae, además del comando <code>git</code>, una terminal propia llamada <i>Git Bash</i>. No la necesitas: en este libro todo se hace desde PowerShell.</p>
+<div class="caja consejo"><b>La configuración de Git viene después.</b> El instalador deja Git con sus opciones de fábrica. Tu nombre, tu correo, el editor que abrirá Git y el nombre de la rama principal (<code>main</code>) se configuran en el capítulo 7, cuando entiendas para qué sirve cada cosa.</div>
+
+<h2>Instalar NetBeans</h2>
+<pre class="ps">winget install --id Apache.NetBeans -e --skip-dependencies</pre>
+<p>El ID es <code>Apache.NetBeans</code> y la versión que instala winget es la 25. Este comando tiene un parámetro más, <code>--skip-dependencies</code> («saltar dependencias»), y conviene entender por qué.</p>
+<p>Una <b>dependencia</b> es otro programa que un programa necesita para funcionar. NetBeans está escrito en Java, así que necesita un JDK para arrancar. El paquete de NetBeans en winget declara como dependencia otra distribución de Java (Liberica JDK 23) y, si no le dices nada, la instala junto con NetBeans. Pero tú ya tienes un JDK, el Temurin 21 que acabas de instalar, y NetBeans 25 funciona perfectamente con él. Tener dos JDK distintos en la misma computadora no rompe nada, pero confunde: según el orden del PATH, al escribir <code>java</code> podría responder uno u otro, y al principio es mejor que haya uno solo. Por eso le pides a winget que no instale la dependencia.</p>
+<div class="caja cuidado"><b>El orden importa: primero el JDK, después NetBeans.</b> Con <code>--skip-dependencies</code>, el instalador de NetBeans busca un JDK que ya esté en la computadora. Si instalas NetBeans antes que el JDK, no encontrará ninguno y fallará o NetBeans no arrancará. Si eso te pasa, instala el JDK y luego repite la instalación de NetBeans.</div>
+<p>Si tu versión de winget es antigua y responde que no reconoce el argumento <code>--skip-dependencies</code>, quítalo: <code>winget install --id Apache.NetBeans -e</code>. Se instalará también Liberica JDK 23; más abajo, en «Problemas típicos», verás cómo comprobar cuál de los dos responde y por qué no es grave.</p>
+<p>La descarga de NetBeans es la más pesada (unos 400 MB) y su instalación tarda unos minutos. Puede que no veas ventana alguna mientras tanto: winget lo instala en modo silencioso. Espera a que aparezca «Instalado correctamente».</p>
+
+<h2>Cerrar y volver a abrir PowerShell</h2>
+<p>Este paso es pequeño pero imprescindible: <b>cierra la ventana de PowerShell y abre una nueva</b>.</p>
+<p>¿Por qué? Cuando se abre un programa, Windows le entrega una <b>copia</b> de las variables de entorno (entre ellas, el PATH) tal como están en ese instante. Los instaladores modificaron el PATH «oficial» de Windows, pero tu ventana de PowerShell sigue trabajando con la copia vieja, tomada cuando la abriste, en la que todavía no existen Java, Git ni <code>gh</code>. Una ventana nueva recibe una copia nueva, ya actualizada. Es como una fotocopia de una lista de teléfonos: si alguien agrega un número al original, tu fotocopia no se entera; tienes que sacar otra.</p>
+<div class="caja cuidado"><b>«No se reconoce como nombre de un cmdlet» justo después de instalar.</b> Es el síntoma clásico de no haber reabierto PowerShell. Y ojo: si usas Windows Terminal, cerrar una pestaña no basta en algunos casos; cierra la ventana completa. Si aun así no funciona, cierra sesión en Windows y vuelve a entrar.</div>
+
+<h2>Verificar que todo quedó bien</h2>
+<p>En la ventana nueva de PowerShell, escribe estos cuatro comandos, uno por uno:</p>
+<pre class="ps">java -version
+javac -version
+git --version
+gh --version</pre>
+<p>Deberías ver algo así (con tus números de versión, que serán iguales o más nuevos):</p>
+<pre class="salida">openjdk version "21.0.8" 2025-07-15 LTS
+OpenJDK Runtime Environment Temurin-21.0.8+9 (build 21.0.8+9-LTS)
+OpenJDK 64-Bit Server VM Temurin-21.0.8+9 (build 21.0.8+9-LTS, mixed mode, sharing)
+
+javac 21.0.8
+
+git version 2.55.0.windows.5
+
+gh version 2.102.0 (2026-09-30)
+https://github.com/cli/cli/releases/tag/v2.102.0</pre>
+<p>Lo que dice cada línea de <code>java -version</code>, porque vas a volver a verla muchas veces:</p>
+<ul>
+<li><b><code>openjdk version "21.0.8" … LTS</code></b>: la versión de Java. El primer número (<code>21</code>) es lo importante; los demás son correcciones. <code>LTS</code> confirma que es de soporte largo. <i>OpenJDK</i> es el proyecto abierto del que parten todas las distribuciones.</li>
+<li><b><code>OpenJDK Runtime Environment Temurin-…</code></b>: el «entorno de ejecución», es decir, las bibliotecas que trae Java (para ventanas, archivos, red…). Aquí confirmas que es Temurin.</li>
+<li><b><code>OpenJDK 64-Bit Server VM …</code></b>: la <b>máquina virtual de Java</b> (JVM), el motor que ejecuta los programas Java, en su versión de 64 bits. En el capítulo 11 verás qué es exactamente y por qué Java la necesita.</li>
+</ul>
+<p><code>java -version</code> comprueba que puedes <i>ejecutar</i> Java; <code>javac -version</code> comprueba que puedes <i>compilar</i>. Si el primero funciona y el segundo no, instalaste un JRE en lugar de un JDK, o tienes otro Java antiguo delante en el PATH (mira «Problemas típicos»). Ambos números deberían coincidir.</p>
+<div class="caja concepto"><b>Un solo guion o dos.</b> Fíjate en que Java usa <code>-version</code> (un guion) y Git y <code>gh</code> usan <code>--version</code> (dos). No hay una regla universal: cada programa decide cómo se escriben sus opciones. Java conserva el estilo antiguo de un guion por compatibilidad (aunque las versiones nuevas también aceptan <code>--version</code>). Cuando dudes, prueba con <code>--help</code> o consulta su documentación.</div>
+<div class="caja hito"><b>Hito</b> Si los cuatro comandos respondieron con su versión, tu computadora ya es una computadora de programador: tiene el compilador de Java, el control de versiones y la conexión con GitHub. Anota las cuatro versiones en tu ficha técnica del capítulo 2.</div>
+
+<h2>PATH y JAVA_HOME: cómo encuentra Windows a Java</h2>
+<h3>PATH</h3>
+<p>En el capítulo 3 viste que <code>$env:Path</code> es la lista de carpetas donde Windows busca los programas. Cuando escribes <code>java</code>, Windows recorre esas carpetas <b>en orden</b> y ejecuta el primer <code>java.exe</code> que encuentra. Comprueba que el instalador agregó la carpeta del JDK:</p>
+<pre class="ps">$env:Path -split ";" | Select-String "Adoptium"</pre>
+<pre class="salida">C:\Program Files\Eclipse Adoptium\jdk-21.0.8.9-hotspot\bin\</pre>
+<p>Aquí combinas lo que ya sabes: partes el PATH en líneas y, con la tubería, filtras solo las que contienen «Adoptium». Para saber <b>qué</b> <code>java.exe</code> se ejecuta exactamente cuando escribes <code>java</code>:</p>
+<pre class="ps">where.exe java</pre>
+<pre class="salida">C:\Program Files\Eclipse Adoptium\jdk-21.0.8.9-hotspot\bin\java.exe</pre>
+<p><code>where.exe</code> lista, en orden, todos los <code>java.exe</code> que hay en las carpetas del PATH. <b>El primero es el que se usa.</b> Si aparece más de una línea, tienes varios Java instalados, y el de arriba gana. Fíjate en el <code>.exe</code>: en PowerShell, <code>where</code> a secas es un alias de otro comando (<code>Where-Object</code>, que filtra datos) y no haría lo que buscas. Otra forma de preguntar lo mismo es <code>Get-Command java</code>, que muestra la ruta en su columna <code>Source</code>.</p>
+<h3>JAVA_HOME</h3>
+<p><code>JAVA_HOME</code> es una variable de entorno que no usa Windows, sino las <b>herramientas de Java</b>: Maven, NetBeans y muchas otras la consultan para saber dónde está el JDK. A diferencia del PATH, no es una lista, sino una sola ruta, y apunta a la carpeta <b>raíz</b> del JDK, no a <code>bin</code>:</p>
+<pre class="ps">$env:JAVA_HOME</pre>
+<pre class="salida">C:\Program Files\Eclipse Adoptium\jdk-21.0.8.9-hotspot\</pre>
+<table class="tabla">
+<tr><th>Variable</th><th>Apunta a</th><th>La usa</th><th>Para</th></tr>
+<tr><td><code>Path</code></td><td><code>…\jdk-21…\bin</code> (entre muchas otras carpetas)</td><td>Windows, PowerShell</td><td>Encontrar <code>java.exe</code> cuando escribes <code>java</code>.</td></tr>
+<tr><td><code>JAVA_HOME</code></td><td><code>…\jdk-21…</code> (una sola ruta)</td><td>Maven, NetBeans y otras herramientas de Java</td><td>Saber qué JDK usar y encontrar todo lo que trae.</td></tr>
+</table>
+<p>El instalador de Temurin, tal como lo ejecuta winget, crea <code>JAVA_HOME</code> automáticamente. Si al escribir <code>$env:JAVA_HOME</code> no aparece nada (una línea vacía), créala tú con estos comandos:</p>
+<pre class="ps">$jdk = Split-Path (Split-Path (Get-Command javac).Source)
+$jdk
+[Environment]::SetEnvironmentVariable("JAVA_HOME", $jdk, "User")</pre>
+<p>Qué hace cada línea:</p>
+<ol>
+<li><code>(Get-Command javac).Source</code> da la ruta completa de <code>javac.exe</code>, por ejemplo <code>C:\Program Files\Eclipse Adoptium\jdk-21.0.8.9-hotspot\bin\javac.exe</code>. Cada <code>Split-Path</code> le quita el último trozo: el primero quita <code>javac.exe</code> y el segundo quita <code>bin</code>. El resultado se guarda en una variable nueva, <code>$jdk</code>.</li>
+<li><code>$jdk</code> muestra la ruta calculada, para que compruebes que termina en la carpeta del JDK y no en <code>bin</code>.</li>
+<li>La última línea guarda la variable <code>JAVA_HOME</code> de forma permanente para tu usuario (<code>"User"</code>). No necesita permisos de administrador.</li>
+</ol>
+<p>Como siempre que cambias variables de entorno, cierra y vuelve a abrir PowerShell para que <code>$env:JAVA_HOME</code> muestre el valor nuevo.</p>
+<h3>Ver y editar las variables con el ratón</h3>
+<p>Todo lo anterior también se puede ver en una ventana: presiona <b>Win</b>, escribe <code>variables de entorno</code> y elige <i>Editar las variables de entorno del sistema</i>. En la ventana que se abre, haz clic en <b>Variables de entorno…</b>. Verás dos listas: arriba, las <b>variables de usuario</b> (solo para ti) y abajo, las <b>variables del sistema</b> (para todos los usuarios). Seleccionando <code>Path</code> y pulsando <b>Editar…</b> aparece la lista de carpetas, una por renglón, con botones para subir y bajar cada una. Mira, pero no cambies nada si no estás seguro: un PATH dañado puede hacer que muchos programas dejen de encontrarse.</p>
+
+<h2>Primer arranque de NetBeans</h2>
+<p>Abre el menú Inicio y busca <b>Apache NetBeans IDE 25</b> (también quedó un acceso directo en el escritorio). El primer arranque tarda más de lo normal: NetBeans prepara su configuración. Si te pregunta si quieres importar la configuración de una versión anterior, responde que no. Si Windows Defender o el firewall preguntan algo, permite el acceso en redes privadas.</p>
+<p>Para comprobar que NetBeans usa tu JDK 21, abre <i>Help → About</i> (Ayuda → Acerca de). Verás algo como:</p>
+<pre class="salida">Product Version: Apache NetBeans IDE 25
+Java: 21.0.8; OpenJDK 64-Bit Server VM 21.0.8+9-LTS
+Runtime: OpenJDK Runtime Environment 21.0.8+9-LTS
+System: Windows 11 version 10.0 running on amd64; UTF-8; es_GT (nb)</pre>
+<p>La línea <code>Java</code> debe decir 21. Cierra NetBeans por ahora; en el capítulo 5 lo usarás de verdad. Si en cambio NetBeans no arranca y muestra un mensaje de que no encuentra un JDK, mira la tabla de problemas típicos.</p>
+
+<h2>Problemas típicos y su solución</h2>
+<table class="tabla">
+<tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr>
+<tr><td><code>winget</code> no se reconoce</td><td>Falta el Instalador de aplicación o Windows es muy antiguo.</td><td>Instálalo o actualízalo desde la Microsoft Store; actualiza Windows.</td></tr>
+<tr><td>«No se encontró ningún paquete que coincida con los criterios de entrada»</td><td>El ID está mal escrito (con <code>-e</code> importan las mayúsculas) o el catálogo está desactualizado.</td><td>Revisa el ID letra por letra; ejecuta <code>winget source update</code> y repite.</td></tr>
+<tr><td><code>java</code>, <code>git</code> o <code>gh</code> no se reconocen después de instalar</td><td>PowerShell sigue con la copia vieja del PATH.</td><td>Cierra la ventana y abre otra. Si persiste, cierra sesión en Windows. Comprueba con <code>$env:Path -split ";"</code>.</td></tr>
+<tr><td><code>java -version</code> muestra otra versión (por ejemplo <code>1.8.0</code> o <code>23</code>)</td><td>Hay otro Java instalado y está antes en el PATH.</td><td><code>where.exe java</code> te dice cuál gana. Desinstala el que no quieras en <i>Configuración → Aplicaciones</i>, o súbelo de orden en el PATH (variables del sistema). Para este libro sirve cualquier JDK 17 o más nuevo, pero es más sencillo tener solo uno.</td></tr>
+<tr><td><code>java</code> funciona pero <code>javac</code> no</td><td>Instalaste un JRE o hay un Java antiguo (solo para ejecutar) delante en el PATH; un caso típico es la carpeta <code>…\Common Files\Oracle\Java\javapath</code>.</td><td>Instala el JDK con el ID exacto; revisa <code>where.exe java</code> y <code>where.exe javac</code>.</td></tr>
+<tr><td>La instalación termina con un código de error (por ejemplo, 1603) o «se canceló»</td><td>Respondiste No en la ventana de administrador, había otra instalación en curso o hay un reinicio pendiente.</td><td>Reinicia Windows y repite el comando; responde Sí en el Control de cuentas de usuario.</td></tr>
+<tr><td>«El hash del instalador no coincide»</td><td>El editor publicó una versión nueva y el catálogo aún no se actualizó, o la descarga se dañó.</td><td>Espera unas horas y vuelve a intentarlo, o usa la instalación manual. No fuerces la instalación.</td></tr>
+<tr><td>Las descargas fallan o se cortan</td><td>Internet inestable, o una red de oficina o colegio que bloquea descargas.</td><td>Reintenta en otra red o usa la instalación manual.</td></tr>
+<tr><td>NetBeans no arranca: no encuentra un JDK</td><td>NetBeans se instaló antes que el JDK, o el JDK se desinstaló después.</td><td>Instala el JDK y vuelve a instalar NetBeans. Alternativa avanzada: en <code>C:\Program Files\NetBeans-25\netbeans\etc\netbeans.conf</code>, la línea <code>netbeans_jdkhome</code> indica qué JDK usa.</td></tr>
+</table>
+<p>Si instalaste NetBeans sin <code>--skip-dependencies</code>, ahora tienes dos JDK: Temurin 21 y Liberica 23. No es grave: el Totito compila igual con ambos. Mira con <code>where.exe java</code> cuál aparece primero y comprueba en <i>Help → About</i> cuál usa NetBeans. Lo importante es que <code>java -version</code> y <code>javac -version</code> digan el mismo número. El libro muestra salidas de Java 21; con 23 verás otros números, nada más.</p>
+<div class="caja consejo"><b>Cómo pedir ayuda con una instalación.</b> Copia el comando que ejecutaste y la salida completa (no solo la última línea), y añade la salida de <code>winget --version</code>, <code>where.exe java</code> y tu versión de Windows (capítulo 2). Con eso, cualquier persona con experiencia puede diagnosticar el problema.</div>
+
+<h2>Instalación manual (si winget no es una opción)</h2>
+<p>Si winget no funciona en tu computadora, cada herramienta se puede instalar descargando su instalador desde la página oficial. Usa <b>solo</b> estas direcciones: descargar programas de sitios no oficiales es una de las vías más comunes de infección.</p>
+<table class="tabla">
+<tr><th>Herramienta</th><th>Página oficial</th><th>Qué descargar y qué marcar</th></tr>
+<tr><td>JDK 21</td><td><code>adoptium.net</code></td><td>Elige <i>Temurin 21 (LTS)</i>, sistema Windows, arquitectura x64, paquete <b>JDK</b>, archivo <code>.msi</code>. En el paso <i>Custom Setup</i> del instalador, además de lo que viene marcado, activa <b>Set JAVA_HOME variable</b> (haz clic en su icono y elige «Will be installed on local hard drive»).</td></tr>
+<tr><td>Git</td><td><code>git-scm.com</code></td><td><i>Download for Windows</i>, el instalador de 64 bits. Las opciones de fábrica sirven; si quieres, en <i>Choosing the default editor</i> elige el Bloc de notas (<i>Notepad</i>), y en <i>Adjusting the name of the initial branch</i> escribe <code>main</code>. Si no, lo configuras en el capítulo 7.</td></tr>
+<tr><td>GitHub CLI</td><td><code>cli.github.com</code></td><td><i>Download for Windows</i>: un <code>.msi</code>. Siguiente, siguiente, finalizar.</td></tr>
+<tr><td>NetBeans</td><td><code>netbeans.apache.org</code></td><td>Sección <i>Download</i>: el instalador para Windows, <code>Apache-NetBeans-XX-bin-windows-x64.exe</code>. Instálalo después del JDK; el instalador lo detecta solo. La página puede ofrecer una versión más nueva que la 25; sirve igual, porque los menús que usa el libro no han cambiado.</td></tr>
+</table>
+<p>Después de instalar a mano, el resto del capítulo es igual: cierra y abre PowerShell y haz las verificaciones.</p>
+
+<h2>Opcionales recomendados</h2>
+<h3>Windows Terminal</h3>
+<pre class="ps">winget install --id Microsoft.WindowsTerminal -e</pre>
+<p>Windows Terminal es una ventana moderna para PowerShell: pestañas (varias terminales en una ventana), mejor manejo de copiar y pegar, tildes y emojis bien dibujados, y temas de color. En Windows 11 ya viene instalado (si el comando dice que ya existe, perfecto). Ábrelo buscando <i>Terminal</i> en el menú Inicio; por defecto abre PowerShell. Todos los comandos del libro funcionan igual dentro de él.</p>
+<h3>Visual Studio Code</h3>
+<pre class="ps">winget install --id Microsoft.VisualStudioCode -e</pre>
+<p>VS Code es un editor de texto para programadores, ligero y gratuito. No es necesario para el libro (NetBeans hace todo), pero es más cómodo que el Bloc de notas para archivos como el <code>README.md</code> o el <code>.gitignore</code>: colorea su contenido y muestra los caracteres invisibles. Tras instalarlo y reabrir PowerShell, <code>code .</code> abre la carpeta actual en VS Code.</p>
+
+<h2>Mantener las herramientas al día</h2>
+<pre class="ps">winget upgrade</pre>
+<p>Sin más parámetros, <code>winget upgrade</code> solo <b>lista</b> los programas que tienen una versión más nueva; no instala nada. Para actualizar uno concreto: <code>winget upgrade --id Git.Git -e</code>. Una buena costumbre es revisarlo una vez al mes, y no actualizar el JDK ni NetBeans a mitad de un capítulo: hazlo entre capítulos, cuando todo compila, para que si algo cambia sepas que fue la actualización.</p>
+
+<h2>Todos los comandos del capítulo, juntos</h2>
+<p>Para tenerlos a mano (por ejemplo, si un día configuras otra computadora):</p>
+<pre class="ps">winget --version
+winget install --id EclipseAdoptium.Temurin.21.JDK -e
+winget install --id Git.Git -e
+winget install --id GitHub.cli -e
+winget install --id Apache.NetBeans -e --skip-dependencies
+# Cierra PowerShell y abre una ventana nueva antes de seguir
+java -version
+javac -version
+git --version
+gh --version
+$env:JAVA_HOME
+where.exe java</pre>
+
+<h2>Resumen</h2>
+<ul>
+<li>winget instala programas con un comando: <code>winget install --id &lt;ID&gt; -e</code>, donde <code>--id</code> indica un identificador y <code>-e</code> exige coincidencia exacta.</li>
+<li>Se instalan, en este orden: JDK 21 de Temurin, Git, GitHub CLI y NetBeans 25 (con <code>--skip-dependencies</code> para no añadir un segundo JDK).</li>
+<li>El JDK incluye <code>javac</code> (compilar) y <code>java</code> (ejecutar); el JRE solo ejecuta. Java 21 es LTS.</li>
+<li>Después de instalar hay que cerrar y volver a abrir PowerShell, porque cada ventana tiene una copia del PATH tomada al abrirse.</li>
+<li>Se verifica con <code>java -version</code>, <code>javac -version</code>, <code>git --version</code> y <code>gh --version</code>.</li>
+<li>PATH es la lista de carpetas donde Windows busca programas (gana el primero, mira <code>where.exe java</code>); JAVA_HOME apunta a la carpeta raíz del JDK y la usan Maven y NetBeans.</li>
+<li>Si winget falla, cada herramienta se puede instalar a mano desde su página oficial.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> Lo que aprendiste sirve para montar cualquier entorno de trabajo:
+<ul>
+<li><b>Preparar una computadora nueva en minutos:</b> guarda en un archivo de texto la lista de comandos <code>winget install</code> de los programas que usas (navegador, editor, Zoom, 7-Zip…) y ejecútalos de una vez cuando cambies de equipo.</li>
+<li><b>Otros lenguajes:</b> Python (<code>Python.Python.3.12</code>), Node.js (<code>OpenJS.NodeJS.LTS</code>) o Go siguen el mismo patrón: instalar, reabrir la terminal, verificar con <code>--version</code> y revisar el PATH si no aparece.</li>
+<li><b>Diagnosticar «el programa no se encuentra»:</b> con cualquier herramienta, <code>where.exe</code> y <code>$env:Path</code> te dicen si está en el PATH y cuál versión responde primero.</li>
+<li><b>Herramientas de Java del mundo real:</b> servidores como Tomcat, herramientas como Gradle o Android Studio buscan el JDK en <code>JAVA_HOME</code>; ya sabes comprobarla y crearla.</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Ejecuta <code>winget list</code> y localiza en la lista las cuatro herramientas que instalaste. Pista: <code>winget list Temurin</code> filtra por nombre.</li>
+<li>Cuenta otra vez las carpetas de tu PATH con <code>($env:Path -split ";").Count</code> y compáralo con el número que anotaste en el capítulo 3. ¿Cuántas agregaron los instaladores? Identifícalas.</li>
+<li>Usa <code>where.exe</code> para encontrar dónde están <code>git.exe</code>, <code>gh.exe</code> y <code>javac.exe</code>. ¿Están todos en <code>C:\Program Files</code>?</li>
+<li>Ejecuta <code>winget show --id GitHub.cli -e</code> y averigua quién publica el paquete, su licencia y su página oficial.</li>
+<li>Abre <code>jshell</code> (viene con el JDK; escribe <code>jshell</code> en PowerShell), escribe <code>2 + 3</code> y presiona Enter. Luego escribe <code>/exit</code> para salir. Acabas de ejecutar tu primera instrucción de Java; el capítulo 11 te explica qué pasó. Pista: si <code>jshell</code> no se reconoce, revisa el PATH como en este capítulo.</li>
+</ol>
+</div>
+</section>

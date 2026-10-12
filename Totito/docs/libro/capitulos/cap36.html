@@ -1,0 +1,432 @@
+<section class="capitulo" id="cap36">
+<h1><span class="num">Capítulo 36</span>Tipografía, espaciado, alineación y consistencia</h1>
+<p class="entrada">El color atrae la mirada, pero son la letra y los espacios los que hacen que una interfaz se vea ordenada o improvisada. En este capítulo aprendes cómo elige el Totito su fuente, qué tamaños usa y por qué, cómo se centra un texto de verdad, cuánto espacio necesita un halo de neón y qué reglas mantienen todas las pantallas coherentes entre sí.</p>
+
+<h2>Vocabulario mínimo de tipografía</h2>
+<p>La <b>tipografía</b> es el arte de elegir y colocar letras. Antes de seguir, cuatro palabras que se confunden a menudo:</p>
+<table class="tabla">
+<tr><th>Palabra</th><th>Qué es</th><th>Ejemplo</th></tr>
+<tr><td><b>Familia</b> tipográfica</td><td>Un diseño de letra completo, con todas sus variantes.</td><td>Arial, Segoe UI, Nunito</td></tr>
+<tr><td><b>Estilo</b> (o peso)</td><td>Una variante de la familia: normal, negrita, cursiva, fina, gruesa.</td><td>Arial Bold (negrita)</td></tr>
+<tr><td><b>Tamaño</b></td><td>La altura de la letra, medida en <b>puntos</b>.</td><td>25 puntos</td></tr>
+<tr><td><b>Fuente</b></td><td>En Java, la combinación concreta de las tres cosas anteriores. Es un objeto de la clase <code>java.awt.Font</code>.</td><td><code>new Font("Arial", Font.BOLD, 25)</code></td></tr>
+</table>
+<h3>Con remate, sin remate y de ancho fijo</h3>
+<p>Las familias se agrupan en grandes categorías. Las tres que importan para programar:</p>
+<svg viewBox="0 0 600 120" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="600" height="120" fill="#1C1740"/>
+<text x="100" y="60" fill="#FFFFFF" font-family="serif" font-size="34" text-anchor="middle">Totito</text>
+<text x="300" y="60" fill="#FFFFFF" font-family="sans-serif" font-size="34" text-anchor="middle">Totito</text>
+<text x="500" y="60" fill="#FFFFFF" font-family="monospace" font-size="34" text-anchor="middle">Totito</text>
+<text x="100" y="100" fill="#C8BCF6" font-family="sans-serif" font-size="13" text-anchor="middle">Con remate (serif)</text>
+<text x="300" y="100" fill="#C8BCF6" font-family="sans-serif" font-size="13" text-anchor="middle">Sin remate (sans serif)</text>
+<text x="500" y="100" fill="#C8BCF6" font-family="sans-serif" font-size="13" text-anchor="middle">Ancho fijo (monospace)</text>
+</svg>
+<ul>
+<li><b>Con remate</b> (<i>serif</i>): las letras tienen unos pequeños «pies» o terminaciones. Times New Roman es la más conocida. Se asocian a libros y periódicos.</li>
+<li><b>Sin remate</b> (<i>sans serif</i>, «sin remate» en francés): trazos limpios, sin terminaciones. Arial, Segoe UI. Son las más usadas en pantallas porque se leen bien en tamaños pequeños.</li>
+<li><b>De ancho fijo</b> (<i>monospace</i>): todas las letras ocupan lo mismo, la «i» igual que la «m». Se usan para código (como el de este libro) porque alinean las columnas.</li>
+</ul>
+<p>El diseño del Totito usa una sin remate <b>redondeada y geométrica</b>: letras basadas en círculos, con terminaciones suaves. Ese estilo transmite algo amable y lúdico, perfecto para un juego. Familias de ese tipo son, por ejemplo, Nunito, Poppins o Montserrat.</p>
+
+<h2>El problema: Java solo usa las fuentes que hay en la computadora</h2>
+<p>Aquí aparece la primera diferencia entre una maqueta y un programa. El diseñador eligió una letra que tenía instalada; tu programa se ejecutará en computadoras que <b>no la tienen</b>. Java solo puede dibujar con las fuentes instaladas en el sistema operativo (o con archivos de fuente que el programa traiga y cargue él mismo).</p>
+<p>Peor aún: si pides una familia que no existe, Java <b>no da error</b>. Usa en silencio una fuente genérica llamada <i>Dialog</i> y sigue adelante. Puedes escribir <code>new Font("Nunito", Font.BOLD, 25)</code> y no enterarte nunca de que se está viendo otra letra.</p>
+<h3>Fuentes lógicas: las que existen siempre</h3>
+<p>Para que siempre haya algo con qué escribir, Java define cinco <b>fuentes lógicas</b>, nombres que existen en cualquier sistema y que Java traduce a una fuente real instalada:</p>
+<table class="tabla">
+<tr><th>Nombre lógico</th><th>Constante</th><th>Qué es</th></tr>
+<tr><td><code>"SansSerif"</code></td><td><code>Font.SANS_SERIF</code></td><td>Una sin remate (en Windows suele ser Arial).</td></tr>
+<tr><td><code>"Serif"</code></td><td><code>Font.SERIF</code></td><td>Una con remate (en Windows, Times New Roman).</td></tr>
+<tr><td><code>"Monospaced"</code></td><td><code>Font.MONOSPACED</code></td><td>Una de ancho fijo (en Windows, Courier New).</td></tr>
+<tr><td><code>"Dialog"</code></td><td><code>Font.DIALOG</code></td><td>La de los diálogos; la que se usa si pides algo que no existe.</td></tr>
+<tr><td><code>"DialogInput"</code></td><td><code>Font.DIALOG_INPUT</code></td><td>La de los campos de texto.</td></tr>
+</table>
+<p>El <code>JuegoMain</code> del capítulo 33 usaba <code>new Font("SansSerif", Font.BOLD, 48)</code>: seguro, pero sin personalidad.</p>
+<h3>La lista de respaldo de <code>Tema</code></h3>
+<p>El Totito resuelve el problema con una <b>lista de preferencias</b>: intenta la fuente ideal y, si no está, la siguiente, y así hasta llegar a una que exista. Es la misma idea que usan las páginas web con su propiedad <code>font-family</code>.</p>
+<pre class="java">private static final List&lt;String&gt; FAMILIAS = Arrays.asList(
+        "Nunito", "Poppins", "Montserrat", "Segoe UI", "Helvetica Neue",
+        "Ubuntu", "Arial", "Liberation Sans", "DejaVu Sans");</pre>
+<p>El orden no es al azar. Va de «la más parecida al diseño» a «la que seguro existe»:</p>
+<table class="tabla">
+<tr><th>Familia</th><th>Por qué está en la lista</th></tr>
+<tr><td>Nunito, Poppins, Montserrat</td><td>Las más parecidas al diseño (redondeadas, geométricas). Son gratuitas (Google Fonts) pero no vienen con Windows: solo se usan si el jugador las instaló.</td></tr>
+<tr><td>Segoe UI</td><td>La fuente de la interfaz de Windows desde Vista. Moderna y muy legible: es la que verá casi cualquier usuario de Windows 10/11.</td></tr>
+<tr><td>Helvetica Neue</td><td>La clásica de macOS.</td></tr>
+<tr><td>Ubuntu</td><td>La de la distribución Linux del mismo nombre.</td></tr>
+<tr><td>Arial</td><td>Está en prácticamente todas las computadoras con Windows o macOS.</td></tr>
+<tr><td>Liberation Sans, DejaVu Sans</td><td>Las de casi cualquier Linux. Liberation Sans tiene las mismas medidas que Arial.</td></tr>
+</table>
+<p>Y si no hay ninguna, el método devuelve <code>Font.SANS_SERIF</code>, que existe siempre:</p>
+<pre class="java">private static String elegirFamilia() {
+    try {
+        List&lt;String&gt; instaladas = Arrays.asList(
+                GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
+        for (String familia : FAMILIAS) {
+            if (instaladas.contains(familia)) {
+                return familia;
+            }
+        }
+    } catch (RuntimeException e) {
+        // Sin acceso a las fuentes del sistema: se usa la generica.
+    }
+    return Font.SANS_SERIF;
+}</pre>
+<p><code>GraphicsEnvironment.getLocalGraphicsEnvironment()</code> representa «el entorno gráfico de esta computadora», y su método <code>getAvailableFontFamilyNames()</code> devuelve un arreglo con los nombres de todas las familias instaladas. El <code>for</code> recorre las preferidas en orden y devuelve la primera que aparezca. El <code>try/catch</code> (capítulo 26) protege contra el caso raro de que el sistema no deje consultar sus fuentes.</p>
+<p>Un detalle de eficiencia: el resultado se guarda en una constante, <code>private static final String FAMILIA = elegirFamilia();</code>. Una variable <code>static</code> se inicializa <b>una sola vez</b>, cuando Java carga la clase <code>Tema</code> por primera vez (capítulo 20). Consultar las fuentes del sistema es lento; hacerlo cada vez que se dibuja un texto (decenas de veces por segundo) sería un desperdicio.</p>
+<div class="caja concepto"><b>Por qué las capturas del libro no son idénticas a lo que verás</b> Las capturas de este libro se tomaron en Linux, donde la primera familia disponible de la lista es <i>Liberation Sans</i>. En tu Windows, el Totito usará <i>Segoe UI</i> (o Nunito, si la instalas). Los tamaños y posiciones son los mismos, pero la forma de las letras cambia un poco. Eso es justo lo que la lista de respaldo pretende: que el programa se vea bien en cualquier sistema, aunque no idéntico.</div>
+<h3>Comprueba qué fuente usaría tu equipo</h3>
+<p>Este programa hace lo mismo que <code>Tema</code>: recorre la lista, te dice cuáles están instaladas y cuál elegiría el Totito, y además mide la fuente elegida (lo de «ascent» y «descent» lo explicamos más abajo). Créalo en tu carpeta de prácticas (la del capítulo 35, fuera del proyecto):</p>
+<pre class="ps">Set-Location $HOME\Proyectos\Practicas
+notepad Fuentes.java</pre>
+<pre class="java">import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
+import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import java.util.List;
+
+/** Dice cual de las fuentes preferidas del Totito existe en este equipo y la mide. */
+public class Fuentes {
+
+    public static void main(String[] args) {
+        List&lt;String&gt; preferidas = List.of("Nunito", "Poppins", "Montserrat", "Segoe UI",
+                "Helvetica Neue", "Ubuntu", "Arial", "Liberation Sans", "DejaVu Sans");
+        List&lt;String&gt; instaladas = Arrays.asList(
+                GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
+
+        String elegida = Font.SANS_SERIF;
+        for (String familia : preferidas) {
+            boolean esta = instaladas.contains(familia);
+            System.out.println((esta ? "[si] " : "[no] ") + familia);
+            if (esta &amp;&amp; elegida.equals(Font.SANS_SERIF)) {
+                elegida = familia;
+            }
+        }
+        System.out.println("El Totito usaria: " + elegida);
+
+        Graphics2D g = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics();
+        for (float tamano : new float[]{36f, 25f, 19f, 13f}) {
+            g.setFont(new Font(elegida, Font.BOLD, 12).deriveFont(tamano));
+            FontMetrics fm = g.getFontMetrics();
+            System.out.printf("%4.0f pt: ascent %d, descent %d, alto de linea %d, ancho de \"Jugar\" %d%n",
+                    tamano, fm.getAscent(), fm.getDescent(), fm.getHeight(), fm.stringWidth("Jugar"));
+        }
+        g.dispose();
+    }
+}</pre>
+<p>Dos cosas nuevas: <code>List.of(…)</code> crea una lista que no se puede modificar, y para medir texto hace falta un <code>Graphics2D</code>, así que se crea uno a partir de una imagen de 1 × 1 píxel que nunca se muestra (un truco habitual para medir sin abrir ventanas). Ejecútalo:</p>
+<pre class="ps">java Fuentes.java</pre>
+<p>Esta es la salida en la computadora Linux donde se tomaron las capturas:</p>
+<pre class="salida">[no] Nunito
+[no] Poppins
+[no] Montserrat
+[no] Segoe UI
+[no] Helvetica Neue
+[no] Ubuntu
+[no] Arial
+[si] Liberation Sans
+[si] DejaVu Sans
+El Totito usaria: Liberation Sans
+  36 pt: ascent 33, descent 8, alto de linea 42, ancho de "Jugar" 98
+  25 pt: ascent 23, descent 6, alto de linea 30, ancho de "Jugar" 68
+  19 pt: ascent 18, descent 4, alto de linea 23, ancho de "Jugar" 54
+  13 pt: ascent 12, descent 3, alto de linea 16, ancho de "Jugar" 36</pre>
+<p>En un Windows 10/11 normal verás <code>[si]</code> al menos en Segoe UI y Arial, y la línea «El Totito usaria: Segoe UI». Los números de las medidas serán otros, porque cada familia tiene sus proporciones.</p>
+<div class="caja consejo"><b>¿Quieres ver el Totito con la letra del diseño?</b> Descarga Nunito desde Google Fonts (fonts.google.com, busca «Nunito»), descomprime el archivo, haz clic derecho sobre los archivos <code>.ttf</code> y elige <b>Instalar para todos los usuarios</b>. Cierra y vuelve a abrir NetBeans y ejecuta el juego: <code>Tema</code> la encontrará primera en la lista. Solo cambiará en tu computadora; en las de tus amigos seguirá usándose Segoe UI salvo que también la instalen.</div>
+<div class="caja cuidado"><b>Si quieres garantizar una fuente</b> La única forma de que todos vean la misma letra es que el programa <b>lleve dentro</b> el archivo de la fuente y lo cargue con <code>Font.createFont(Font.TRUETYPE_FONT, flujo)</code> y <code>GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(fuente)</code>. Antes de hacerlo, revisa la licencia: las de Google Fonts (licencia SIL Open Font) permiten incluirlas en tus programas; muchas fuentes comerciales, no. El Totito no lo hace para mantener el proyecto simple, pero es una mejora natural.</div>
+
+<h2>Tamaños: una escala, no números sueltos</h2>
+<h3>Puntos y píxeles</h3>
+<p>El tamaño de una fuente se mide en <b>puntos</b> (una medida de imprenta: 72 puntos son una pulgada). Java2D considera que la pantalla tiene 72 puntos por pulgada, así que <b>un punto equivale a un píxel</b> en sus coordenadas: una letra de 25 puntos ocupa unos 25 píxeles de alto, contando el espacio para acentos y colas. Si Windows tiene la escala de pantalla al 125 % o al 150 %, Java (desde la versión 9) agranda <b>todo</b> en la misma proporción, letras y componentes por igual, y las proporciones se mantienen.</p>
+<h3>Cómo crea fuentes el Totito</h3>
+<pre class="java">public static Font fuente(int estilo, float tamano) {
+    return new Font(FAMILIA, estilo, 12).deriveFont(tamano);
+}</pre>
+<p>¿Por qué crear la fuente con tamaño 12 y luego cambiarlo? Porque el constructor de <code>Font</code> solo acepta tamaños enteros (<code>int</code>), y el Totito usa tamaños con decimales, como 10,5 para el lema. <code>deriveFont(float)</code> crea una copia de la fuente con el nuevo tamaño, que sí admite decimales. El 12 es un valor de paso que se descarta.</p>
+<h3>Todos los tamaños del Totito</h3>
+<table class="tabla">
+<tr><th>Tamaño</th><th>Peso</th><th>Dónde</th><th>Nivel</th></tr>
+<tr><td>40</td><td>Negrita</td><td>«¡Ganó Luis!» / «¡Empate!» (<code>PantallaResultado</code>)</td><td rowspan="2">Exhibición</td></tr>
+<tr><td>36</td><td>Negrita</td><td>«Juego del Totito» (<code>Encabezado</code>), «Cómo jugar»</td></tr>
+<tr><td>26</td><td>Negrita</td><td>Letrero «Turno de Ana» (<code>PantallaJuego</code>)</td><td rowspan="3">Título</td></tr>
+<tr><td>25</td><td>Negrita</td><td>Botones del menú</td></tr>
+<tr><td>24</td><td>Negrita</td><td>Número de empates del marcador</td></tr>
+<tr><td>21</td><td>Negrita</td><td>«Jugador 1» en las tarjetas de jugador</td><td rowspan="4">Subtítulo y botones</td></tr>
+<tr><td>19</td><td>Negrita</td><td>Botones píldora y contorno; «Excelente jugada»</td></tr>
+<tr><td>18</td><td>Negrita</td><td>Números de los pasos (1, 2, 3)</td></tr>
+<tr><td>17</td><td>Negrita</td><td>Títulos de sección (espaciados); nombres del marcador</td></tr>
+<tr><td>17</td><td>Normal</td><td>Texto de los pasos; texto del campo de nombre</td><td>Cuerpo</td></tr>
+<tr><td>16</td><td>Negrita</td><td>«2 jugadores», «Contra la IA»</td><td rowspan="3">Secundario</td></tr>
+<tr><td>14</td><td>Normal</td><td>«Cada jugador elige su símbolo»</td></tr>
+<tr><td>12–13</td><td>Normal</td><td>«Nombre», «Victorias: 0», descripciones de las opciones</td></tr>
+<tr><td>10,5–11</td><td>Negrita, espaciada</td><td>Lema del encabezado; «EMPATES»</td><td>Etiqueta</td></tr>
+</table>
+<p>Fíjate en que los tamaños no están repartidos al azar: forman <b>escalones</b>. Del lema al texto secundario, de ahí al cuerpo, al subtítulo, al título y a la exhibición, cada nivel es aproximadamente un 20 %–25 % más grande que el anterior (13 → 17 → 21 → 25 → 36). Los diseñadores llaman a esto una <b>escala tipográfica</b>: un conjunto pequeño de tamaños con una proporción constante entre ellos. Con una escala, cada tamaño «significa» algo (este es un título, esto es una nota) y la jerarquía del capítulo 34 se lee sola.</p>
+<div class="caja consejo"><b>Para tus proyectos: cinco o seis tamaños</b> Elige un tamaño base para el cuerpo (16 es un buen número en pantalla) y multiplícalo y divídelo por 1,25: 10, 13, 16, 20, 25, 31, 39. Usa solo esos. Si te encuentras escribiendo un 15 o un 23 «porque se ve mejor aquí», probablemente estés rompiendo la jerarquía.</div>
+<h3>Cuando el texto no cabe, la letra se achica</h3>
+<p>Los títulos variables, como «¡Ganó …!», pueden ser más largos de lo previsto. <code>Rotulo</code> (capítulo 46) mide el texto y, mientras no quepa, le quita un punto a la letra (sin bajar de 12):</p>
+<pre class="java">while (fm.stringWidth(texto) + extraIcono &gt; getWidth() - 20 &amp;&amp; f.getSize2D() &gt; 12) {
+    f = f.deriveFont(f.getSize2D() - 1);
+    ...
+}</pre>
+<p>Es una excepción controlada a la escala: preferimos un título un poco más pequeño a uno cortado.</p>
+
+<h2>Pesos: normal y negrita</h2>
+<p>Java define tres estilos básicos que se combinan con el operador <code>|</code>: <code>Font.PLAIN</code> (normal), <code>Font.BOLD</code> (negrita), <code>Font.ITALIC</code> (cursiva) y <code>Font.BOLD | Font.ITALIC</code>. El Totito solo usa los dos primeros, con una regla sencilla:</p>
+<ul>
+<li><b>Negrita</b> para lo que se pulsa (todos los botones) y para lo que nombra algo (títulos, nombres de jugadores, opciones).</li>
+<li><b>Normal</b> para lo que explica (los pasos, las descripciones, las etiquetas como «Nombre»).</li>
+</ul>
+<p>Combinar el peso con el color es la manera más fina de crear jerarquía: en <code>OpcionModo</code>, «2 jugadores» va en negrita y blanco, y «Turnos en el mismo equipo» en normal y <code>TEXTO_SUAVE</code>. Sin cambiar casi el tamaño (16 frente a 12), el ojo entiende cuál es el título y cuál la explicación.</p>
+<div class="caja cuidado"><b>No abuses de la negrita</b> Si todo está en negrita, nada destaca. Y evita la cursiva en pantallas con letra pequeña: con pocos píxeles las letras inclinadas se ven dentadas. Por eso el Totito no la usa.</div>
+
+<h2>El espacio entre letras (tracking)</h2>
+<p>Los títulos de sección del diseño («J U G A D O R E S») tienen las letras visiblemente separadas. Ese espacio adicional entre todas las letras se llama <b>tracking</b> (o <i>interletraje</i>). En Java se consigue con un <b>atributo</b> de la fuente:</p>
+<pre class="java">public static Font fuenteEspaciada(int estilo, float tamano, float espaciado) {
+    return fuente(estilo, tamano).deriveFont(Map.of(TextAttribute.TRACKING, espaciado));
+}</pre>
+<p><code>deriveFont</code> también acepta un mapa de atributos (<code>Map.of(clave, valor)</code> crea un mapa con una sola entrada). <code>TextAttribute.TRACKING</code> es la clave del espaciado y su valor es una <b>fracción del tamaño de la letra</b>: 0 es el espaciado normal y 0,3 agrega un 30 % del tamaño después de cada letra. Para «JUGADORES» a 17 puntos con espaciado 0,3:</p>
+<ul>
+<li>Espacio extra por letra: 17 × 0,3 = <b>5,1 píxeles</b>.</li>
+<li>Ancho sin espaciado: 108 píxeles. Con espaciado: 154 píxeles (medido con Liberation Sans).</li>
+<li>Diferencia: 46 píxeles = 9 letras × 5,1. Las cuentas cuadran.</li>
+</ul>
+<p>Un detalle fino que pocos conocen: Java agrega el espacio extra <b>también después de la última letra</b>. Eso significa que <code>stringWidth</code> cuenta unos 5 píxeles de aire invisible a la derecha, y un texto espaciado centrado con <code>(ancho - stringWidth) / 2</code> queda desplazado unos 2,5 píxeles a la izquierda. En el Totito no se nota; en un logotipo grande con mucho espaciado sí, y la solución es restar ese último espacio antes de centrar.</p>
+<h3>Mayúsculas espaciadas para títulos de sección</h3>
+<p>El Totito usa tres fuentes espaciadas: los títulos de sección (17 puntos, 0,3), el lema del encabezado (10,5 puntos, 0,28) y la etiqueta «EMPATES» del marcador (11 puntos, 0,2). Las tres tienen algo en común: son <b>palabras cortas en mayúsculas</b>. No es casualidad:</p>
+<ul>
+<li>Las mayúsculas tienen todas la misma altura y forman un bloque compacto; pegadas, se ven apretadas. Separarlas les devuelve el aire.</li>
+<li>Las mayúsculas espaciadas se leen como una <b>etiqueta</b>, no como una frase. Le dicen al usuario «esto es el nombre de una zona», no «esto es algo para leer».</li>
+<li>Con letras pequeñas (10,5 puntos), el espaciado mejora la legibilidad: cada letra se distingue mejor.</li>
+</ul>
+<p>Las mayúsculas se escriben así en el texto del código (<code>"JUGADORES"</code>, <code>"SÍMBOLOS"</code>); no se transforman con <code>toUpperCase()</code>. Y en el lema, los separadores son puntos medios con dos espacios a cada lado: <code>"ESTRATEGIA  •  DIVERSIÓN  •  SIEMPRE UN CLÁSICO"</code>.</p>
+<div class="caja cuidado"><b>Nunca para frases largas</b> Un párrafo entero en mayúsculas espaciadas cuesta muchísimo leerlo: perdemos la forma de las palabras, que es en gran parte cómo leemos. Úsalas solo para etiquetas de una a cuatro palabras.</div>
+
+<h2>La línea base y el centrado vertical</h2>
+<p>Este es probablemente el detalle técnico más importante del capítulo, y el origen de muchísimos textos «mal centrados» en programas de principiantes.</p>
+<h3>drawString no empieza arriba</h3>
+<p>Cuando escribes <code>g2.drawString("Jugar", x, y)</code>, la coordenada <code>y</code> <b>no</b> es la parte de arriba del texto, sino su <b>línea base</b>: la línea invisible sobre la que «se apoyan» las letras, como los renglones de un cuaderno. Las letras suben por encima de ella y algunas (la «g», la «j», la «p») bajan por debajo.</p>
+<svg viewBox="0 0 700 230" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="700" height="230" fill="#1C1740"/>
+<line x1="20" y1="60" x2="420" y2="60" stroke="#40C8FF" stroke-width="1.5" stroke-dasharray="6 4"/>
+<line x1="20" y1="150" x2="420" y2="150" stroke="#FF3BD4" stroke-width="2"/>
+<line x1="20" y1="171" x2="420" y2="171" stroke="#40C8FF" stroke-width="1.5" stroke-dasharray="6 4"/>
+<line x1="20" y1="105" x2="420" y2="105" stroke="#C8BCF6" stroke-width="1" stroke-dasharray="2 4"/>
+<text x="40" y="150" fill="#FFFFFF" font-family="sans-serif" font-weight="bold" font-size="100">Jugar</text>
+<line x1="440" y1="60" x2="440" y2="150" stroke="#40C8FF" stroke-width="2"/>
+<line x1="440" y1="150" x2="440" y2="171" stroke="#A05CFF" stroke-width="2"/>
+<g font-family="sans-serif" font-size="13">
+<text x="452" y="64" fill="#40C8FF">base − ascent (arriba del todo)</text>
+<text x="452" y="86" fill="#40C8FF">↕ ascent</text>
+<text x="452" y="109" fill="#C8BCF6">centro del texto</text>
+<text x="452" y="146" fill="#FF3BD4">línea base (la y de drawString)</text>
+<text x="452" y="166" fill="#A05CFF">↕ descent</text>
+<text x="452" y="190" fill="#40C8FF">base + descent (abajo del todo)</text>
+</g>
+</svg>
+<h3>FontMetrics: las medidas de una fuente</h3>
+<p>Para colocar texto con precisión, Java da un objeto <code>FontMetrics</code> (se obtiene con <code>g2.getFontMetrics()</code> después de fijar la fuente) con las medidas de la fuente actual:</p>
+<table class="tabla">
+<tr><th>Método</th><th>Qué mide</th><th>Liberation Sans negrita 25</th></tr>
+<tr><td><code>getAscent()</code></td><td>Cuánto sube la letra sobre la línea base (incluye sitio para acentos de mayúsculas como «Á»).</td><td>23</td></tr>
+<tr><td><code>getDescent()</code></td><td>Cuánto baja bajo la línea base (colas de g, j, p, q, y).</td><td>6</td></tr>
+<tr><td><code>getLeading()</code></td><td>Espacio extra recomendado entre una línea y la siguiente.</td><td>1</td></tr>
+<tr><td><code>getHeight()</code></td><td>Alto total de una línea: ascent + descent + leading.</td><td>30</td></tr>
+<tr><td><code>stringWidth(texto)</code></td><td>Ancho que ocupará ese texto con esta fuente.</td><td>«Jugar»: 68</td></tr>
+</table>
+<h3>La fórmula del centrado vertical</h3>
+<p>Supón que quieres el texto centrado en vertical sobre una altura <code>yCentro</code> (por ejemplo, la mitad de un botón). El texto ocupa desde <code>base − ascent</code> (arriba) hasta <code>base + descent</code> (abajo). Su centro está en el punto medio:</p>
+<pre class="texto">centro del texto = base + (descent − ascent) ÷ 2</pre>
+<p>Queremos que ese centro sea <code>yCentro</code>. Despejando la base:</p>
+<pre class="texto">base = yCentro + (ascent − descent) ÷ 2</pre>
+<p>Es exactamente lo que hace <code>Dibujo.lineaBaseCentrada</code>, una de las líneas más usadas del Totito:</p>
+<pre class="java">public static float lineaBaseCentrada(FontMetrics fm, float yCentro) {
+    return yCentro + (fm.getAscent() - fm.getDescent()) / 2f;
+}</pre>
+<p>Con números: en un botón del menú, la forma visible va de y = 9 a y = 79, así que su centro es 44. Con Liberation Sans negrita 25 (ascent 23, descent 6): base = 44 + (23 − 6) ÷ 2 = 44 + 8,5 = <b>52,5</b>. El texto se dibuja con su línea base en 52,5 y queda centrado.</p>
+<p>La gran ventaja es que la fórmula <b>se adapta a la fuente</b>: con Segoe UI los valores de ascent y descent serán otros, y el texto seguirá centrado. Si hubieras escrito «52» a mano, en Windows el texto quedaría torcido.</p>
+<div class="caja consejo"><b>Centrado matemático y centrado óptico</b> Como el ascent reserva sitio para acentos que la mayoría de las palabras no tienen, a veces un texto matemáticamente centrado parece un pelo bajo. Los diseñadores corrigen «a ojo» uno o dos píxeles. El Totito lo hace en <code>Rotulo</code>: cuando un título lleva subrayado, lo sube 6 píxeles (<code>getHeight() / 2f - (conSubrayado ? 6 : 0)</code>) para que el conjunto texto + línea quede equilibrado.</div>
+<h3>Y el centrado horizontal</h3>
+<p>Es más sencillo: si el espacio mide <code>ancho</code> y el texto mide <code>fm.stringWidth(texto)</code>, el texto empieza en <code>(ancho − stringWidth) ÷ 2</code>. Cuando además hay un icono, se centra <b>el bloque completo</b> (icono + hueco + texto), como hace <code>BotonNeon</code> en sus píldoras:</p>
+<pre class="java">double total = tamIcono + hueco + fm.stringWidth(texto);
+double x = forma.getCenterX() - total / 2;</pre>
+<p>Ejemplo con «Regresar» (píldora de 330 × 70; forma visible de 312 × 52): icono de 52 × 0,44 ≈ 23 píxeles, hueco de 16 y texto de 82 píxeles (Liberation Sans negrita 19). Total: 23 + 16 + 82 = 121. El bloque empieza en 165 − 60,5 = 104,5 y el texto en 104,5 + 23 + 16 = 143,5. Si centraras solo el texto, el icono «colgaría» a la izquierda y el conjunto se vería desplazado.</p>
+
+<h2>Márgenes: el espacio que necesita el halo</h2>
+<p>En el capítulo 34 viste que un <code>BotonNeon</code> del menú mide 384 × 88, pero su forma visible mide 366 × 70: hay un <b>margen</b> de 9 píxeles por lado. ¿Por qué 9 y no 5 o 20? Se puede calcular.</p>
+<h3>Un componente no puede pintar fuera de sí mismo</h3>
+<p>Cada componente de Swing dibuja dentro de su propio rectángulo. Si intentas pintar fuera, lo que sobresale <b>se recorta</b> (en inglés, <i>clipping</i>): simplemente no aparece. Para un halo, que por definición se desborda alrededor del trazo, eso es un problema: si la forma toca el borde del componente, el halo queda cortado en seco.</p>
+<svg viewBox="0 0 600 170" width="100%" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<clipPath id="c36-recorte"><rect x="40" y="40" width="200" height="80"/></clipPath>
+</defs>
+<rect x="0" y="0" width="600" height="170" fill="#1C1740"/>
+<g clip-path="url(#c36-recorte)" fill="none">
+<rect x="43" y="43" width="194" height="74" rx="20" stroke="#FF3BD4" stroke-width="16.4" stroke-opacity="0.05"/>
+<rect x="43" y="43" width="194" height="74" rx="20" stroke="#FF3BD4" stroke-width="11.6" stroke-opacity="0.08"/>
+<rect x="43" y="43" width="194" height="74" rx="20" stroke="#FF3BD4" stroke-width="6.8" stroke-opacity="0.12"/>
+<rect x="43" y="43" width="194" height="74" rx="20" stroke="#FF3BD4" stroke-width="2"/>
+</g>
+<rect x="40" y="40" width="200" height="80" fill="none" stroke="#C8BCF6" stroke-dasharray="4 3"/>
+<text x="140" y="150" fill="#C8BCF6" font-family="sans-serif" font-size="13" text-anchor="middle">Margen de 3 px: halo cortado</text>
+<g fill="none">
+<rect x="369" y="49" width="182" height="62" rx="20" stroke="#FF3BD4" stroke-width="16.4" stroke-opacity="0.05"/>
+<rect x="369" y="49" width="182" height="62" rx="20" stroke="#FF3BD4" stroke-width="11.6" stroke-opacity="0.08"/>
+<rect x="369" y="49" width="182" height="62" rx="20" stroke="#FF3BD4" stroke-width="6.8" stroke-opacity="0.12"/>
+<rect x="369" y="49" width="182" height="62" rx="20" stroke="#FF3BD4" stroke-width="2"/>
+</g>
+<rect x="360" y="40" width="200" height="80" fill="none" stroke="#C8BCF6" stroke-dasharray="4 3"/>
+<text x="460" y="150" fill="#C8BCF6" font-family="sans-serif" font-size="13" text-anchor="middle">Margen de 9 px: halo completo</text>
+</svg>
+<p>(La línea punteada es el borde del componente.)</p>
+<h3>El cálculo</h3>
+<p>Un trazo de grosor g se dibuja <b>centrado</b> sobre la línea de la figura: la mitad cae hacia afuera y la mitad hacia adentro. En <code>Dibujo.trazoNeon</code>, la capa más ancha del halo mide g + 6 × 2,4 = g + 14,4. Por lo tanto sobresale de la figura:</p>
+<pre class="texto">lo que sobresale = (g + 14,4) ÷ 2 = g ÷ 2 + 7,2 píxeles</pre>
+<table class="tabla">
+<tr><th>Componente</th><th>Grosor del borde</th><th>Sobresale</th><th>Margen elegido</th></tr>
+<tr><td><code>BotonNeon</code></td><td>2</td><td>1 + 7,2 = 8,2</td><td><code>MARGEN = 9</code></td></tr>
+<tr><td><code>Tarjeta</code></td><td>1,8</td><td>0,9 + 7,2 = 8,1</td><td><code>MARGEN = 10</code></td></tr>
+<tr><td><code>Encabezado</code></td><td>1,2</td><td>0,6 + 7,2 = 7,8</td><td><code>MARGEN = 10</code></td></tr>
+<tr><td><code>PanelTablero</code></td><td>1,5</td><td>0,75 + 7,2 = 7,95</td><td><code>MARGEN = 10</code></td></tr>
+</table>
+<p>Cada margen es el mínimo necesario redondeado hacia arriba, con un píxel o dos de holgura. La intensidad del neón no cambia este cálculo: solo cambia la opacidad de las capas, no su grosor.</p>
+<h3>Margen exterior y relleno interior</h3>
+<p>Conviene distinguir dos espacios:</p>
+<ul>
+<li><b>Margen</b> (exterior): entre el borde del componente y la forma visible. En el Totito sirve para el halo y se descuenta al dibujar (<code>new RoundRectangle2D.Double(MARGEN, MARGEN, getWidth() - 2 * MARGEN, …)</code>).</li>
+<li><b>Relleno</b> (interior, en inglés <i>padding</i>): entre el borde de una caja y su contenido. En Swing se pone con un borde vacío: <code>tarjeta.setBorder(BorderFactory.createEmptyBorder(34, 28, 34, 28))</code> deja 34 píxeles arriba y abajo y 28 a los lados (en ese orden: arriba, izquierda, abajo, derecha) antes de colocar los botones.</li>
+</ul>
+<p>Una consecuencia importante: <b>el espacio que ves entre dos formas</b> es la suma de los márgenes de ambos componentes más la separación que pongas entre ellos. Entre dos botones del menú hay 9 (margen de abajo del primero) + 14 (el espacio fijo) + 9 (margen de arriba del segundo) = 32 píxeles visibles. Por eso en el Totito las separaciones del código parecen pequeñas: el halo ya aporta casi 20 píxeles de aire.</p>
+
+<h2>Alineación y rejilla</h2>
+<p>Una <b>rejilla</b> (en inglés, <i>grid</i>) es un conjunto de líneas invisibles a las que se alinean los elementos. Las páginas web suelen usar rejillas de 12 columnas; un juego como el Totito usa la rejilla más simple que existe: <b>una sola columna centrada</b>. Todo se alinea a la línea vertical que pasa por la mitad de la ventana (x = 320).</p>
+<p>En el código, eso se consigue con una sola línea repetida en todos los componentes: <code>setAlignmentX(CENTER_ALIGNMENT)</code>. <code>PantallaBase.agregar</code> se la aplica a todo lo que se agrega:</p>
+<pre class="java">protected void agregar(JComponent componente) {
+    componente.setAlignmentX(CENTER_ALIGNMENT);
+    contenido.add(componente);
+}</pre>
+<div class="caja cuidado"><b>La trampa de la alineación en BoxLayout</b> En un panel con <code>BoxLayout</code> vertical (capítulo 37), si unos componentes tienen alineación centrada y otros a la izquierda (el valor por defecto de muchos componentes), Swing hace cosas extrañas: alinea los bordes izquierdos de unos con el centro de los otros y todo queda torcido. Regla: <b>todos los hijos de un mismo BoxLayout con la misma alineación</b>. Por eso el Totito se la pone a todo, sin excepción.</div>
+<h3>Los anchos también forman una rejilla</h3>
+<p>Aunque cada componente tiene su propio ancho, se agrupan en dos medidas que se repiten:</p>
+<table class="tabla">
+<tr><th>Ancho del componente</th><th>Quién lo usa</th></tr>
+<tr><td>≈ 590 (columna ancha)</td><td>Marcador (590), letrero de turno (590), fila de tarjetas de jugador (290 + 8 + 290 = 588), fila de opciones de modo (290 + 6 + 290 = 586), títulos de sección (560)</td></tr>
+<tr><td>≈ 440–480 (columna de tarjeta)</td><td>Tarjeta del menú (440), tarjeta de instrucciones (460), tarjeta de resultado (480)</td></tr>
+</table>
+<p>La columna ancha deja unos 25 píxeles de aire a cada lado de la ventana de 640; la columna de tarjeta, entre 80 y 100. Ese «casi igual» en todas las pantallas hace que, al pasar de una a otra, las cosas no salten de sitio.</p>
+<h3>Centrar lo corto, alinear a la izquierda lo largo</h3>
+<p>Que la columna esté centrada no significa que todo el texto deba estarlo. Los títulos y botones (una línea, pocas palabras) se centran. Pero los pasos de las instrucciones, que tienen dos líneas cada uno, van <b>alineados a la izquierda</b> dentro de su bloque, con los números formando una columna. Un texto de varias líneas centrado obliga al ojo a buscar el principio de cada línea en un lugar distinto; alineado a la izquierda, siempre empieza en el mismo sitio.</p>
+
+<h2>Ritmo vertical: los espacios entre bloques</h2>
+<p>El <b>ritmo vertical</b> es la regularidad de los espacios de arriba abajo. Un buen ritmo aplica la ley de proximidad del capítulo 34: <b>poco espacio dentro de un grupo, más espacio entre grupos</b>. En la pantalla de configuración:</p>
+<ul>
+<li>Entre el título «JUGADORES» y sus tarjetas: 0 píxeles de separación en el código (solo los márgenes de halo). El título está pegado a lo que nombra.</li>
+<li>Entre las tarjetas y el título siguiente: <code>espacio(2)</code> más los márgenes. Un poco más de aire marca el cambio de sección.</li>
+</ul>
+<p>Las pantallas usan dos herramientas de <code>PantallaBase</code> (verás cómo funcionan por dentro en el capítulo 37):</p>
+<ul>
+<li><code>espacio(n)</code>: una separación <b>fija</b> de n píxeles.</li>
+<li><code>relleno()</code>: un espacio <b>elástico</b> que se estira para ocupar lo que sobre. Poniendo uno al principio y otro al final, el contenido queda centrado en vertical.</li>
+</ul>
+<h3>Las cuentas de la pantalla más llena</h3>
+<p>¿Por qué en la configuración los espacios son tan pequeños (2 y 4) mientras que en el menú la tarjeta flota con mucho aire? Hagamos la suma de los altos de la pantalla de configuración, de arriba abajo:</p>
+<table class="tabla">
+<tr><th>Elemento</th><th>Alto</th></tr>
+<tr><td>Título «JUGADORES»</td><td>28</td></tr>
+<tr><td>Fila de tarjetas de jugador</td><td>150</td></tr>
+<tr><td><code>espacio(2)</code></td><td>2</td></tr>
+<tr><td>Título «SÍMBOLOS» con subtítulo</td><td>48</td></tr>
+<tr><td>Selector de símbolo (cajas + leyenda)</td><td>120</td></tr>
+<tr><td><code>espacio(4)</code></td><td>4</td></tr>
+<tr><td>Título «MODO DE JUEGO»</td><td>28</td></tr>
+<tr><td>Fila de opciones de modo</td><td>72</td></tr>
+<tr><td><code>espacio(4)</code></td><td>4</td></tr>
+<tr><td>Botón «Comenzar partida»</td><td>66</td></tr>
+<tr><td>Botón «Volver»</td><td>52</td></tr>
+<tr><td><b>Total</b></td><td><b>574</b></td></tr>
+</table>
+<p>El espacio disponible debajo del encabezado es 690 − 96 (encabezado) − 10 (borde inferior del contenido) = <b>584</b> píxeles. Sobran solo 10, que los dos <code>relleno()</code> reparten: 5 arriba y 5 abajo. ¡La pantalla está al límite! Cualquier espacio mayor habría empujado el botón «Volver» fuera de la ventana. El menú, en cambio, solo tiene una tarjeta de 360 píxeles de alto (34 + 88 + 14 + 88 + 14 + 88 + 34): los rellenos se reparten 584 − 360 = 224 píxeles, 112 arriba y 112 abajo, y la tarjeta queda flotando en el centro. Las mismas dos herramientas producen resultados muy distintos según el contenido, y por eso son tan útiles.</p>
+<div class="caja consejo"><b>Una unidad base de espaciado</b> En proyectos nuevos, elige una unidad (4 u 8 píxeles) y haz que todos los espacios, márgenes y rellenos sean múltiplos de ella: 4, 8, 12, 16, 24, 32. El Totito usa valores ajustados a ojo (2, 6, 14, 34…) porque se calcaron del diseño, pero una unidad base hace que el ritmo salga regular sin pensarlo y facilita ponerse de acuerdo con un diseñador.</div>
+
+<h2>El tamaño de la ventana: 640 × 690</h2>
+<p>La ventana del Totito mide 640 píxeles de ancho y 690 de alto. Está escrito en <code>PanelPrincipal</code>, con un comentario que da la razón:</p>
+<pre class="java">/** Tamano de la ventana. Cabe en pantallas de 1366x768. */
+public static final int ANCHO = 640;
+public static final int ALTO = 690;</pre>
+<p>La resolución de 1366 × 768 sigue siendo muy común en portátiles económicos. Hagamos la cuenta vertical en Windows: la barra de tareas ocupa unos 40 píxeles, así que quedan 728 libres; la barra de título de la ventana ocupa unos 30. Con 690 de contenido, la ventana completa mide unos 720: cabe, con 8 píxeles de sobra. 700 de alto ya habría sido demasiado justo. El ancho no es problema (640 de 1366).</p>
+<p>Otras decisiones relacionadas, todas en <code>TotitoApp</code> y <code>PanelPrincipal</code>:</p>
+<ul>
+<li><b>El tamaño se fija en el contenido, no en la ventana</b>: <code>PanelPrincipal</code> llama a <code>setPreferredSize(new Dimension(ANCHO, ALTO))</code> y la ventana usa <code>pack()</code>, que la ajusta para que el contenido mida exactamente eso. Si en cambio hicieras <code>setSize(640, 690)</code> en la ventana, la barra de título y los bordes se comerían parte de ese espacio y el contenido sería más pequeño de lo planeado.</li>
+<li><b>No se puede cambiar el tamaño</b> (<code>setResizable(false)</code>): los componentes tienen tamaños fijos en píxeles, así que agrandar la ventana solo añadiría espacio vacío alrededor.</li>
+<li><b>Se abre centrada</b>: <code>setLocationRelativeTo(null)</code>.</li>
+</ul>
+<div class="caja cuidado"><b>La escala de pantalla de Windows</b> Si Windows tiene la escala al 125 %, Java agranda la ventana a 800 × 862 píxeles físicos. En una pantalla de 1920 × 1080 (la combinación típica de 125 %) cabe sin problema. En una de 1366 × 768 con escala de 125 % no cabría, pero es un caso raro: Windows recomienda el 100 % para esa resolución.</div>
+
+<h2>Consistencia: las mismas reglas en todas partes</h2>
+<p>La <b>consistencia</b> es lo que hace que cinco pantallas distintas parezcan un solo programa. No es algo que se consiga al final «repasando»: se construye desde el principio repitiendo los mismos valores. Estos son los del Totito.</p>
+<h3>Radios de las esquinas</h3>
+<table class="tabla">
+<tr><th>Radio (diámetro del arco)</th><th>Dónde</th><th>Tipo de elemento</th></tr>
+<tr><td>30</td><td>Tarjetas (<code>Tarjeta</code> por defecto), botones del menú</td><td rowspan="2">Contenedores grandes</td></tr>
+<tr><td>26</td><td>Encabezado, tarjetas de jugador</td></tr>
+<tr><td>22</td><td>Marco del tablero, marcador, opciones de modo</td><td rowspan="2">Controles medianos</td></tr>
+<tr><td>18–20</td><td>Campo de texto, cajas del selector de símbolo</td></tr>
+<tr><td>14–16</td><td>Casillas del tablero, botón de cerrar</td><td>Elementos pequeños</td></tr>
+<tr><td>= alto</td><td>Botones píldora</td><td>Extremos semicirculares</td></tr>
+</table>
+<p>El patrón es claro: <b>cuanto más grande el elemento, más redondas sus esquinas</b>, en escalones fijos. Un elemento pequeño con esquinas muy redondas parecería una pastilla; uno grande con esquinas pequeñas, una caja de cartón.</p>
+<div class="caja consejo"><b>Esquinas concéntricas</b> Cuando una caja redondeada contiene otra, la de dentro se ve mejor si su radio es el de fuera menos el espacio que las separa. Con radios iguales, el hueco entre las dos curvas se ve más ancho en las esquinas que en los lados. Fíjate en el tablero: marco de 22 y casillas de 14.</div>
+<h3>Grosores de línea</h3>
+<table class="tabla">
+<tr><th>Grosor</th><th>Dónde</th></tr>
+<tr><td>2</td><td>Bordes de botones, cajas del selector, círculos de los pasos</td></tr>
+<tr><td>1,8</td><td>Bordes de tarjetas, marcador y opciones</td></tr>
+<tr><td>1,2–1,6</td><td>Bordes secundarios: encabezado, tablero, campo de texto, rejilla</td></tr>
+<tr><td>8,5 % del lado de la casilla</td><td>Fichas X y O (8,5 píxeles en casillas de 100)</td></tr>
+</table>
+<p>Los bordes de los elementos que se pulsan son un poco más gruesos (2) que los de los que solo contienen (1,8), y los secundarios aún más finos. Otra vez, una escala pequeña y fija.</p>
+<h3>El resto de las reglas</h3>
+<ul>
+<li><b>Colores</b>: solo de <code>Tema</code> (capítulo 35).</li>
+<li><b>Fuentes</b>: solo con <code>Tema.fuente</code> o <code>Tema.fuenteEspaciada</code>, con los tamaños de la escala.</li>
+<li><b>Halos</b>: siempre con <code>Dibujo.trazoNeon</code>, nunca dibujados a mano.</li>
+<li><b>Iconos</b>: todos de línea, con puntas redondeadas (<code>Dibujo.redondo</code>) y medidas en fracciones del tamaño (capítulo 42).</li>
+<li><b>Alineación</b>: todo centrado en la columna.</li>
+<li><b>Estados</b>: los mismos efectos (más brillo, oscurecer, 40 % de opacidad) en todos los controles.</li>
+</ul>
+<p>Fíjate en que casi todas estas reglas están <b>en el código</b>, no en la memoria del programador: si para crear un botón tienes que llamar a <code>BotonNeon.pildora(…)</code>, el botón saldrá con el radio, el grosor, el halo y la fuente correctos sin que tengas que acordarte de nada. La mejor consistencia es la que no se puede romper por descuido.</p>
+
+<h2>Resumen</h2>
+<ul>
+<li>Una <b>fuente</b> en Java es familia + estilo + tamaño. Java solo usa fuentes instaladas y, si pides una que no existe, cambia a otra en silencio.</li>
+<li><code>Tema</code> recorre una <b>lista de respaldo</b> (Nunito… Segoe UI… Arial… DejaVu Sans) y usa la primera instalada; si no hay ninguna, <code>SansSerif</code>. En Windows será casi siempre Segoe UI.</li>
+<li>Los tamaños forman una <b>escala</b> (de 10,5 a 40) con niveles que significan algo; negrita para lo que se pulsa o nombra, normal para lo que explica.</li>
+<li>El <b>tracking</b> (<code>TextAttribute.TRACKING</code>) separa las letras de las etiquetas cortas en mayúsculas; es una fracción del tamaño.</li>
+<li><code>drawString</code> usa la <b>línea base</b>; para centrar en vertical: <code>base = yCentro + (ascent − descent) ÷ 2</code>.</li>
+<li>El <b>margen</b> para el halo se calcula: grosor ÷ 2 + 7,2; por eso 9 y 10 píxeles. El espacio visible entre dos formas incluye los márgenes de ambas.</li>
+<li>Todo se alinea a <b>una columna centrada</b>; el ritmo vertical usa espacios fijos y rellenos elásticos.</li>
+<li>La ventana mide <b>640 × 690</b> para caber en 1366 × 768; la <b>consistencia</b> (radios, grosores, colores, fuentes) se garantiza con constantes y métodos de fábrica.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Cualquier programa de escritorio</b>: copia el patrón de la lista de respaldo de fuentes. Un programa de facturación que pide «Calibri» a secas se verá distinto en cada oficina; con una lista y un respaldo genérico, se verá bien en todas.</li>
+<li><b>Páginas web</b>: las mismas ideas tienen nombre propio en CSS: <code>font-family</code> con lista de respaldo, <code>letter-spacing</code> para el tracking, <code>line-height</code> para el alto de línea, <code>padding</code> y <code>margin</code> para relleno y margen, y <code>border-radius</code> para los radios.</li>
+<li><b>Botones, etiquetas y celdas de tabla</b> en cualquier interfaz dibujada a mano (un juego, un gráfico, un visor): usa siempre <code>FontMetrics</code> y la fórmula de la línea base para centrar texto. Es lo que diferencia un programa pulido de uno amateur.</li>
+<li><b>Documentos y presentaciones</b>: una escala de cinco tamaños, mayúsculas espaciadas solo para etiquetas, poco espacio dentro de los grupos y más entre grupos. Funciona igual en un informe de Word que en un afiche.</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Ejecuta <code>java Fuentes.java</code> en tu Windows y anota qué familia elegiría el Totito y sus medidas a 25 puntos. Con esos números, calcula dónde quedaría la línea base del texto de un botón del menú (centro en y = 44).</li>
+<li>Modifica <code>Fuentes.java</code> para que también imprima el ancho de «JUGADORES» a 17 puntos en negrita, sin espaciado y con <code>TextAttribute.TRACKING</code> de 0,3. Comprueba que la diferencia sea aproximadamente 9 × 17 × 0,3. Pista: necesitarás <code>import java.awt.font.TextAttribute;</code> e <code>import java.util.Map;</code>.</li>
+<li>Calcula qué margen necesitaría un componente cuyo borde de neón tuviera grosor 6. ¿Y si <code>trazoNeon</code> usara 8 capas en lugar de 6, cada una 2,4 píxeles más ancha?</li>
+<li>En la tabla del ritmo vertical de la configuración, ¿cuántos píxeles podrías agregar como máximo entre secciones antes de que el botón «Volver» se salga de la ventana? Propón cómo repartirlos.</li>
+<li>Elige una escala tipográfica de proporción 1,25 con base 16 y reasigna los tamaños del Totito a sus escalones. ¿Qué tamaños actuales desaparecerían? ¿Crees que el juego se vería mejor o peor? Pista: no hay una única respuesta; argumenta con la jerarquía.</li>
+</ol>
+</div>
+</section>
