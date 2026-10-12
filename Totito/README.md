@@ -12,6 +12,9 @@ y todo está dibujado con código (Java2D), sin imágenes ni librerías extra.
 |---|---|---|
 | ![Partida](docs/capturas/4-juego.png) | ![Victoria](docs/capturas/5-victoria.png) | ![Empate](docs/capturas/6-empate.png) |
 
+> 📄 **Documentación completa:** [`docs/Integracion_Grafica_Totito.pdf`](docs/Integracion_Grafica_Totito.pdf) explica
+> qué se hizo y por qué, la arquitectura y **cada archivo bloque por bloque** (con números de línea).
+
 ---
 
 ## 1. Qué se necesita
