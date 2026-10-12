@@ -1,0 +1,443 @@
+<section class="capitulo" id="cap10">
+<h1><span class="num">Capítulo 10</span>Colaborar y publicar en GitHub</h1>
+<p class="entrada">Git guarda tu historia; GitHub la convierte en un lugar de trabajo compartido. En este capítulo recorres la página de un repositorio, aprendes el flujo rama → pull request → revisión → fusión que usarás en el capítulo 61, anotas tareas con issues, invitas colaboradores, entiendes los forks, escribes un buen README, eliges una licencia y sabes qué no debe subirse nunca. Cierra con la lista de buenas prácticas de toda la Parte II.</p>
+
+<h2>Un recorrido por la página de tu repositorio</h2>
+<p>Abre el Totito en el navegador con <code>gh repo view --web</code>. Arriba verás <code>ana-lopez / totito</code> (dueño / repositorio), la etiqueta <b>Private</b> o <b>Public</b>, y a la derecha los botones <b>Watch</b> (recibir avisos de lo que pase), <b>Fork</b> (hacer tu propia copia, lo verás más abajo) y <b>Star</b> (marcar con una estrella, como un «me gusta» que además lo guarda en tu lista). Debajo hay una fila de pestañas:</p>
+<table class="tabla">
+<tr><th>Pestaña</th><th>Qué hay ahí</th><th>Cuándo la usarás en el Totito</th></tr>
+<tr><td><b>Code</b></td><td>Los archivos, el selector de ramas, el historial de commits, el README, y a la derecha el panel <i>About</i>, <i>Releases</i> y <i>Tags</i></td><td>Siempre: es la portada</td></tr>
+<tr><td><b>Issues</b></td><td>Lista de tareas, errores e ideas</td><td>Para anotar las mejoras pendientes</td></tr>
+<tr><td><b>Pull requests</b></td><td>Propuestas para fusionar una rama en otra, con revisión</td><td>En el capítulo 61, para fusionar <code>interfaz-neon</code></td></tr>
+<tr><td><b>Actions</b></td><td>Automatizaciones que GitHub ejecuta en sus servidores (compilar, probar, publicar)</td><td>Opcional; un ejemplo al final del capítulo</td></tr>
+<tr><td><b>Projects</b></td><td>Tableros de organización (columnas «Por hacer», «En curso», «Hecho»)</td><td>Opcional</td></tr>
+<tr><td><b>Wiki</b></td><td>Páginas de documentación extra (en repos públicos con el plan gratuito)</td><td>No hace falta: el README basta</td></tr>
+<tr><td><b>Security</b></td><td>Avisos de seguridad y secretos detectados</td><td>Si GitHub detecta algo, aparecerá aquí</td></tr>
+<tr><td><b>Insights</b></td><td>Estadísticas: quién contribuyó, cuántos commits, gráfico de ramas (<i>Network</i>)</td><td>Por curiosidad</td></tr>
+<tr><td><b>Settings</b></td><td>Configuración: nombre, visibilidad, colaboradores, reglas de ramas, borrar el repositorio</td><td>Solo la ves tú (el dueño)</td></tr>
+</table>
+<p>En la pestaña <b>Code</b> conviene conocer:</p>
+<ul>
+<li>El <b>selector de ramas</b> (un botón que dice <code>main</code>): elige otra rama para ver sus archivos tal como están en ella.</li>
+<li>La línea del <b>último commit</b>, con tu foto, el mensaje, el hash y la fecha, y a la derecha el contador de commits (<i>N Commits</i>): al hacer clic ves el historial, como <code>git log</code>, y al hacer clic en un commit ves su diff, en rojo y verde.</li>
+<li>Al entrar a un archivo, el botón <b>History</b> muestra los commits que lo tocaron, y <b>Blame</b> muestra, línea por línea, qué commit la escribió por última vez («blame» significa «culpar», pero sirve más para entender el porqué de una línea que para culpar a nadie).</li>
+<li>El botón verde <b>&lt;&gt; Code</b> da la dirección para clonar el repositorio (HTTPS o SSH) y la opción <i>Download ZIP</i>.</li>
+<li>Al pulsar la tecla <code>.</code> (punto) en la página de un repositorio, GitHub abre un editor de código en el navegador. Útil para cambios rápidos desde otra computadora.</li>
+</ul>
+
+<h2>Pull requests: proponer, revisar y fusionar</h2>
+<p>Un <b>pull request</b> (PR; en español a veces «solicitud de extracción», aunque nadie lo dice así) es una <b>petición para fusionar una rama en otra</b>, con una página propia en GitHub donde se ve el diff completo, se comenta línea por línea, se aprueba o se piden cambios, y finalmente se fusiona con un botón o un comando. El nombre viene de «pídele al dueño que <i>jale</i> (<i>pull</i>) mis cambios».</p>
+<p>En un equipo, es la forma estándar de que nadie meta código en <code>main</code> sin que otra persona lo mire. ¿Y si trabajas solo, como en el Totito? Igual vale la pena:</p>
+<ul>
+<li><b>Revisas tu propio trabajo</b> con otros ojos: ver el diff completo de la rama en la página de GitHub hace saltar errores que en NetBeans no ves.</li>
+<li><b>Queda escrito</b> qué se fusionó, cuándo y por qué, con su descripción y sus comentarios. El PR #1 del Totito contará la historia de toda la interfaz neón.</li>
+<li><b>Se pueden ejecutar comprobaciones automáticas</b> antes de fusionar (Actions).</li>
+<li><b>Practicas</b> el flujo que te pedirán en cualquier trabajo.</li>
+</ul>
+
+<h3>El flujo completo, paso a paso</h3>
+<p>Así es el flujo que harás en el capítulo 61 con la rama <code>interfaz-neon</code> (y el que harás en cualquier proyecto con equipo):</p>
+<ol>
+<li><b>Crear la rama</b> desde una <code>main</code> actualizada (en el Totito lo haces al empezar la Parte VII, capítulo 38):</li>
+</ol>
+<pre class="ps">git switch main
+git pull
+git switch -c interfaz-neon</pre>
+<ol start="2">
+<li><b>Trabajar y hacer commits</b> en la rama, uno por capítulo, como siempre.</li>
+<li><b>Subir la rama</b> a GitHub. La primera vez con <code>-u</code>, para emparejarla:</li>
+</ol>
+<pre class="ps">git push -u origin interfaz-neon</pre>
+<pre class="salida">remote:
+remote: Create a pull request for 'interfaz-neon' on GitHub by visiting:
+remote:      https://github.com/ana-lopez/totito/pull/new/interfaz-neon
+remote:
+To https://github.com/ana-lopez/totito.git
+ * [new branch]      interfaz-neon -&gt; interfaz-neon
+branch 'interfaz-neon' set up to track 'origin/interfaz-neon'.</pre>
+<p>Las líneas que empiezan con <code>remote:</code> las escribe GitHub: te sugiere crear un pull request y te da el enlace. Las siguientes veces basta con <code>git push</code>. Subir la rama con frecuencia tiene una ventaja extra: tu trabajo a medias también está respaldado en GitHub.</p>
+<ol start="4">
+<li><b>Abrir el pull request</b>:</li>
+</ol>
+<pre class="ps">gh pr create --base main --head interfaz-neon --title "Interfaz neon completa (v1.0.0)" --body-file $HOME\pr-interfaz.md</pre>
+<table class="tabla">
+<tr><th>Pieza</th><th>Qué hace</th></tr>
+<tr><td><code>gh pr create</code></td><td>Crea un pull request en el repositorio de la carpeta actual</td></tr>
+<tr><td><code>--base main</code></td><td>La rama <b>destino</b>: a dónde quieres llevar los cambios</td></tr>
+<tr><td><code>--head interfaz-neon</code></td><td>La rama <b>origen</b>: la que tiene los cambios. Si estás en ella, puedes omitirla</td></tr>
+<tr><td><code>--title "..."</code></td><td>El título del PR: una frase clara, como el de un commit</td></tr>
+<tr><td><code>--body-file $HOME\pr-interfaz.md</code></td><td>Toma la descripción de un archivo de texto. Para descripciones cortas sirve <code>--body "texto"</code></td></tr>
+</table>
+<p>Escribir la descripción en un archivo es más cómodo que en una sola línea de PowerShell. Créalo <b>fuera de la carpeta del proyecto</b>, para que no termine en un commit por accidente: <code>notepad $HOME\pr-interfaz.md</code> lo crea en tu carpeta personal. Una buena descripción de PR responde cuatro preguntas:</p>
+<pre class="texto">## Que cambia
+Toda la interfaz neon del Totito: menu, instrucciones, configuracion,
+partida y pantalla de resultado, con sus componentes (BotonNeon,
+Tarjeta, Rotulo, PanelTablero...). La logica (Tablero, Jugador,
+IA_Minimax) no se toco; Partida la une con la interfaz.
+
+## Por que
+Pasar de la ventana basica de la v0.1.0 al diseno final (v1.0.0).
+
+## Como probarlo
+1. Clean and Build en NetBeans y Run (F6).
+2. Jugar una partida de 2 jugadores y una contra la IA.
+3. Comprobar victoria, empate, "Jugar de nuevo" y "Menu principal".
+
+## Capturas
+Ver docs/capturas o las imagenes del capitulo 61.</pre>
+<p>Si prefieres no usar comandos, <code>gh pr create --web</code> abre el formulario en el navegador con las ramas ya elegidas. Y si escribes <code>gh pr create</code> sin opciones, te pregunta todo de forma interactiva. Al terminar, <code>gh</code> imprime la dirección del PR, por ejemplo <code>https://github.com/ana-lopez/totito/pull/1</code>: el número <code>1</code> es su identificador.</p>
+
+<ol start="5">
+<li><b>Revisar</b>. Esto se puede hacer en la terminal o en la página:</li>
+</ol>
+<pre class="ps">gh pr list
+gh pr view 1
+gh pr diff 1
+gh pr view 1 --web</pre>
+<p><code>gh pr list</code> muestra los PR abiertos; <code>gh pr view 1</code> su descripción y estado; <code>gh pr diff 1</code> el diff completo (sal con <code>q</code>); <code>--web</code> lo abre en el navegador. La página de un PR tiene cuatro pestañas:</p>
+<table class="tabla">
+<tr><th>Pestaña</th><th>Contenido</th></tr>
+<tr><td><b>Conversation</b></td><td>La descripción, los comentarios, las revisiones y, al final, el botón para fusionar</td></tr>
+<tr><td><b>Commits</b></td><td>La lista de commits de la rama (en el Totito, uno por capítulo)</td></tr>
+<tr><td><b>Checks</b></td><td>El resultado de las comprobaciones automáticas (Actions), si hay</td></tr>
+<tr><td><b>Files changed</b></td><td>El diff de todos los archivos. Pasando el ratón por una línea aparece un <b>+</b> azul para comentar <b>esa</b> línea. El botón <i>Review changes</i> permite enviar la revisión como comentario (<i>Comment</i>), aprobación (<i>Approve</i>) o petición de cambios (<i>Request changes</i>)</td></tr>
+</table>
+<p>Desde la terminal también se comenta y se revisa:</p>
+<pre class="ps">gh pr comment 1 --body "Probado en Windows 11: menu, partida y empate funcionan."
+gh pr review 1 --comment --body "Revisar el contraste del texto suave en la tarjeta del jugador."</pre>
+<p>Si la revisión pide cambios, <b>no se abre otro PR</b>: haces los commits en la misma rama y <code>git push</code>; el PR se actualiza solo con los commits nuevos. Así se ve, en la conversación, qué se pidió y cómo se resolvió.</p>
+<div class="caja concepto"><b>No puedes aprobar tu propio PR</b> GitHub no deja que el autor de un PR lo apruebe (<code>gh pr review --approve</code> sobre tu propio PR da error). Trabajando solo, tu «revisión» consiste en leer el diff completo y dejar un comentario con lo que probaste. Cuando tengas colaboradores, ellos aprueban.</div>
+
+<ol start="6">
+<li><b>Fusionar</b>:</li>
+</ol>
+<pre class="ps">gh pr merge 1 --merge --delete-branch</pre>
+<p><code>gh pr merge</code> fusiona el PR. La opción que elijas decide cómo queda el historial; GitHub ofrece tres, y las verás también en el botón verde de la página:</p>
+<table class="tabla">
+<tr><th>Opción</th><th>Botón en la página</th><th>Qué hace</th><th>Cuándo conviene</th></tr>
+<tr><td><code>--merge</code></td><td><i>Create a merge commit</i></td><td>Fusión de tres vías con commit de fusión, como en el capítulo 9. Todos los commits de la rama se conservan</td><td>Cuando los commits de la rama cuentan una historia que quieres conservar. <b>Es la que usa el Totito</b>: cada capítulo de la Parte VII queda como un commit</td></tr>
+<tr><td><code>--squash</code></td><td><i>Squash and merge</i></td><td>Aplasta todos los commits de la rama en <b>uno solo</b> en <code>main</code></td><td>Ramas cortas con commits de prueba («wip», «arreglo typo») que no aportan</td></tr>
+<tr><td><code>--rebase</code></td><td><i>Rebase and merge</i></td><td>Copia los commits de la rama uno a uno encima de <code>main</code>, sin commit de fusión</td><td>Equipos que prefieren un historial en línea recta</td></tr>
+</table>
+<p><code>--delete-branch</code> borra la rama en GitHub y en tu PC después de fusionar (su trabajo ya está en <code>main</code>). <code>gh</code> además te deja en <code>main</code> actualizada. Si fusionaste desde la página, actualiza tú:</p>
+<pre class="ps">git switch main
+git pull
+git branch -d interfaz-neon
+git fetch --prune</pre>
+<p><code>git fetch --prune</code> («podar») borra de tu PC las referencias a ramas remotas que ya no existen en GitHub, para que <code>git branch -a</code> no muestre ramas fantasma.</p>
+<ol start="7">
+<li><b>Etiquetar la versión</b>, ya en <code>main</code>: <code>git tag -a v1.0.0 -m "Totito 1.0.0: interfaz neon"</code> y <code>git push --tags</code>.</li>
+</ol>
+
+<div class="caja hito"><b>Hito (capítulo 61)</b> Cuando hagas este flujo con la interfaz neón, el PR #1 quedará en la pestaña <i>Pull requests → Closed</i> con la etiqueta morada <b>Merged</b>, y <code>main</code> tendrá el Totito v1.0.0.</div>
+
+<div class="caja consejo"><b>PR en borrador y PR pequeños</b> <code>gh pr create --draft</code> abre un PR en <b>borrador</b>: sirve para enseñar trabajo a medias y recibir opiniones antes de terminarlo; no se puede fusionar hasta que lo marques como listo (<code>gh pr ready 1</code>). Y en general, cuanto más pequeño el PR, mejor la revisión: el de la interfaz neón es grande porque el libro lo hace en una sola rama para que veas el proceso completo; en un equipo real se partiría en varios PR (uno para los componentes, otro para cada pantalla…).</div>
+
+<h2>Issues: la lista de pendientes del proyecto</h2>
+<p>Un <b>issue</b> («asunto», «tema») es una ficha para anotar algo que hay que hacer: un error, una mejora, una idea, una pregunta. Cada issue tiene un número, un título, una descripción, comentarios, etiquetas y un estado (abierto o cerrado). Es mucho mejor que una lista en un papel porque se enlaza con el código: un PR puede decir «esto resuelve el #3» y el issue se cierra solo.</p>
+<p>El README del proyecto de referencia termina con una lista de «Ideas pendientes». Son candidatos perfectos para issues:</p>
+<pre class="ps">gh issue create --title "Niveles de dificultad para la IA" --body "Opcion facil: la IA hace a veces una jugada al azar en lugar de la de Minimax." --label enhancement
+gh issue create --title "Jugar con el teclado (teclas 1 a 9)" --label enhancement
+gh issue list</pre>
+<pre class="salida">Showing 2 of 2 open issues in ana-lopez/totito
+
+ID  TITLE                                  LABELS       UPDATED
+#2  Jugar con el teclado (teclas 1 a 9)    enhancement  less than a minute ago
+#1  Niveles de dificultad para la IA       enhancement  about 1 minute ago</pre>
+<ul>
+<li><code>--title</code> y <code>--body</code>: título y descripción. Si omites el <code>--body</code>, <code>gh</code> te lo pregunta.</li>
+<li><code>--label enhancement</code>: una etiqueta. Todo repositorio nuevo trae algunas: <code>bug</code> (error), <code>enhancement</code> (mejora), <code>documentation</code>, <code>question</code>, <code>good first issue</code> (buena para quien empieza)… Puedes crear las tuyas en <i>Issues → Labels</i>.</li>
+<li><code>gh issue view 1</code> muestra uno; <code>gh issue close 1</code> lo cierra; <code>gh issue comment 1 --body "..."</code> comenta.</li>
+</ul>
+<p>Los issues y los PR comparten la numeración: si ya existen los issues #1 y #2, el siguiente PR será el #3 (por eso en tu repositorio el PR de la interfaz neón podría no ser el #1; no importa).</p>
+<h3>Cerrar issues automáticamente</h3>
+<p>Si la descripción de un PR (o el mensaje de un commit que llega a <code>main</code>) incluye <code>Closes #1</code>, <code>Fixes #1</code> o <code>Resolves #1</code>, GitHub cierra el issue #1 cuando el PR se fusiona, y deja el enlace entre los dos. Por ejemplo, en el cuerpo de un commit: <code>git commit -m "IA_Minimax: agregar nivel facil" -m "Closes #1"</code>.</p>
+<h3>Cómo se escribe un buen issue de error</h3>
+<pre class="texto">Titulo: El marcador suma dos victorias si se hace doble clic al ganar
+
+Pasos para reproducirlo:
+1. Modo 2 jugadores.
+2. Hacer la jugada ganadora con doble clic rapido.
+
+Resultado esperado: el marcador suma 1.
+Resultado obtenido: el marcador suma 2.
+
+Version: v1.0.0, Windows 11. Captura adjunta.</pre>
+<p>Pasos exactos, lo esperado, lo obtenido y la versión. Con eso, cualquiera (incluido tú dentro de un mes) puede reproducir el error sin preguntar nada.</p>
+
+<h2>Colaboradores: dar acceso a otras personas</h2>
+<p>Si un amigo va a programar contigo en el Totito, necesita permiso para subir a tu repositorio:</p>
+<ol>
+<li>En la página del repositorio: <b>Settings → Collaborators</b> (GitHub puede pedirte confirmar con tu contraseña o el código del teléfono).</li>
+<li><b>Add people</b> → escribe su nombre de usuario o correo de GitHub → <b>Add … to this repository</b>.</li>
+<li>Tu amigo recibe una invitación por correo (o en <code>https://github.com/notifications</code>) y debe <b>aceptarla</b>.</li>
+<li>Él descarga el proyecto con <code>gh repo clone ana-lopez/totito</code> (o <code>git clone https://github.com/ana-lopez/totito.git</code>), que crea la carpeta <code>totito</code> con todo el historial y el remoto <code>origin</code> ya configurado.</li>
+</ol>
+<p>Desde la terminal, la invitación también se puede enviar por la API de GitHub: <code>gh api -X PUT repos/ana-lopez/totito/collaborators/usuario-del-amigo</code>.</p>
+<p>En un repositorio personal, un colaborador puede hacer casi todo: subir commits, crear ramas, fusionar PR. Aun así, acuerden trabajar <b>siempre con ramas y PR</b>: cada quien en su rama, y a <code>main</code> solo por PR revisado por el otro. Ese acuerdo vale más que cualquier permiso.</p>
+
+<h2>Forks: tu propia copia de un proyecto ajeno</h2>
+<p>¿Y si quieres contribuir a un proyecto donde <b>no</b> eres colaborador, por ejemplo una librería pública que tiene un error? No puedes subir a su repositorio, pero puedes hacer un <b>fork</b> («bifurcación»): una copia completa del repositorio en <b>tu</b> cuenta, donde sí puedes subir. Desde tu fork abres un PR hacia el repositorio original, y sus dueños deciden si lo aceptan.</p>
+<pre class="ps">gh repo fork dueno-original/proyecto --clone
+cd proyecto
+git remote -v</pre>
+<pre class="salida">origin	https://github.com/ana-lopez/proyecto.git (fetch)
+origin	https://github.com/ana-lopez/proyecto.git (push)
+upstream	https://github.com/dueno-original/proyecto.git (fetch)
+upstream	https://github.com/dueno-original/proyecto.git (push)</pre>
+<p><code>gh repo fork … --clone</code> crea el fork en tu cuenta, lo descarga, y configura <b>dos</b> remotos: <code>origin</code> (tu fork, donde subes) y <code>upstream</code> («corriente arriba», el original, de donde traes novedades). El flujo es el mismo de siempre: rama, commits, <code>git push -u origin mi-arreglo</code> y <code>gh pr create</code> (gh propone por defecto el repositorio original como destino). Para traer los cambios nuevos del original a tu fork: <code>git pull upstream main</code> estando en tu <code>main</code>, y luego <code>git push</code>; o el botón <b>Sync fork</b> en la página de tu fork.</p>
+<table class="tabla">
+<tr><th></th><th>Colaborador</th><th>Fork</th></tr>
+<tr><td>Dónde subes</td><td>Al repositorio original</td><td>A tu copia</td></tr>
+<tr><td>Necesita invitación</td><td>Sí</td><td>No (si el repositorio es público)</td></tr>
+<tr><td>Cómo llegan tus cambios al original</td><td>PR entre ramas del mismo repositorio</td><td>PR desde tu fork al original</td></tr>
+<tr><td>Típico de</td><td>Un equipo pequeño, un trabajo de grupo</td><td>Proyectos de código abierto</td></tr>
+</table>
+
+<h2>Un buen README</h2>
+<p>El <code>README.md</code> es la portada del proyecto: GitHub lo muestra debajo de la lista de archivos, y es lo primero (y a veces lo único) que lee un visitante. Está escrito en <b>Markdown</b>, un formato de texto con símbolos sencillos que GitHub convierte en formato:</p>
+<table class="tabla">
+<tr><th>Escribes</th><th>Se ve como</th></tr>
+<tr><td><code># Título</code>, <code>## Subtítulo</code></td><td>Títulos de nivel 1 y 2</td></tr>
+<tr><td><code>**negrita**</code>, <code>*cursiva*</code></td><td><b>negrita</b>, <i>cursiva</i></td></tr>
+<tr><td><code>- elemento</code> / <code>1. paso</code></td><td>Lista con viñetas / numerada</td></tr>
+<tr><td><code>`codigo`</code></td><td>Código en línea</td></tr>
+<tr><td>Tres comillas invertidas antes y después de un bloque</td><td>Bloque de código</td></tr>
+<tr><td><code>[texto](https://...)</code></td><td>Un enlace</td></tr>
+<tr><td><code>![descripcion](docs/capturas/1-menu.png)</code></td><td>Una imagen del repositorio</td></tr>
+<tr><td><code>| a | b |</code> en varias líneas</td><td>Una tabla</td></tr>
+</table>
+<p>Un buen README responde, en este orden: <b>qué es</b>, <b>cómo se ve</b>, <b>cómo lo uso</b>, <b>cómo lo construyo</b>, <b>cómo está hecho</b>, <b>cómo contribuyo</b> y <b>bajo qué licencia</b>. Este es un modelo para el Totito terminado (los textos del código del libro van sin tildes, pero el README es para personas: aquí sí usa tildes, GitHub las muestra perfecto):</p>
+<pre class="texto"># Totito neón
+
+Juego del totito (tres en raya) para dos personas o contra una IA
+que nunca pierde (algoritmo Minimax). Hecho en Java con Swing, con
+una interfaz neón dibujada con código.
+
+![Menú del Totito](docs/capturas/1-menu.png)
+
+## Descargar y jugar
+
+1. Ve a **Releases** y descarga `Totito-1.0.0.exe`.
+2. Ejecuta el instalador y abre *Totito* desde el menú Inicio.
+
+No hace falta instalar Java: el programa lleva el suyo.
+
+## Compilar desde el código
+
+Requisitos: JDK 21 y Maven (o NetBeans 25).
+
+```
+git clone https://github.com/ana-lopez/totito.git
+cd totito
+mvn package
+java -jar target/Totito-1.0-SNAPSHOT.jar
+```
+
+## Cómo está organizado
+
+| Clase | Qué hace |
+|---|---|
+| `Tablero` | Las 9 casillas y las reglas |
+| `IA_Minimax` | La jugada perfecta de la computadora |
+| `Partida` | Turnos, marcador y modo de juego |
+| `Tema` | Todos los colores y fuentes |
+
+## Contribuir
+
+Los errores e ideas van en **Issues**. Para proponer cambios:
+crea una rama, haz commits pequeños y abre un pull request.
+
+## Licencia
+
+MIT. Ver el archivo `LICENSE`.
+
+Hecho por Ana López como proyecto del libro
+*Java desde cero con el Totito*.</pre>
+<p>Para que la imagen funcione, el archivo tiene que existir en el repositorio: toma capturas del juego (Windows + Shift + S), guárdalas como PNG en <code>docs\capturas\</code> y súbelas en un commit (<code>Documentacion: capturas del juego</code>). Revisa siempre cómo queda el README en la página de GitHub después de subirlo: un error de Markdown se nota enseguida.</p>
+<p>Completa también el panel <b>About</b> (el engranaje a la derecha de la pestaña Code): una descripción de una línea y <b>topics</b> (temas) como <code>java</code>, <code>swing</code>, <code>tic-tac-toe</code>, <code>minimax</code>, que ayudan a que otros encuentren tu proyecto.</p>
+
+<h2>Licencias: qué pueden hacer otros con tu código</h2>
+<p>Aquí hay una sorpresa para casi todo el mundo: si publicas código <b>sin licencia</b>, legalmente <b>nadie puede usarlo</b>, copiarlo ni modificarlo, aunque esté público en GitHub. Sin licencia rige el derecho de autor por defecto: «todos los derechos reservados». Las personas pueden <b>verlo</b> (y hacer un fork dentro de GitHub, según sus términos de uso), pero no reutilizarlo en sus proyectos. Una <b>licencia</b> es el permiso por escrito que tú, como autor, das a los demás.</p>
+<table class="tabla">
+<tr><th>Licencia</th><th>En una frase</th><th>Típica de</th></tr>
+<tr><td><b>MIT</b></td><td>Haz lo que quieras, incluso venderlo, pero conserva mi nombre y el aviso; no hay garantía</td><td>Proyectos personales, librerías pequeñas. La más usada en GitHub</td></tr>
+<tr><td><b>Apache 2.0</b></td><td>Como MIT, pero además habla de patentes y pide indicar los cambios</td><td>Proyectos de empresas, Android</td></tr>
+<tr><td><b>GPL 3.0</b></td><td>Puedes usarlo y cambiarlo, pero si distribuyes un programa basado en él, debe ser también GPL con su código abierto</td><td>Linux (con la GPL 2.0), proyectos que quieren seguir siendo libres</td></tr>
+<tr><td>Ninguna</td><td>Todos los derechos reservados: se puede mirar, no reutilizar</td><td>Código privado o que no quieres compartir</td></tr>
+</table>
+<p>Para el Totito, el libro recomienda la <b>MIT</b>: es corta, clara y permite que cualquiera aprenda de tu juego y lo reutilice. Este es su texto completo, en inglés (las licencias se dejan en su idioma original, porque es el texto legal reconocido):</p>
+<pre class="texto">MIT License
+
+Copyright (c) 2026 Ana López
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre>
+<p>Párrafo por párrafo, en español llano:</p>
+<ol>
+<li><b>Copyright (c) 2026 Ana López</b>: el año y el autor. Dice que el código es tuyo.</li>
+<li><b>«Permission is hereby granted…»</b>: «por la presente se da permiso, gratis, a cualquier persona que obtenga una copia de este software… para usarlo sin restricción, incluyendo usar, copiar, modificar, fusionar, publicar, distribuir, sublicenciar y/o vender copias…, con la siguiente condición».</li>
+<li><b>La condición</b>: «el aviso de copyright y este permiso deben incluirse en todas las copias o partes sustanciales». Es decir: quien use tu código debe conservar tu nombre y la licencia.</li>
+<li><b>«AS IS»</b>, en mayúsculas para que nadie diga que no lo vio: «el software se entrega tal cual, sin garantía de ningún tipo… en ningún caso los autores serán responsables de reclamos o daños». Si a alguien el Totito le borra la tarea (no lo hará), no puede demandarte.</li>
+</ol>
+<h3>Cómo agregar la licencia</h3>
+<p>Lo más fácil es dejar que GitHub escriba el archivo:</p>
+<ol>
+<li>En la pestaña <b>Code</b>: <b>Add file → Create new file</b>.</li>
+<li>Como nombre escribe <code>LICENSE</code> (en mayúsculas, sin extensión). Aparece un botón <b>Choose a license template</b> («elegir una plantilla de licencia»): púlsalo.</li>
+<li>Elige <b>MIT License</b>, revisa que el año y el nombre sean los correctos y pulsa <b>Review and submit</b>.</li>
+<li>Pulsa <b>Commit changes…</b>, deja el mensaje (o escribe <code>Agregar licencia MIT</code>), con la opción de hacer el commit directamente en <code>main</code>, y confirma.</li>
+<li>Ese commit existe en GitHub pero no en tu PC. Tráelo:</li>
+</ol>
+<pre class="ps">git switch main
+git pull</pre>
+<p>Y ya tienes <code>LICENSE</code> en tu carpeta. GitHub mostrará «MIT license» en el panel <i>About</i>. (También podrías crear el archivo en NetBeans, pegar el texto y hacer el commit tú; el resultado es el mismo).</p>
+<div class="caja cuidado"><b>Esto no es asesoría legal</b> Para un proyecto personal o de aprendizaje, la MIT es una elección sencilla y segura. Si algún día publicas software de una empresa o con código de otras personas, revisa con quien corresponda qué licencia usar, y respeta las licencias de las librerías que incluyas.</div>
+
+<h2>Releases: publicar versiones para descargar</h2>
+<p>Un <b>release</b> («lanzamiento») es una versión publicada del proyecto en la página de GitHub: se basa en una etiqueta (<code>v1.0.0</code>), tiene un título, unas notas que explican qué trae, y <b>archivos adjuntos</b> (<i>assets</i>), como el instalador <code>.exe</code>. Es la respuesta a una pregunta importante: si los <code>.exe</code> no van en el repositorio (ver la sección siguiente), ¿cómo los descarga la gente? Por los Releases.</p>
+<p>En el capítulo 67, cuando tengas el instalador, lo publicarás con un comando como este (allí se explica cada parte, las notas de la versión y el versionado SemVer):</p>
+<pre class="ps">gh release create v1.0.0 dist\instalador\Totito-1.0.0.exe --title "Totito 1.0.0" --notes "Primera version completa con interfaz neon."</pre>
+<p>El release aparecerá en el panel derecho de la pestaña Code, con un botón de descarga para el instalador y, automáticamente, el código fuente comprimido de esa versión.</p>
+
+<h2>Qué NO subir nunca</h2>
+<p>Todo lo que llega a un commit se queda <b>en el historial para siempre</b>, y todo lo que se sube a un repositorio público lo pueden leer en minutos robots que recorren GitHub buscando secretos. Por eso esta lista no tiene excepciones:</p>
+<table class="tabla">
+<tr><th>Qué</th><th>Ejemplos</th><th>Por qué</th><th>Qué hacer en su lugar</th></tr>
+<tr><td><b>Contraseñas, tokens y claves</b></td><td>Tokens de GitHub (<code>ghp_…</code>, <code>gho_…</code>), claves de API, contraseñas de bases de datos, archivos <code>.env</code></td><td>Cualquiera que los lea puede usar tus cuentas y servicios en tu nombre</td><td>Leerlos de variables de entorno o de un archivo local que esté en el <code>.gitignore</code>; subir solo un ejemplo sin valores (<code>.env.example</code>)</td></tr>
+<tr><td><b>Llaves privadas y certificados</b></td><td><code>id_ed25519</code> (SSH), certificados <code>.pfx</code> / <code>.p12</code> para firmar programas (capítulo 67)</td><td>Permiten hacerse pasar por ti o firmar programas como si fueran tuyos</td><td>Guardarlos fuera de cualquier carpeta de proyecto</td></tr>
+<tr><td><b>Archivos generados</b></td><td><code>target/</code>, <code>out/</code>, <code>dist/</code>, <code>*.class</code>, el <code>.jar</code>, el <code>.exe</code></td><td>Se regeneran desde el código; ensucian el historial, ocupan espacio y causan conflictos absurdos</td><td>El <code>.gitignore</code> del capítulo 5; los instaladores van a Releases</td></tr>
+<tr><td><b>Archivos enormes</b></td><td>Videos, instaladores, discos virtuales, respaldos <code>.zip</code></td><td>GitHub avisa con archivos de más de 50 MB y <b>rechaza</b> los de más de 100 MB; y aunque los borres, el historial sigue pesando</td><td>Releases (permiten archivos grandes) o Git LFS, una extensión para archivos pesados</td></tr>
+<tr><td><b>Configuración personal</b></td><td><code>nbproject/private/</code>, <code>.idea/</code>, <code>.vscode/</code>, <code>Thumbs.db</code>, <code>desktop.ini</code></td><td>Son de tu computadora; a los demás no les sirven y les cambian sus ajustes</td><td>Ya están en tu <code>.gitignore</code></td></tr>
+<tr><td><b>Datos personales</b></td><td>Listas de clientes, datos de alumnos, fotos de otras personas</td><td>Privacidad y, en muchos países, la ley</td><td>Datos de ejemplo inventados</td></tr>
+</table>
+
+<h3>Si ya subiste un secreto</h3>
+<p>Pasa, incluso a profesionales. El orden de los pasos importa:</p>
+<ol>
+<li><b>Considéralo robado, desde ya.</b> No importa que el repositorio sea privado ni que lo borres en cinco minutos.</li>
+<li><b>Revócalo o cámbialo</b> en el servicio de origen: cambia la contraseña, borra el token (los de GitHub, en <i>Settings → Developer settings</i>), genera una clave nueva. Este es el paso que de verdad te protege.</li>
+<li><b>Sácalo del proyecto</b> como viste en el capítulo 9: <code>git rm --cached archivo</code>, agrégalo al <code>.gitignore</code>, commit y push.</li>
+<li>Si además quieres borrarlo <b>del historial</b>, existen herramientas que reescriben todos los commits (<code>git filter-repo</code>, BFG Repo-Cleaner). Es una operación delicada que obliga a forzar el push y a que todos vuelvan a clonar; por eso el paso 2 nunca se salta: aunque limpies el historial, alguien pudo haberlo copiado antes.</li>
+</ol>
+<div class="caja consejo"><b>GitHub te echa una mano, pero no confíes en ello</b> GitHub revisa los pushes en busca de formatos conocidos de tokens y claves (su <i>push protection</i> y el <i>secret scanning</i>) y puede bloquear el envío o avisarte en la pestaña <i>Security</i>. Ayuda, pero no reconoce todo, y menos una contraseña normal. La protección real es tu costumbre: leer <code>git status</code> y <code>git diff --staged</code> antes de cada commit.</div>
+
+<h2>Proteger la rama main</h2>
+<p>Cuando hay más de una persona, conviene que GitHub <b>impida</b> subir directamente a <code>main</code> y obligue a pasar por un PR aprobado. Eso se llama <b>protección de ramas</b>:</p>
+<ol>
+<li>En el repositorio: <b>Settings → Rules → Rulesets → New ruleset → New branch ruleset</b> (en versiones anteriores de la página: <i>Settings → Branches → Add branch protection rule</i>).</li>
+<li>Dale un nombre (<code>proteger-main</code>), pon <i>Enforcement status</i> en <b>Active</b> y, en <i>Target branches</i>, agrega la rama por defecto (<code>main</code>).</li>
+<li>Activa las reglas que quieras. Las más útiles: <b>Require a pull request before merging</b> (nadie sube directo; con un número mínimo de aprobaciones si hay equipo), <b>Block force pushes</b> (nadie puede reescribir el historial de <code>main</code>), <b>Restrict deletions</b> (nadie puede borrar <code>main</code>) y, si usas Actions, <b>Require status checks to pass</b> (no se fusiona si la compilación falla).</li>
+<li>Guarda con <b>Create</b>.</li>
+</ol>
+<div class="caja cuidado"><b>Repositorios privados con plan gratuito</b> Con una cuenta gratuita, GitHub solo aplica estas reglas en repositorios <b>públicos</b>. En un repositorio privado gratuito las opciones aparecen, pero no se hacen cumplir (hace falta un plan de pago). Si tu Totito es privado, la protección de <code>main</code> depende de tu disciplina: <b>todo cambio a <code>main</code> entra por PR</b>, aunque GitHub no te obligue.</div>
+
+<h2>Para ir más allá: GitHub Actions</h2>
+<p>La pestaña <b>Actions</b> permite que GitHub haga trabajo por ti en sus servidores cada vez que pasa algo (un push, un PR). Lo más común es la <b>integración continua</b> (CI): compilar y probar el proyecto automáticamente para saber, antes de fusionar, si algo se rompió. Es opcional y el libro no lo necesita, pero así de poco hace falta para el Totito. Crea el archivo <code>.github\workflows\compilar.yml</code> (con las carpetas <code>.github</code> y <code>workflows</code>) con este contenido:</p>
+<pre class="texto">name: Compilar
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: mvn -B package</pre>
+<ul>
+<li>El formato es <b>YAML</b>: la sangría (con espacios, nunca tabuladores) indica qué va dentro de qué.</li>
+<li><code>on</code>: cuándo se ejecuta: en cada push a <code>main</code> y en cada pull request.</li>
+<li><code>runs-on: ubuntu-latest</code>: en una máquina Linux de GitHub (el juego es Java, compila igual en cualquier sistema).</li>
+<li><code>steps</code>: descargar el código (<code>checkout</code>), instalar el JDK 21 de Temurin (el mismo que instalaste en el capítulo 4) y compilar con Maven (<code>-B</code> es «modo por lotes», sin colores ni preguntas).</li>
+</ul>
+<p>Haz commit y push. En la pestaña Actions verás la ejecución con un círculo amarillo (en curso), y luego una marca verde (todo bien) o una X roja (falló, con el registro para ver por qué). En cada PR, la pestaña <i>Checks</i> mostrará el resultado. Gracias al permiso <code>workflow</code> que pidió <code>gh auth login</code> (capítulo 7), puedes subir este archivo sin problemas.</p>
+
+<h2>Buenas prácticas de Git y GitHub: la lista</h2>
+<p>Todo lo de la Parte II, condensado. Vuelve a esta lista cuando dudes.</p>
+<h3>Al configurar</h3>
+<ol>
+<li>Activa la verificación en dos pasos y guarda los códigos de recuperación fuera de la PC.</li>
+<li>Configura <code>user.name</code> y <code>user.email</code> (mejor la dirección <code>noreply</code>) antes del primer commit.</li>
+<li>En Windows, <code>core.autocrlf true</code>; rama por defecto <code>main</code>; un editor que sepas usar.</li>
+<li>Crea el <code>.gitignore</code> <b>antes</b> del primer commit.</li>
+</ol>
+<h3>Al trabajar</h3>
+<ol start="5">
+<li><code>git pull</code> al empezar, <code>git push</code> al terminar cada tarea.</li>
+<li><code>git status</code> siempre; <code>git diff --staged</code> antes de cada commit.</li>
+<li>Commits pequeños y atómicos: un cambio lógico, completo, que compile.</li>
+<li>Mensajes con una primera línea de 50 caracteres o menos, en infinitivo o imperativo, y el porqué en el cuerpo.</li>
+<li>Prefiere <code>git add archivo</code> a <code>git add .</code>, o revisa la lista antes del commit.</li>
+<li>No hagas commit de código que no compila en <code>main</code>.</li>
+</ol>
+<h3>Con ramas</h3>
+<ol start="11">
+<li><code>main</code> siempre funciona. El trabajo nuevo, en una rama con nombre descriptivo.</li>
+<li>Ramas cortas: fusiónalas pronto y bórralas al terminar.</li>
+<li>A <code>main</code> se llega por PR, aunque trabajes solo; protégela si el repositorio lo permite.</li>
+<li>Ante un conflicto: calma, lee las marcas, decide, compila, prueba, y solo entonces <code>git add</code> y <code>commit</code>.</li>
+</ol>
+<h3>Al deshacer</h3>
+<ol start="15">
+<li>Lo que no subiste se puede reescribir (<code>--amend</code>, <code>reset</code>); lo que subiste se corrige con <code>git revert</code>.</li>
+<li>Nunca <code>git push --force</code> sobre <code>main</code> ni sobre ramas compartidas.</li>
+<li>Antes de un <code>reset --hard</code>, un <code>git stash</code>; después de un susto, <code>git reflog</code>.</li>
+</ol>
+<h3>Al publicar</h3>
+<ol start="18">
+<li>Nunca subas secretos, archivos generados ni archivos enormes. Si se escapa un secreto: cámbialo primero, limpia después.</li>
+<li>Un README que diga qué es, cómo se ve, cómo se usa y cómo se construye; una licencia explícita.</li>
+<li>Etiquetas anotadas con SemVer (<code>v1.0.0</code>) para cada versión, y los binarios en Releases.</li>
+<li>Issues para los pendientes; <code>Closes #n</code> para enlazarlos con los PR.</li>
+</ol>
+
+<h2>Resumen</h2>
+<ul>
+<li>La página de un repositorio se organiza en pestañas: Code (archivos, historial, README, releases), Issues, Pull requests, Actions, Settings y otras.</li>
+<li>El flujo profesional es rama → commits → <code>git push -u origin rama</code> → <code>gh pr create</code> → revisión (comentarios, cambios con más commits) → <code>gh pr merge</code> → <code>git pull</code> en <code>main</code> → etiqueta. El Totito lo usa en el capítulo 61 con <code>--merge</code>, para conservar un commit por capítulo.</li>
+<li>Los issues anotan errores e ideas; <code>Closes #n</code> en un PR los cierra al fusionar.</li>
+<li>Los colaboradores suben al repositorio original; los forks son copias en tu cuenta desde las que propones PR a proyectos ajenos.</li>
+<li>Un buen README explica qué es, cómo se ve, cómo se usa y cómo se construye; sin licencia, nadie puede reutilizar tu código, y la MIT lo permite con la única condición de conservar tu aviso.</li>
+<li>Los releases publican versiones con sus instaladores; los secretos, los archivos generados y los enormes nunca van al repositorio, y un secreto filtrado se cambia antes que nada.</li>
+<li>La protección de ramas obliga a pasar por PR (en repos públicos con el plan gratuito); en privados gratuitos, la regla la cumples tú.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> Este es exactamente el flujo de trabajo de la industria:
+<ul>
+<li><b>En tu primer empleo</b> te asignarán un issue, crearás una rama con su número (<code>fix/42-marcador-doble</code>), abrirás un PR con <code>Closes #42</code>, un compañero lo revisará y, cuando las comprobaciones de Actions estén en verde, se fusionará. Ya lo sabes hacer.</li>
+<li><b>Para contribuir a código abierto</b>: busca en proyectos que uses issues con la etiqueta <code>good first issue</code>, haz un fork, arregla, y abre tu PR. Es una de las mejores formas de aprender y de que te conozcan.</li>
+<li><b>Como portafolio</b>: tres o cuatro repositorios públicos con buen README, capturas, licencia y releases descargables dicen más de ti que un currículum. El Totito puede ser el primero.</li>
+<li><b>En un trabajo de grupo</b>: un repositorio con colaboradores, un issue por tarea asignado a cada integrante, y la regla de que nada entra a <code>main</code> sin PR revisado por otro. Se acabaron los «¿quién borró mi parte?».</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b><ol>
+<li>Crea dos issues en tu repositorio <code>totito</code> con ideas del README de referencia («Alternar quién empieza en cada partida», «Sonidos al marcar y al ganar»), cada uno con la etiqueta <code>enhancement</code>. Comprueba con <code>gh issue list</code> y en la pestaña Issues.</li>
+<li>Haz un PR de práctica en el repositorio del laboratorio del capítulo 9 (súbelo a GitHub si no lo hiciste): rama <code>mejorar-readme</code>, un commit que mejore el README, <code>git push -u origin mejorar-readme</code>, <code>gh pr create</code> con una descripción de «Qué cambia / Por qué / Cómo probarlo», un comentario con <code>gh pr comment</code>, y <code>gh pr merge --squash --delete-branch</code>. Después, <code>git switch main</code> y <code>git pull</code>. Pista: mira el historial con <code>git log --oneline</code>; con <code>--squash</code> verás un único commit nuevo.</li>
+<li>Agrega la licencia MIT a tu repositorio <code>totito</code> desde la página de GitHub y tráela a tu PC con <code>git pull</code>. Luego explica con tus palabras la única condición que pone la MIT.</li>
+<li>Revisa tu carpeta del Totito con <code>git status --ignored</code> (muestra también lo que el <code>.gitignore</code> está ignorando). Comprueba que <code>target</code> está en la lista de ignorados y que no hay ningún archivo que no debería subirse. Pista: si NetBeans creó un <code>nb-configuration.xml</code> o un <code>nbactions.xml</code>, piensa si quieres que viajen con el proyecto o no.</li>
+<li>(Reto) Busca en GitHub un proyecto público de Java que te interese (prueba la búsqueda con <code>language:Java tic-tac-toe</code>), y analiza su página: ¿tiene buen README? ¿licencia? ¿releases? ¿cuántos issues y PR abiertos? ¿usa Actions? Escribe tres cosas que harías igual en tu Totito y una que harías distinto.</li>
+</ol></div>
+</section>

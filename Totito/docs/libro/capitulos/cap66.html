@@ -1,0 +1,276 @@
+<section class="capitulo" id="cap66">
+<h1><span class="num">Capítulo 66</span>El instalador .exe</h1>
+<p class="entrada">La carpeta portable funciona, pero la mayoría de la gente espera otra cosa: un archivo <code>Totito-1.0.0.exe</code> que se abre, pregunta dónde instalar, pone el juego en el menú Inicio y en el escritorio, y se puede desinstalar desde Configuración. En este capítulo fabricas ese instalador de dos maneras: con jpackage y WiX, y con Inno Setup. Al final sabrás elegir entre las dos.</p>
+
+<h2>Qué espera la gente de un programa «de verdad»</h2>
+<p>Piensa en cómo instalas cualquier programa en Windows: descargas un <code>.exe</code>, le das doble clic, aparece un asistente con botones <i>Siguiente</i>, aceptas, y al terminar el programa está en el menú Inicio, a veces en el escritorio, y aparece en <i>Configuración → Aplicaciones</i> para quitarlo cuando quieras. Ese asistente es un <b>instalador</b>: un programa cuyo único trabajo es copiar otro programa al lugar correcto del sistema y dejarlo integrado con Windows.</p>
+<table class="tabla">
+<tr><th></th><th>Portable (capítulo 65)</th><th>Instalador (este capítulo)</th></tr>
+<tr><td>Qué recibe la persona</td><td>Un <code>.zip</code></td><td>Un único <code>.exe</code></td></tr>
+<tr><td>Dónde queda el juego</td><td>Donde la persona lo descomprima</td><td><code>C:\Program Files\Totito</code> (o donde elija)</td></tr>
+<tr><td>Menú Inicio y escritorio</td><td>No</td><td>Sí, automáticos</td></tr>
+<tr><td>Aparece en Configuración → Aplicaciones</td><td>No</td><td>Sí, con nombre, versión y editor</td></tr>
+<tr><td>Desinstalar</td><td>Borrar la carpeta a mano</td><td>Desde Configuración, limpio</td></tr>
+<tr><td>Actualizar</td><td>Reemplazar la carpeta a mano</td><td>Instalar la versión nueva encima: reemplaza la vieja sola</td></tr>
+<tr><td>Permisos de administrador</td><td>No</td><td>Normalmente sí (para escribir en <code>Program Files</code>)</td></tr>
+</table>
+<p>Las dos formas son útiles y en el capítulo 67 publicarás ambas. Pero para el público general, el instalador es lo que se siente profesional.</p>
+
+<h2>Camino 1: jpackage + WiX</h2>
+<h3>Qué es WiX y por qué hace falta</h3>
+<p>Windows tiene un sistema oficial para instalar programas llamado <b>Windows Installer</b>. Los paquetes que entiende tienen extensión <code>.msi</code> (<i>Microsoft Installer</i>): son bases de datos que describen qué archivos copiar, a qué carpetas, qué accesos directos crear, qué escribir en el registro y cómo deshacerlo todo al desinstalar. Windows Installer se encarga de ejecutar esa descripción, de pedir permisos, de recordar qué se instaló y de deshacerlo limpio.</p>
+<p>Fabricar un <code>.msi</code> a mano es muy laborioso. <b>WiX</b> (<i>Windows Installer XML</i>) es un conjunto de herramientas gratuito y de código abierto que lo hace a partir de una descripción escrita en XML. Tiene dos programas principales: <code>candle.exe</code>, que «compila» el XML, y <code>light.exe</code>, que «enlaza» el resultado y produce el <code>.msi</code> (los nombres son un juego de palabras: <i>candle</i> es vela y <i>light</i> es luz).</p>
+<p>Lo bueno: <b>tú no escribes ese XML</b>. jpackage lo genera a partir de las opciones del comando, llama a <code>candle.exe</code> y a <code>light.exe</code>, y por último envuelve el <code>.msi</code> dentro de un <code>.exe</code>, que es más familiar para la gente. Pero jpackage no trae WiX dentro: tienes que instalarlo tú.</p>
+<div class="caja cuidado"><b>WiX 3, no una versión más nueva.</b> WiX tiene versiones 4, 5 y 6, que funcionan de forma distinta (un solo programa <code>wix.exe</code> en lugar de <code>candle</code> y <code>light</code>). El jpackage del <b>JDK 21</b> solo sabe usar <b>WiX 3</b>; el soporte para las versiones nuevas llegó en JDKs posteriores. Por eso instalamos la 3.14, la última de la serie 3. Si un tutorial te dice que instales WiX con <code>dotnet tool install</code>, es para WiX 4 o superior: no sirve para este libro.</div>
+
+<h3>Instalar WiX 3.14</h3>
+<pre class="ps">winget install --id WiXToolset.WiXToolset -e</pre>
+<p>Como en el capítulo 4: <code>--id</code> indica el identificador exacto del paquete y <code>-e</code> (<i>exact</i>) que no acepte parecidos. Windows te pedirá permiso de administrador (el aviso del Control de cuentas de usuario): acepta. Si durante la instalación Windows te pide activar una característica de <b>.NET Framework</b> (las versiones 3 de WiX la han necesitado en algunos equipos), acepta también: Windows la descarga sola. Al terminar, <b>cierra PowerShell y vuelve a abrirlo</b>, para que tome los cambios del sistema.</p>
+<p>Comprueba que las herramientas están donde deben:</p>
+<pre class="ps">Get-ChildItem "C:\Program Files (x86)\WiX Toolset v3.14\bin\candle.exe", "C:\Program Files (x86)\WiX Toolset v3.14\bin\light.exe"</pre>
+<p>Deben aparecer los dos archivos. Las comillas son obligatorias porque la ruta tiene espacios y paréntesis. WiX es un programa de 32 bits; por eso vive en <code>Program Files (x86)</code> y no en <code>Program Files</code>.</p>
+<p>jpackage normalmente encuentra WiX solo, buscando en las carpetas de instalación habituales. Si al fabricar el instalador te dice que no encuentra las herramientas de WiX (el mensaje menciona <code>light.exe</code> y <code>candle.exe</code>, y suele terminar con algo como <i>Invalid or unsupported type: [exe]</i>), añade la carpeta al PATH <b>de esta sesión</b> de PowerShell:</p>
+<pre class="ps">$env:Path += ";C:\Program Files (x86)\WiX Toolset v3.14\bin"
+Get-Command candle.exe, light.exe</pre>
+<p>La primera línea añade (<code>+=</code>) al final de la variable de entorno <code>Path</code> un punto y coma (el separador de rutas en Windows) y la carpeta de WiX. Solo dura mientras esta ventana de PowerShell esté abierta: al cerrarla, se olvida. Es a propósito: no tocas la configuración permanente del sistema. La segunda línea comprueba que ahora PowerShell sí los encuentra (muestra su ruta y versión).</p>
+
+<h3>Tu propio UUID de actualización</h3>
+<p>Antes de fabricar el instalador necesitas un dato que solo se genera una vez en la vida del proyecto: el <b>UUID de actualización</b>.</p>
+<p>Un <b>UUID</b> (<i>Universally Unique Identifier</i>, también llamado GUID en el mundo de Microsoft) es un número de 128 bits escrito como 32 cifras hexadecimales en cinco grupos, por ejemplo <code>6f1c2a52-6a8e-4c39-9d0b-2f5d7d1a7e31</code>. Se genera al azar y hay tantas combinaciones posibles que, en la práctica, nunca se repite: es como una matrícula de carro que nadie más en el universo tiene.</p>
+<p>Windows Installer usa ese número (lo llama <i>UpgradeCode</i>) para reconocer que <b>dos instaladores son del mismo programa</b>. Cuando instalas el Totito 1.0.1, Windows mira su UUID, ve que coincide con el del Totito 1.0.0 que ya está instalado y entiende: «esto es una actualización; quito la versión vieja y pongo la nueva». Por eso:</p>
+<ul>
+<li><b>El UUID no debe cambiar nunca entre versiones.</b> Si el 1.0.1 tuviera otro UUID, Windows creería que es un programa distinto y tendrías dos Totitos instalados, uno al lado del otro, con dos entradas en Configuración.</li>
+<li><b>Cada programa necesita el suyo.</b> Si tu Totito y tu futuro Buscaminas compartieran UUID, instalar uno desinstalaría el otro.</li>
+<li><b>No copies el del libro.</b> El UUID de los ejemplos, <code>6f1c2a52-6a8e-4c39-9d0b-2f5d7d1a7e31</code>, lo usarán todos los lectores. Genera el tuyo.</li>
+</ul>
+<p>PowerShell lo genera con una línea:</p>
+<pre class="ps">[guid]::NewGuid().ToString()</pre>
+<pre class="salida">3b0e9a8c-5f6d-4c2e-8a17-d94e0b2c6f35</pre>
+<p><code>[guid]</code> es el tipo GUID de .NET (la plataforma sobre la que está hecho PowerShell); <code>::NewGuid()</code> llama a su método estático que crea uno al azar, y <code>.ToString()</code> lo convierte en texto sin adornos (sin <code>.ToString()</code>, PowerShell lo muestra en una tablita con el encabezado <code>Guid</code>). El tuyo será distinto. <b>Guárdalo</b> en un lugar que no se pierda: lo ideal es escribirlo en el README de tu repositorio, en una sección «Cómo se empaqueta», junto con el comando completo. En adelante, donde el libro ponga <code>6f1c2a52-…</code>, tú pones el tuyo.</p>
+
+<h3>El comando del instalador</h3>
+<p>Los pasos 1 y 2 del capítulo 65 (Clean and Build y copiar el <code>.jar</code> a <code>dist\entrada</code>) tienen que estar hechos. Luego, desde la carpeta del proyecto:</p>
+<pre class="ps">jpackage --type exe --name Totito --input dist\entrada `
+  --main-jar Totito-1.0-SNAPSHOT.jar --main-class TotitoApp `
+  --icon recursos\totito.ico --app-version 1.0.0 --vendor "Tu Nombre" `
+  --description "Juego del Totito" --add-modules java.desktop `
+  --jlink-options "--strip-debug --no-man-pages --no-header-files --compress=zip-6" `
+  --win-shortcut --win-menu --win-menu-group "Juegos" --win-dir-chooser `
+  --win-upgrade-uuid 6f1c2a52-6a8e-4c39-9d0b-2f5d7d1a7e31 --dest dist\instalador</pre>
+<p>Recuerda: cada acento grave <code>`</code> debe ser el último carácter de su línea (capítulo 65). Este comando tarda más que el de la carpeta, entre uno y tres minutos, porque además de fabricar la imagen de la aplicación genera el XML, llama a WiX y comprime todo. Si quieres ver lo que hace mientras tanto, añade <code>--verbose</code>.</p>
+<p>Las cinco primeras líneas son idénticas al comando del capítulo 65 (salvo el <code>--type</code>) y significan lo mismo. Lo nuevo:</p>
+<table class="tabla">
+<tr><th>Opción</th><th>Qué hace</th><th>Qué verá quien instale</th></tr>
+<tr><td><code>--type exe</code></td><td>Fabricar un instalador <code>.exe</code> (un <code>.msi</code> envuelto en un <code>.exe</code>). Con <code>--type msi</code> obtendrías el <code>.msi</code> directamente</td><td>Un archivo <code>Totito-1.0.0.exe</code></td></tr>
+<tr><td><code>--win-shortcut</code></td><td>Crear un acceso directo en el escritorio</td><td>El icono del Totito en su escritorio</td></tr>
+<tr><td><code>--win-menu</code></td><td>Crear una entrada en el menú Inicio</td><td>El Totito al buscar en Inicio y en la lista de aplicaciones</td></tr>
+<tr><td><code>--win-menu-group "Juegos"</code></td><td>Dentro de qué carpeta del menú Inicio se pone el acceso</td><td>Una carpeta «Juegos» con el Totito dentro. Sin esta opción, jpackage usa una carpeta propia con un nombre genérico</td></tr>
+<tr><td><code>--win-dir-chooser</code></td><td>Añadir al asistente una pantalla para elegir la carpeta de instalación</td><td>Puede cambiar <code>C:\Program Files\Totito</code> por otra. Sin esta opción, se instala directamente ahí sin preguntar</td></tr>
+<tr><td><code>--win-upgrade-uuid ...</code></td><td>El UUID de actualización (<i>UpgradeCode</i>)</td><td>Nada a simple vista; pero gracias a él, la versión 1.0.1 reemplazará a la 1.0.0</td></tr>
+<tr><td><code>--dest dist\instalador</code></td><td>Dónde dejar el instalador</td><td>—</td></tr>
+</table>
+<p>Algunas opciones más que puedes añadir cuando las necesites (consulta <code>jpackage --help</code> en tu Windows para ver la lista completa de opciones <code>--win-</code>):</p>
+<table class="tabla">
+<tr><th>Opción</th><th>Para qué</th></tr>
+<tr><td><code>--win-per-user-install</code></td><td>Instalar solo para el usuario actual, en su carpeta personal, <b>sin pedir permisos de administrador</b>. Útil en computadoras del trabajo o de la escuela</td></tr>
+<tr><td><code>--win-shortcut-prompt</code></td><td>Que el asistente pregunte si se quieren los accesos directos, en vez de crearlos siempre</td></tr>
+<tr><td><code>--license-file LICENSE.txt</code></td><td>Mostrar una pantalla con la licencia que hay que aceptar (capítulo 10)</td></tr>
+<tr><td><code>--copyright "© 2026 Tu Nombre"</code></td><td>Texto de derechos de autor en las propiedades del programa</td></tr>
+<tr><td><code>--about-url https://github.com/tu-usuario/totito</code></td><td>Enlace a la página del programa, visible en la información de la aplicación instalada</td></tr>
+</table>
+<p>Al terminar, mira el resultado:</p>
+<pre class="ps">Get-ChildItem dist\instalador</pre>
+<p>Debe aparecer <code>Totito-1.0.0.exe</code>: jpackage lo nombra con <code>--name</code> y <code>--app-version</code>. Ocupa menos que la carpeta de 54 MB, porque va comprimido. Anota su tamaño: lo dirás en las notas de la versión (capítulo 67).</p>
+
+<h3>Qué ve quien instala</h3>
+<p>Prueba tu instalador como lo haría cualquier persona: doble clic en <code>dist\instalador\Totito-1.0.0.exe</code> desde el Explorador (o <code>.\dist\instalador\Totito-1.0.0.exe</code> en PowerShell). La secuencia habitual es esta:</p>
+<ol>
+<li><b>El asistente de instalación.</b> Una ventana sencilla, normalmente en <b>inglés</b> (jpackage solo trae traducciones de su asistente a unos pocos idiomas y el español no suele estar entre ellos): una bienvenida, el botón <i>Next</i>, y gracias a <code>--win-dir-chooser</code>, una pantalla para elegir la carpeta, con <code>C:\Program Files\Totito\</code> ya escrita y un botón <i>Change…</i> para cambiarla.</li>
+<li><b>El Control de cuentas de usuario</b> (UAC), al pulsar <i>Install</i>: una pantalla oscurecida que pregunta «¿Quieres permitir que esta aplicación de un editor desconocido haga cambios en el dispositivo?». Dice <b>editor desconocido</b> porque tu instalador no está firmado digitalmente; en el capítulo 67 verás qué significa y cómo se resuelve. Responde <i>Sí</i>.</li>
+<li><b>La barra de progreso</b>, unos segundos.</li>
+<li><b>Fin</b>: un botón <i>Finish</i>.</li>
+</ol>
+<p>Y el resultado, que ahora tienes que comprobar uno por uno:</p>
+<ul>
+<li>En el escritorio hay un acceso directo «Totito» con tu icono (<code>--win-shortcut</code>).</li>
+<li>En el menú Inicio, al escribir «Totito», aparece el juego; en la lista de todas las aplicaciones está dentro de la carpeta «Juegos» (<code>--win-menu</code> y <code>--win-menu-group</code>).</li>
+<li>Existe la carpeta <code>C:\Program Files\Totito</code>, con la misma estructura que la portable: <code>Totito.exe</code>, <code>app\</code> y <code>runtime\</code>.</li>
+<li>En <i>Configuración → Aplicaciones → Aplicaciones instaladas</i> (Windows 11) o <i>Configuración → Aplicaciones → Aplicaciones y características</i> (Windows 10) aparece «Totito», versión 1.0.0, de «Tu Nombre».</li>
+<li>El juego abre desde el acceso directo y pasa la lista de pruebas del capítulo 62.</li>
+</ul>
+<div class="caja cuidado"><b>Lo que tienes que verificar tú.</b> Las pantallas exactas del asistente (cuántas son, sus textos, el idioma) dependen de la versión de jpackage y de WiX, y no las pude ver en Windows mientras escribía este libro: el comando está tomado de la configuración del proyecto y las opciones están comprobadas en la documentación, pero haz tú la prueba completa en tu equipo. Si algo de la lista anterior no aparece (por ejemplo, el acceso del escritorio), revisa que la opción correspondiente esté en tu comando, borra <code>dist\instalador</code> y vuelve a fabricarlo.</div>
+
+<h3>Desinstalar</h3>
+<p>Ve a <i>Configuración → Aplicaciones → Aplicaciones instaladas</i>, busca «Totito», pulsa los tres puntos <i>⋯</i> (Windows 11) o el propio nombre (Windows 10) y elige <i>Desinstalar</i>. Windows Installer borra la carpeta de <code>Program Files</code>, los accesos directos y la entrada de la lista: deja el sistema como estaba. También funciona desde el clásico <i>Panel de control → Programas → Programas y características</i>.</p>
+<p>Desde PowerShell puedes comprobar si está instalado con <code>winget list --name Totito</code>: winget muestra también los programas que no instaló él, si están registrados en Windows.</p>
+
+<h3>Actualizar a la versión 1.0.1</h3>
+<p>Supón que un amigo encuentra un error y lo corriges. Así se publica la actualización:</p>
+<ol>
+<li>Corrige el código, prueba (capítulo 62), haz commit y push.</li>
+<li><i>Clean and Build</i> en NetBeans.</li>
+<li>Vuelve a copiar el <code>.jar</code> (el nombre sigue siendo <code>Totito-1.0-SNAPSHOT.jar</code>; lo que cambia es su contenido): <code>Copy-Item target\Totito-1.0-SNAPSHOT.jar dist\entrada\ -Force</code>.</li>
+<li>Ejecuta <b>el mismo comando</b> de jpackage cambiando solo <code>--app-version 1.0.0</code> por <code>--app-version 1.0.1</code>. <b>El UUID, igual.</b></li>
+<li>Instala <code>dist\instalador\Totito-1.0.1.exe</code> en un equipo que tenga la 1.0.0.</li>
+</ol>
+<p>Windows Installer reconoce el UUID, ve que 1.0.1 es mayor que 1.0.0, quita la versión vieja e instala la nueva. En Configuración verás un solo Totito, ahora con versión 1.0.1. Esto se llama una <b>actualización mayor</b> en el vocabulario de Windows Installer (aunque para ti sea un parche pequeño).</p>
+<p>¿Y al revés? Si alguien intenta instalar la 1.0.0 teniendo la 1.0.1, el instalador de jpackage lo impide con un mensaje que dice que ya hay una versión más nueva instalada. Y si vuelves a ejecutar el mismo instalador de la misma versión, Windows puede ofrecerte reparar o quitar el programa, o avisarte de que ya está instalado. Moraleja: <b>cada instalador que publiques debe tener una versión mayor que el anterior</b>. En el capítulo 67 verás cómo numerarlas.</p>
+
+<h2>Camino 2: Inno Setup</h2>
+<p><b>Inno Setup</b> es un creador de instaladores gratuito que existe desde 1997 y que usan miles de programas conocidos. A diferencia de WiX, no fabrica un <code>.msi</code>: produce su propio tipo de instalador <code>.exe</code>, descrito en un <b>script</b> (un archivo de texto con instrucciones) de extensión <code>.iss</code>. Tiene dos ventajas claras para nosotros: su asistente está <b>en español</b> (y en muchos otros idiomas) y el script es corto y legible.</p>
+<p>La estrategia es combinar lo mejor de los dos mundos: jpackage fabrica la carpeta con <code>Totito.exe</code> y su runtime (capítulo 65), y Inno Setup la empaqueta en un instalador.</p>
+
+<h3>Instalar Inno Setup</h3>
+<pre class="ps">winget install --id JRSoftware.InnoSetup -e</pre>
+<p>Instala Inno Setup 6, normalmente en <code>C:\Program Files (x86)\Inno Setup 6\</code>. Allí está el compilador de línea de comandos, <code>ISCC.exe</code> (<i>Inno Setup Command-line Compiler</i>), y también un editor con ventanas, el <i>Inno Setup Compiler</i>, que aparece en el menú Inicio. Si no lo encuentras en esa carpeta (algunas versiones pueden instalarse solo para tu usuario), búscalo:</p>
+<pre class="ps">Get-ChildItem "C:\Program Files (x86)", "C:\Program Files", "$env:LOCALAPPDATA\Programs" -Filter ISCC.exe -Recurse -Depth 2 -ErrorAction SilentlyContinue</pre>
+<p><code>-Filter ISCC.exe</code> busca ese nombre, <code>-Recurse -Depth 2</code> entra hasta dos niveles de subcarpetas (para que no tarde una eternidad) y <code>-ErrorAction SilentlyContinue</code> calla los avisos de carpetas sin permiso.</p>
+
+<h3>El script totito.iss</h3>
+<p>Primero, genera un GUID para este instalador (Inno Setup lo llama <code>AppId</code> y cumple el mismo papel que el UUID de actualización de jpackage: reconocer las versiones del mismo programa). Puede ser el mismo número que usaste en jpackage o uno distinto; lo importante es que <b>no cambie nunca</b>:</p>
+<pre class="ps">[guid]::NewGuid().ToString().ToUpper()</pre>
+<p>Crea el script en la carpeta del proyecto, junto al <code>pom.xml</code>:</p>
+<pre class="ps">New-Item totito.iss
+notepad totito.iss</pre>
+<p>Escribe esto, poniendo tu GUID donde está el de ejemplo y tu nombre en <code>AppPublisher</code>:</p>
+<pre class="texto">; Instalador del Totito con Inno Setup 6.
+; Empaqueta la carpeta que crea jpackage --type app-image (capitulo 65),
+; asi que primero hay que fabricar dist\app\Totito.
+; Compilar desde la carpeta Totito:
+;   &amp; "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" totito.iss
+
+#define MiVersion "1.0.0"
+
+[Setup]
+; Identificador unico del programa: NO cambiarlo entre versiones.
+AppId={{0B7C4F6E-2D1A-4C3B-9E8F-7A6B5C4D3E2F}
+AppName=Totito
+AppVersion={#MiVersion}
+AppPublisher=Tu Nombre
+; {autopf} = C:\Program Files (o la carpeta personal si no hay permisos)
+DefaultDirName={autopf}\Totito
+DefaultGroupName=Totito
+DisableProgramGroupPage=yes
+; Donde queda el instalador y como se llama
+OutputDir=dist\instalador-inno
+OutputBaseFilename=Totito-{#MiVersion}-setup
+SetupIconFile=recursos\totito.ico
+UninstallDisplayIcon={app}\Totito.exe
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+; El runtime que hace jpackage es de 64 bits
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+
+[Languages]
+Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+
+[Tasks]
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+
+[Files]
+; Toda la carpeta de jpackage, con sus subcarpetas app y runtime
+Source: "dist\app\Totito\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Icons]
+Name: "{group}\Totito"; Filename: "{app}\Totito.exe"
+Name: "{group}\{cm:UninstallProgram,Totito}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\Totito"; Filename: "{app}\Totito.exe"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\Totito.exe"; Description: "{cm:LaunchProgram,Totito}"; Flags: nowait postinstall skipifsilent</pre>
+<p>Los comentarios van sin tildes, igual que en el código Java del proyecto, para no depender de la codificación con que guardes el archivo. Si quieres usar tildes o eñes en algún valor (por ejemplo <code>AppPublisher=José Pérez</code>), guarda el archivo como <i>UTF-8 con BOM</i> (en el Bloc de notas: <i>Guardar como…</i> → <i>Codificación</i>) y comprueba que el instalador los muestra bien.</p>
+
+<h3>El script, línea por línea</h3>
+<p>Un archivo <code>.iss</code> se parece a un archivo <code>.ini</code> de Windows: está dividido en <b>secciones</b> entre corchetes, y cada sección tiene líneas con un formato propio. Las líneas que empiezan con <code>;</code> son comentarios. Las palabras entre llaves, como <code>{app}</code>, son <b>constantes</b> que Inno Setup reemplaza al instalar por rutas reales.</p>
+<table class="tabla">
+<tr><th>Línea</th><th>Qué hace</th></tr>
+<tr><td><code>#define MiVersion "1.0.0"</code></td><td>Define una variable del <b>preprocesador</b> de Inno Setup (un paso previo que reemplaza texto antes de compilar). Así la versión se escribe una sola vez; <code>{#MiVersion}</code> la inserta donde haga falta. Para la 1.0.1, cambias solo esta línea</td></tr>
+<tr><td><code>[Setup]</code></td><td>La sección de configuración general del instalador</td></tr>
+<tr><td><code>AppId={{0B7C...}</code></td><td>El identificador único. La llave doble <code>{{</code> es necesaria: como <code>{</code> sirve para las constantes, para escribir una llave de verdad se duplica. El resultado es <code>{0B7C...}</code>, que es como se escriben los GUID en Windows</td></tr>
+<tr><td><code>AppName=Totito</code></td><td>El nombre del programa, que aparece en el asistente y en Configuración</td></tr>
+<tr><td><code>AppVersion={#MiVersion}</code></td><td>La versión: 1.0.0</td></tr>
+<tr><td><code>AppPublisher=Tu Nombre</code></td><td>El editor, como <code>--vendor</code> en jpackage</td></tr>
+<tr><td><code>DefaultDirName={autopf}\Totito</code></td><td>La carpeta de instalación propuesta. <code>{autopf}</code> significa «la carpeta de programas adecuada»: <code>C:\Program Files</code> si se instala para todos (con permisos de administrador)</td></tr>
+<tr><td><code>DefaultGroupName=Totito</code></td><td>El nombre de la carpeta del menú Inicio. Aquí usamos «Totito» y no «Juegos», porque el script también pone ahí un acceso para desinstalar, y es más claro que viva en una carpeta propia</td></tr>
+<tr><td><code>DisableProgramGroupPage=yes</code></td><td>No preguntar por la carpeta del menú Inicio: usar la de arriba. Un paso menos para quien instala</td></tr>
+<tr><td><code>OutputDir=dist\instalador-inno</code></td><td>Dónde dejar el instalador. Las rutas relativas del script son relativas a la carpeta donde está el propio <code>.iss</code>: la del proyecto</td></tr>
+<tr><td><code>OutputBaseFilename=Totito-{#MiVersion}-setup</code></td><td>El nombre del archivo, sin <code>.exe</code>: <code>Totito-1.0.0-setup.exe</code>. Lo llamamos distinto del de jpackage para no confundirlos</td></tr>
+<tr><td><code>SetupIconFile=recursos\totito.ico</code></td><td>El icono del propio instalador (el archivo que se descarga)</td></tr>
+<tr><td><code>UninstallDisplayIcon={app}\Totito.exe</code></td><td>El icono que muestra Configuración → Aplicaciones. <code>{app}</code> es la carpeta donde quedó instalado el programa</td></tr>
+<tr><td><code>Compression=lzma2</code> y <code>SolidCompression=yes</code></td><td>El método de compresión (LZMA2, el de 7-Zip, muy eficaz) y la compresión «sólida», que comprime todos los archivos como un único bloque. Con cientos de archivos parecidos, como los del runtime, el instalador queda bastante más pequeño</td></tr>
+<tr><td><code>WizardStyle=modern</code></td><td>El aspecto moderno del asistente, más amplio y limpio</td></tr>
+<tr><td><code>ArchitecturesAllowed=x64compatible</code></td><td>Solo permitir instalar en Windows de 64 bits (o compatibles, como los ARM64 que ejecutan programas x64). Tiene sentido: el runtime que hizo jpackage es de 64 bits</td></tr>
+<tr><td><code>ArchitecturesInstallIn64BitMode=x64compatible</code></td><td>Instalar en «modo 64 bits»: así <code>{autopf}</code> es <code>C:\Program Files</code> y no <code>C:\Program Files (x86)</code>, que es para programas de 32 bits. Los valores <code>x64compatible</code> existen desde Inno Setup 6.3; si tuvieras una versión anterior, usa <code>x64</code> en las dos líneas</td></tr>
+<tr><td><code>[Languages]</code> … <code>Spanish.isl</code></td><td>El idioma del asistente. <code>compiler:</code> significa «en la carpeta de Inno Setup». Si añades más líneas con otros idiomas, el instalador pregunta cuál usar</td></tr>
+<tr><td><code>[Tasks]</code> <code>desktopicon</code></td><td>Una <b>tarea opcional</b>: una casilla en el asistente con un texto como «Crear un acceso directo en el escritorio». Los textos <code>{cm:...}</code> son mensajes ya traducidos que vienen en <code>Spanish.isl</code>. Si añades <code>; Flags: unchecked</code> al final, la casilla aparece desmarcada</td></tr>
+<tr><td><code>[Files]</code> <code>Source: "dist\app\Totito\*"</code></td><td>Qué copiar: todo (<code>*</code>) lo que hay en la carpeta de jpackage</td></tr>
+<tr><td><code>DestDir: "{app}"</code></td><td>A dónde: la carpeta de instalación elegida</td></tr>
+<tr><td><code>Flags: ignoreversion recursesubdirs createallsubdirs</code></td><td><code>recursesubdirs</code>: incluir también las subcarpetas (<code>app</code>, <code>runtime</code> y todo lo que tienen dentro). <code>createallsubdirs</code>: crear también las subcarpetas vacías, si las hubiera. <code>ignoreversion</code>: al actualizar, reemplazar siempre los archivos sin comparar números de versión internos, lo correcto para el <code>.jar</code>, que siempre se llama igual</td></tr>
+<tr><td><code>[Icons]</code> <code>{group}\Totito</code></td><td>Un acceso directo en la carpeta del menú Inicio (<code>{group}</code>) que apunta a <code>Totito.exe</code></td></tr>
+<tr><td><code>{group}\{cm:UninstallProgram,Totito}</code></td><td>Otro acceso, «Desinstalar Totito», que apunta al desinstalador que Inno crea solo (<code>{uninstallexe}</code>)</td></tr>
+<tr><td><code>{autodesktop}\Totito</code> … <code>Tasks: desktopicon</code></td><td>Un acceso en el escritorio, <b>solo</b> si la casilla de la tarea <code>desktopicon</code> quedó marcada</td></tr>
+<tr><td><code>[Run]</code> … <code>Flags: nowait postinstall skipifsilent</code></td><td>Al terminar, ofrecer una casilla «Ejecutar Totito». <code>postinstall</code>: es una casilla en la última pantalla, no algo automático. <code>nowait</code>: el instalador no espera a que se cierre el juego. <code>skipifsilent</code>: si alguien instala en modo silencioso (sin ventanas, típico en empresas), no abrir el juego</td></tr>
+</table>
+
+<h3>Compilar el instalador</h3>
+<p>Primero, la carpeta de jpackage tiene que existir y estar al día. Si no la tienes o el código cambió, repite el capítulo 65 (borrando antes <code>dist\app</code>). Luego:</p>
+<pre class="ps">&amp; "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" totito.iss</pre>
+<p>El <code>&amp;</code> es el <b>operador de llamada</b> de PowerShell. Hace falta porque la ruta del programa lleva comillas (por los espacios): sin el <code>&amp;</code>, PowerShell vería un texto entre comillas y simplemente lo mostraría, en vez de ejecutarlo. ISCC escribe lo que va haciendo (lee el script, comprime cada archivo) y, si todo va bien, termina con un mensaje de compilación correcta que indica el nombre del instalador. Si hay un error en el script, dice el número de línea y qué no entendió, como el compilador de Java.</p>
+<p>También puedes abrir <code>totito.iss</code> con doble clic: se abre en el <i>Inno Setup Compiler</i>, con colores, y se compila desde su menú (<i>Build → Compile</i>). Para un primer contacto es más cómodo; para repetirlo, la línea de comandos es más rápida.</p>
+<p>El resultado: <code>dist\instalador-inno\Totito-1.0.0-setup.exe</code>. Pruébalo con doble clic. Esta vez el asistente está en español: elegir carpeta de destino, una casilla para el acceso directo en el escritorio, «Listo para instalar», el aviso del Control de cuentas de usuario («editor desconocido», igual que antes), la instalación y una última pantalla con la casilla para ejecutar el Totito. Compruébalo con la misma lista que el de jpackage: escritorio, menú Inicio (carpeta «Totito»), <code>C:\Program Files\Totito</code> y Configuración → Aplicaciones.</p>
+<div class="caja cuidado"><b>Lo que tienes que verificar tú.</b> Las directivas de este script son las estándar de Inno Setup 6 y las mismas que genera su propio asistente de scripts, pero no pude compilarlo en Windows al escribir el libro. Al compilarlo por primera vez, lee la salida de ISCC con atención; si marca alguna línea, compárala letra por letra con la del libro (un <code>"</code> o un <code>;</code> que falte es el error más común). Y si pruebas los dos instaladores en el mismo equipo, <b>desinstala uno antes de instalar el otro</b>: los dos ponen el juego en <code>C:\Program Files\Totito</code>, pero Windows los considera programas distintos.</div>
+<p><b>Actualizar con Inno Setup</b> es igual de sencillo: cambia <code>#define MiVersion "1.0.0"</code> por <code>"1.0.1"</code>, vuelve a fabricar la carpeta con jpackage (con <code>--app-version 1.0.1</code>) y recompila el script. Como el <code>AppId</code> es el mismo, el nuevo instalador reconoce la instalación anterior, propone la misma carpeta y la actualiza; en Configuración seguirá habiendo un solo Totito.</p>
+
+<h2>¿Cuál elegir?</h2>
+<table class="tabla">
+<tr><th></th><th>jpackage + WiX</th><th>jpackage (app-image) + Inno Setup</th></tr>
+<tr><td>Herramientas</td><td>JDK + WiX 3.14</td><td>JDK + Inno Setup 6</td></tr>
+<tr><td>Pasos</td><td>Un solo comando</td><td>Dos: jpackage y luego ISCC</td></tr>
+<tr><td>Archivo de configuración</td><td>Ninguno (todo en el comando)</td><td><code>totito.iss</code>, legible y versionable en Git</td></tr>
+<tr><td>Tipo de paquete</td><td><code>.msi</code> de Windows Installer (dentro de un <code>.exe</code>)</td><td><code>.exe</code> propio de Inno Setup</td></tr>
+<tr><td>Idioma del asistente</td><td>Normalmente inglés</td><td>Español (y decenas de idiomas)</td></tr>
+<tr><td>Personalización</td><td>Limitada a las opciones de jpackage (o avanzada con <code>--resource-dir</code>, editando el XML de WiX)</td><td>Muy amplia: páginas propias, licencias, tareas, incluso código en Pascal</td></tr>
+<tr><td>Actualizaciones</td><td>Automáticas con <code>--win-upgrade-uuid</code></td><td>Automáticas con <code>AppId</code></td></tr>
+<tr><td>Empresas</td><td>Los <code>.msi</code> se pueden distribuir por políticas de red, algo que valoran los departamentos de informática</td><td>Admite instalación silenciosa, pero no es <code>.msi</code></td></tr>
+<tr><td>Funciona con cualquier programa</td><td>Solo con Java</td><td>Con cualquier programa de Windows, en cualquier lenguaje</td></tr>
+</table>
+<p>Para el Totito, las dos son buenas. Recomendación práctica: usa <b>jpackage + WiX</b> si quieres todo en un solo comando y te da igual el inglés del asistente; usa <b>Inno Setup</b> si quieres un instalador en español y un script que puedas leer, guardar en Git y reutilizar en programas que no sean de Java. Lo que aprendas de Inno Setup te servirá aunque mañana programes en otro lenguaje. En el capítulo 67 el libro publica el de jpackage, <code>Totito-1.0.0.exe</code>; si eliges Inno, solo cambia el nombre del archivo.</p>
+
+<div class="caja git"><b>Git</b> El plan de commits del libro no tiene commit en este capítulo: los instaladores están en <code>dist\</code> y no se suben (se publicarán como archivos de una Release en el capítulo 67). Pero si elegiste Inno Setup, <code>totito.iss</code> sí es parte del proyecto: es una «receta», como el <code>pom.xml</code>, y quien clone tu repositorio debería poder fabricar el mismo instalador. Súbelo:
+<pre class="ps">git add totito.iss
+git commit -m "Script del instalador con Inno Setup"
+git push</pre>
+Y en cualquiera de los dos caminos, anota en el README tu UUID (o tu <code>AppId</code>) y el comando completo de jpackage, en una sección «Cómo se empaqueta». El UUID no es secreto: está dentro de cada instalador que publiques. Lo que importa es no perderlo.</div>
+
+<div class="caja hito"><b>Hito</b> El Totito se instala como cualquier programa profesional: asistente, carpeta en <code>Program Files</code>, acceso en el escritorio y en el menú Inicio, entrada en Configuración para desinstalarlo, y actualizaciones que reemplazan la versión anterior.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Un instalador copia el programa al sistema, crea accesos directos, lo registra en Configuración → Aplicaciones y permite desinstalarlo y actualizarlo.</li>
+<li><code>jpackage --type exe</code> genera un <code>.msi</code> con WiX y lo envuelve en un <code>.exe</code>; el JDK 21 necesita <b>WiX 3</b> (<code>candle.exe</code> y <code>light.exe</code>), que se instala con <code>winget install --id WiXToolset.WiXToolset -e</code>.</li>
+<li>Si jpackage no encuentra WiX: <code>$env:Path += ";C:\Program Files (x86)\WiX Toolset v3.14\bin"</code>, válido solo para esa sesión.</li>
+<li><code>--win-shortcut</code> (escritorio), <code>--win-menu</code> y <code>--win-menu-group</code> (menú Inicio), <code>--win-dir-chooser</code> (elegir carpeta).</li>
+<li><code>--win-upgrade-uuid</code> identifica al programa entre versiones: se genera una vez con <code>[guid]::NewGuid()</code> y no cambia nunca; con él, la 1.0.1 reemplaza a la 1.0.0.</li>
+<li>Inno Setup empaqueta la carpeta de jpackage con un script <code>.iss</code>: secciones <code>[Setup]</code>, <code>[Languages]</code>, <code>[Tasks]</code>, <code>[Files]</code>, <code>[Icons]</code> y <code>[Run]</code>, y se compila con <code>ISCC.exe</code>.</li>
+<li>jpackage + WiX: un comando, <code>.msi</code>, asistente en inglés. Inno Setup: script legible, asistente en español, sirve para cualquier lenguaje.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Un programa para el negocio de un familiar</b> (inventario, facturación, agenda de citas): un instalador con acceso en el escritorio es lo que hace que una persona sin conocimientos técnicos lo use a diario. Con <code>--win-per-user-install</code> ni siquiera necesitas la contraseña de administrador del equipo.</li>
+<li><b>Programas que no son de Java</b>: el mismo <code>totito.iss</code>, cambiando nombre, carpeta de origen y ejecutable, sirve para empaquetar un programa en Python, C# o cualquier otro lenguaje, o simplemente una carpeta de documentos con un acceso directo.</li>
+<li><b>Varias aplicaciones de una misma «suite»</b>: con <code>--win-menu-group "Mi Empresa"</code> (o el mismo <code>DefaultGroupName</code>) todas aparecen juntas en el menú Inicio, cada una con su propio UUID para que se actualicen por separado.</li>
+<li><b>Distribución en una empresa o una escuela</b>: un <code>.msi</code> (<code>jpackage --type msi</code>) se puede instalar sin preguntas con <code>msiexec /i Totito-1.0.0.msi /qn</code>, y los administradores de red lo pueden repartir a todas las computadoras a la vez.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Genera tu UUID con <code>[guid]::NewGuid().ToString()</code>, fabrica el instalador con él, instálalo, comprueba los cinco puntos de la lista de «Qué ve quien instala» y luego desinstálalo desde Configuración. Comprueba que <code>C:\Program Files\Totito</code> ya no existe con <code>Test-Path "C:\Program Files\Totito"</code> (debe responder <code>False</code>).</li>
+<li>Fabrica el instalador con <code>--win-per-user-install</code> en <code>dist\instalador-usuario</code>, instálalo y averigua en qué carpeta quedó el juego. ¿Te pidió permisos de administrador? Pista: busca el acceso directo del escritorio, clic derecho → <i>Propiedades</i> → <i>Destino</i>.</li>
+<li>Haz la prueba de actualización: instala la 1.0.0, cambia algún texto visible del juego (por ejemplo, en <code>PantallaMenu</code>), fabrica la 1.0.1 con el mismo UUID e instálala encima. Comprueba en Configuración que solo hay un Totito y que su versión es 1.0.1. Después deshaz el cambio de código con <code>git restore</code>.</li>
+<li>Repite el ejercicio anterior pero con un UUID distinto en la 1.0.1. ¿Qué ves en Configuración? Desinstala las dos copias al terminar. Pista: este es precisamente el error que el UUID fijo evita.</li>
+<li>Reto con Inno Setup: añade al script una segunda línea de idioma, <code>Name: "english"; MessagesFile: "compiler:Default.isl"</code>, y la directiva <code>LicenseFile=LICENSE</code> en <code>[Setup]</code> (si tu repositorio tiene licencia, capítulo 10). Compila y observa qué pantallas nuevas aparecen en el asistente.</li>
+</ol></div>
+</section>

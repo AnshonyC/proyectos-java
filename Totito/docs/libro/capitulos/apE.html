@@ -1,0 +1,231 @@
+<section class="capitulo" id="apE">
+<h1><span class="num">Apéndice E</span>Glosario</h1>
+<p class="entrada">Los términos de Java, programación orientada a objetos, Swing, Git, diseño y distribución que aparecen en el libro, en orden alfabético, con una definición corta y el capítulo donde se explican a fondo.</p>
+<p>Los nombres que empiezan con un punto o una arroba (<code>.gitignore</code>, <code>@Override</code>) se ordenan por su primera letra. Las palabras en <i>cursiva</i> dentro de una definición tienen su propia entrada.</p>
+<h2>A</h2>
+<ul>
+<li><b>Acoplamiento</b>: Cuánto depende una clase de otras. Se busca que sea <b>bajo</b>: el kit neón del Totito compila sin ninguna clase del juego y por eso se puede llevar a otros proyectos (capítulos 27 y 68).</li>
+<li><b>Alcance</b>: La zona del código donde una variable existe. Una variable declarada dentro de un <code>for</code> o de un método deja de existir al salir de él (capítulo 16).</li>
+<li><b>Alfa</b>: El cuarto componente de un color, que indica su opacidad: 0 es invisible y 255 opaco. <code>Tema.conAlfa</code> cambia el alfa de un color (capítulo 35).</li>
+<li><b>Algoritmo</b>: Una receta de pasos precisos para resolver un problema. Minimax es el algoritmo con el que la IA del Totito elige su jugada.</li>
+<li><b>Anotación</b>: Una marca que empieza con <code>@</code> y da información extra al compilador o a una herramienta, sin cambiar el código: <code>@Override</code>, <code>@FunctionalInterface</code>, <code>@Test</code>.</li>
+<li><b>Antialiasing (suavizado)</b>: Técnica que suaviza los bordes de líneas y letras pintando píxeles intermedios, para que no se vean «en escalera». <code>Dibujo.preparar</code> la activa.</li>
+<li><b>API</b>: (<i>Application Programming Interface</i>) El conjunto de clases y métodos que una librería ofrece para que otros los usen. La API de Swing incluye <code>JButton</code>, <code>JPanel</code>…</li>
+<li><b>Área de preparación</b>: (<i>staging area</i>) La zona de Git donde se ponen, con <code>git add</code>, los cambios que entrarán en el próximo commit (capítulo 6).</li>
+<li><b>Argumento</b>: El valor concreto que se pasa a un método al llamarlo. En <code>marcarCasilla(1, 2, 'X')</code>, los argumentos son 1, 2 y <code>'X'</code>. Ver también <i>parámetro</i>.</li>
+<li><b>Arreglo</b>: (<i>array</i>) Una fila de casillas del mismo tipo y tamaño fijo, numeradas desde 0: <code>int[] victorias = new int[2]</code>. Un arreglo de arreglos es una matriz, como <code>char[][] casillas</code> (capítulo 15).</li>
+<li><b>Asignación</b>: Guardar un valor en una variable con el signo <code>=</code>: <code>turno = 1 - turno;</code>. No es una comparación; comparar es <code>==</code>.</li>
+</ul>
+<h2>B</h2>
+<ul>
+<li><b>BigDecimal</b>: Clase de Java que guarda números decimales exactos. Se usa para dinero y calculadoras, donde <code>double</code> comete pequeños errores (<code>0.1 + 0.2</code>) (capítulo 68).</li>
+<li><b>Bloque</b>: Un grupo de instrucciones entre llaves <code>{ }</code>. El cuerpo de una clase, de un método, de un <code>if</code> o de un <code>for</code> es un bloque.</li>
+<li><b>boolean</b>: Tipo de dato que solo puede valer <code>true</code> (verdadero) o <code>false</code> (falso). Lo devuelven las comparaciones y lo usan los <code>if</code>.</li>
+<li><b>BorderLayout</b>: Layout de Swing que reparte el espacio en cinco zonas: norte, sur, este, oeste y centro. <code>PantallaBase</code> pone el <code>Encabezado</code> en el norte (capítulo 37).</li>
+<li><b>BoxLayout</b>: Layout de Swing que coloca los componentes uno debajo de otro (o uno al lado de otro). Es el que usan las pantallas del Totito para apilar tarjetas y botones.</li>
+<li><b>Bytecode</b>: El código intermedio que produce <code>javac</code> en los archivos <code>.class</code>. No es de ninguna computadora concreta: lo ejecuta la JVM (capítulo 11).</li>
+</ul>
+<h2>C</h2>
+<ul>
+<li><b>Campo</b>: Una variable que pertenece a un objeto (o a la clase, si es <code>static</code>) y vive mientras él viva. <code>Partida</code> tiene campos como <code>tablero</code>, <code>turno</code> y <code>estado</code>. También se llama atributo.</li>
+<li><b>CardLayout</b>: Layout de Swing que apila varios paneles como un mazo de cartas y muestra uno a la vez. <code>PanelPrincipal</code> lo usa para cambiar de pantalla.</li>
+<li><b>Casting</b>: Convertir un valor de un tipo a otro escribiendo el tipo entre paréntesis: <code>(int) Math.floor(x)</code>, <code>(Graphics2D) g</code> (capítulo 12).</li>
+<li><b>char</b>: Tipo de dato que guarda un solo carácter, entre comillas simples: <code>'X'</code>, <code>'O'</code>, <code>' '</code>. Las casillas del Totito son <code>char</code>.</li>
+<li><b>Ciclo</b>: (o bucle) Instrucción que repite un bloque mientras se cumpla una condición: <code>for</code>, <code>while</code>, <code>do-while</code> y el for-each (capítulo 14).</li>
+<li><b>Clase</b>: El molde que describe cómo son y qué saben hacer un tipo de objetos: sus campos y sus métodos. <code>Tablero</code> es una clase; cada <code>new Tablero()</code> crea un objeto (capítulo 18).</li>
+<li><b>Clase abstracta</b>: Una clase marcada con <code>abstract</code> que no se puede instanciar directamente: existe para que otras hereden de ella. <code>PantallaBase</code> es abstracta (capítulo 24).</li>
+<li><b>Clase anónima</b>: Una clase sin nombre que se define y se instancia en el mismo lugar, para usarla una sola vez. El <code>MouseAdapter</code> de <code>PanelTablero</code> es una (capítulo 25).</li>
+<li><b>Clase interna</b>: Una clase escrita dentro de otra. Puede usar los campos de la clase que la contiene. <code>LimiteDeLargo</code> está dentro de <code>CampoTexto</code> (capítulo 25).</li>
+<li><b>Clonar</b>: Descargar una copia completa de un repositorio remoto, con todo su historial: <code>git clone</code> o <code>gh repo clone</code>.</li>
+<li><b>Código fuente</b>: El texto que escribe el programador, en archivos <code>.java</code>. La computadora no lo ejecuta directamente: primero se compila.</li>
+<li><b>Cohesión</b>: Cuánto se relacionan entre sí las tareas de una clase. Se busca que sea <b>alta</b>: <code>Tema</code> solo se ocupa del aspecto, <code>Tablero</code> solo de las casillas (capítulo 27).</li>
+<li><b>Commit</b>: Una foto guardada del proyecto en Git, con un mensaje, un autor, una fecha y un identificador único. El historial es la cadena de commits (capítulo 6).</li>
+<li><b>Compilador</b>: El programa que traduce el código fuente a algo ejecutable. En Java es <code>javac</code>, que produce bytecode y avisa de los errores antes de ejecutar.</li>
+<li><b>Componente</b>: Cualquier pieza visible de una interfaz Swing: un botón, una etiqueta, un panel. Todos heredan de <code>JComponent</code>.</li>
+<li><b>Composición</b>: Una relación «tiene-un» entre clases: un objeto guarda a otros en sus campos. <code>Partida</code> tiene un <code>Tablero</code> y dos <code>Jugador</code> (capítulo 21).</li>
+<li><b>Concatenar</b>: Unir textos con <code>+</code>: <code>"Turno de " + nombre</code>.</li>
+<li><b>Conflicto</b>: Lo que ocurre en Git cuando dos ramas cambiaron las mismas líneas y no puede decidir solo cuál queda. Se resuelve a mano (capítulo 9).</li>
+<li><b>Constante</b>: Un valor que no cambia, declarado con <code>static final</code> y escrito en mayúsculas: <code>Tablero.VACIA</code>, <code>PanelPrincipal.ANCHO</code> (capítulo 20).</li>
+<li><b>Constructor</b>: Método especial, con el mismo nombre que la clase y sin tipo de retorno, que prepara un objeto recién creado con <code>new</code> (capítulo 20).</li>
+<li><b>Contraste</b>: La diferencia de luminosidad entre un texto y su fondo. Con poco contraste el texto cuesta leerse; las pautas de accesibilidad piden un mínimo (capítulo 35).</li>
+</ul>
+<h2>D</h2>
+<ul>
+<li><b>Degradado</b>: Un relleno que pasa gradualmente de un color a otro. <code>GradientPaint</code> pinta el fondo del Totito de violeta oscuro a casi negro.</li>
+<li><b>Dependencia</b>: Una librería ajena que tu proyecto necesita, declarada en el <code>pom.xml</code> para que Maven la descargue. JUnit y el driver de SQLite son dependencias (capítulo 69).</li>
+<li><b>Depurador</b>: Herramienta que ejecuta el programa paso a paso, deteniéndose en puntos de interrupción, para ver el valor de cada variable en cada momento (capítulo 62).</li>
+<li><b>double</b>: Tipo de dato para números con decimales. Es rápido, pero guarda algunos valores con un pequeño error de redondeo.</li>
+</ul>
+<h2>E</h2>
+<ul>
+<li><b>EDT</b>: (<i>Event Dispatch Thread</i>, hilo de eventos) El único hilo desde el que se debe tocar la interfaz Swing. Por eso <code>main</code> crea la ventana dentro de <code>SwingUtilities.invokeLater</code> (capítulo 37).</li>
+<li><b>Encapsulamiento</b>: Ocultar los datos de un objeto (<code>private</code>) y dejar que se cambien solo a través de sus métodos, que cuidan las reglas. Nadie puede poner una ficha en una casilla ocupada saltándose <code>marcarCasilla</code> (capítulo 19).</li>
+<li><b>Enlace dinámico</b>: Mecanismo por el que Java decide, mientras el programa corre, qué versión de un método sobrescrito ejecutar según el objeto real. Es lo que hace funcionar el polimorfismo (capítulo 23).</li>
+<li><b>enum</b>: Un tipo con una lista cerrada de valores con nombre: <code>Partida.Estado</code> solo puede ser <code>EN_CURSO</code>, <code>VICTORIA</code> o <code>EMPATE</code> (capítulo 26).</li>
+<li><b>Etiqueta</b>: (<i>tag</i>) Un nombre fijo que Git pone a un commit concreto, normalmente una versión: <code>v1.0.0</code>.</li>
+<li><b>Excepción</b>: Un objeto que representa un error ocurrido mientras el programa corre. Se lanza con <code>throw</code> y se atrapa con <code>try/catch</code>; si nadie la atrapa, el programa se detiene (capítulo 26).</li>
+<li><b>Excepción comprobada</b>: Una excepción que Java obliga a manejar o declarar con <code>throws</code>, como <code>IOException</code>. Las que heredan de <code>RuntimeException</code> no lo exigen.</li>
+<li><b>extends</b>: Palabra con la que una clase hereda de otra: <code>class BotonNeon extends JButton</code>.</li>
+</ul>
+<h2>F</h2>
+<ul>
+<li><b>final</b>: Modificador que impide cambiar algo: una variable <code>final</code> no se reasigna, un método <code>final</code> no se sobrescribe y de una clase <code>final</code> no se hereda (capítulo 20).</li>
+<li><b>Firma de código</b>: Un sello digital, comprado a una entidad certificadora, que prueba quién hizo un programa y que no se alteró. Evita el aviso de SmartScreen (capítulo 67).</li>
+<li><b>Firma de un método</b>: Su nombre y la lista de tipos de sus parámetros. Dos métodos con el mismo nombre y distinta firma son una sobrecarga.</li>
+<li><b>Fork</b>: Una copia de un repositorio ajeno en tu propia cuenta de GitHub, para cambiarlo y proponer los cambios con un Pull Request (capítulo 10).</li>
+</ul>
+<h2>G</h2>
+<ul>
+<li><b>Getter</b>: Un método que devuelve el valor de un campo privado, como <code>getNombre()</code>. Su pareja es el <i>setter</i>.</li>
+<li><b>gh</b>: GitHub CLI: el programa de línea de comandos para trabajar con GitHub (repositorios, PR, issues, Releases) sin abrir el navegador.</li>
+<li><b>Git</b>: Sistema de control de versiones: guarda la historia completa de un proyecto en commits y permite volver atrás, trabajar en ramas y colaborar (capítulo 6).</li>
+<li><b>GitHub</b>: Sitio web que aloja repositorios de Git y añade colaboración: Pull Requests, issues, Releases, perfiles.</li>
+<li><b>.gitignore</b>: Archivo con los patrones de archivos que Git debe ignorar, como <code>target/</code> o <code>out/</code> (capítulo 5).</li>
+<li><b>Graphics2D</b>: El «pincel» de Java2D: el objeto con el que <code>paintComponent</code> dibuja líneas, formas, textos y degradados (capítulo 37).</li>
+<li><b>GridLayout</b>: Layout de Swing que coloca los componentes en una cuadrícula de celdas iguales. Ideal para el teclado de una calculadora (capítulo 68).</li>
+</ul>
+<h2>H</h2>
+<ul>
+<li><b>HEAD</b>: En Git, el puntero que indica en qué commit (y rama) estás trabajando ahora.</li>
+<li><b>Herencia</b>: Relación «es-un»: una clase hija recibe los campos y métodos de su madre y puede agregar o cambiar comportamiento. <code>TarjetaJugador</code> es una <code>Tarjeta</code> (capítulo 22).</li>
+<li><b>Hexadecimal</b>: Sistema de numeración de base 16 (dígitos 0–9 y A–F). Los colores se escriben así: <code>#FF3BD4</code> es el rosa del Totito (capítulo 35).</li>
+</ul>
+<h2>I</h2>
+<ul>
+<li><b>IDE</b>: (<i>entorno de desarrollo integrado</i>) Un programa que reúne editor, compilador, ejecución y depurador. NetBeans es un IDE.</li>
+<li><b>if</b>: Instrucción de decisión: ejecuta un bloque solo si la condición es verdadera, y opcionalmente otro con <code>else</code> (capítulo 13).</li>
+<li><b>implements</b>: Palabra con la que una clase se compromete a cumplir una interfaz: <code>PanelPrincipal implements Navegacion</code>.</li>
+<li><b>import</b>: Línea al principio de un archivo que permite usar una clase de otro paquete por su nombre corto: <code>import javax.swing.JPanel;</code>.</li>
+<li><b>Instalador</b>: Un programa que copia otro programa en la computadora, crea sus accesos directos y lo registra para poder desinstalarlo. El del Totito se crea con jpackage y WiX (capítulo 66).</li>
+<li><b>Instancia</b>: Un objeto concreto creado a partir de una clase. Cada <code>new Jugador(...)</code> es una instancia de <code>Jugador</code>.</li>
+<li><b>int</b>: Tipo de dato para números enteros, sin decimales: filas, columnas, victorias.</li>
+<li><b>Interfaz (de Java)</b>: Un contrato: una lista de métodos que una clase promete tener, sin decir cómo los hace. <code>Navegacion</code> es una interfaz (capítulo 24).</li>
+<li><b>Interfaz funcional</b>: Una interfaz con un solo método abstracto, que por eso se puede escribir con una lambda: <code>Iconos.Icono</code>, <code>Runnable</code>.</li>
+<li><b>Interfaz gráfica</b>: (GUI) La parte visible de un programa con la que se interactúa con ratón y teclado: ventanas, botones, tableros.</li>
+<li><b>Invariante</b>: Una regla que debe cumplirse siempre en un objeto. En <code>Partida</code>, los dos jugadores nunca tienen la misma ficha: el constructor lo garantiza (capítulo 19).</li>
+<li><b>Inyección SQL</b>: Ataque que consiste en escribir código SQL en un campo de texto para que la base de datos lo ejecute. Se evita con <code>PreparedStatement</code> (capítulo 69).</li>
+<li><b>Issue</b>: En GitHub, una tarea, error o propuesta anotada en un repositorio, con su conversación.</li>
+</ul>
+<h2>J</h2>
+<ul>
+<li><b>.jar</b>: Un archivo que empaqueta las clases compiladas de un programa y su manifiesto. Se ejecuta con <code>java -jar</code> (capítulo 63).</li>
+<li><b>Java</b>: Lenguaje de programación orientado a objetos cuyo código compilado corre en cualquier sistema que tenga una JVM.</li>
+<li><b>javac</b>: El compilador de Java: convierte los <code>.java</code> en <code>.class</code>.</li>
+<li><b>JavaFX</b>: Biblioteca gráfica moderna para Java, alternativa a Swing, con estilos CSS. Se instala aparte (capítulo 69).</li>
+<li><b>JDBC</b>: La parte de Java que se comunica con bases de datos mediante SQL (capítulo 69).</li>
+<li><b>JDK</b>: (<i>Java Development Kit</i>) Lo necesario para programar en Java: compilador, JVM y herramientas como <code>jar</code>, <code>jshell</code> y <code>jpackage</code>. El libro usa Temurin 21.</li>
+<li><b>JFrame</b>: La ventana de Swing, con su barra de título. <code>TotitoApp</code> hereda de <code>JFrame</code>.</li>
+<li><b>jpackage</b>: Herramienta del JDK que convierte un <code>.jar</code> en un programa nativo (<code>Totito.exe</code>) con su propio Java, y en un instalador (capítulos 65 y 66).</li>
+<li><b>JPanel</b>: Un contenedor de Swing: un rectángulo que agrupa componentes y los ordena con un layout.</li>
+<li><b>jshell</b>: Consola interactiva de Java para probar instrucciones sueltas sin crear una clase (capítulo 11).</li>
+<li><b>JSON</b>: Formato de texto para intercambiar datos entre programas: <code>{"fila":0,"columna":2}</code>.</li>
+<li><b>JUnit</b>: La librería de pruebas automáticas más usada en Java (capítulo 69).</li>
+<li><b>JVM</b>: (<i>Java Virtual Machine</i>) La máquina virtual que ejecuta el bytecode. Es lo que permite que el mismo <code>.class</code> corra en Windows, Linux o macOS.</li>
+</ul>
+<h2>L</h2>
+<ul>
+<li><b>Lambda</b>: Una función corta sin nombre, escrita con flecha: <code>e -&gt; navegacion.irAlMenu()</code>. Se usa donde se espera una interfaz funcional (capítulo 25).</li>
+<li><b>Layout</b>: El administrador que decide dónde y de qué tamaño va cada componente dentro de un contenedor: <code>BorderLayout</code>, <code>BoxLayout</code>, <code>CardLayout</code>…</li>
+<li><b>Librería</b>: Código ya escrito, empaquetado para usarlo en otros programas. Swing es una librería del JDK; JUnit, una librería externa.</li>
+</ul>
+<h2>M</h2>
+<ul>
+<li><b>main</b>: El método por el que empieza un programa Java: <code>public static void main(String[] args)</code>.</li>
+<li><b>Manifiesto</b>: El archivo <code>META-INF/MANIFEST.MF</code> dentro de un <code>.jar</code>. Su línea <code>Main-Class</code> dice qué clase arranca (capítulo 63).</li>
+<li><b>Matriz</b>: Un arreglo de dos dimensiones, con filas y columnas: <code>char[3][3]</code>.</li>
+<li><b>Maven</b>: Herramienta que construye proyectos Java a partir del <code>pom.xml</code>: compila, ejecuta las pruebas, descarga dependencias y crea el <code>.jar</code>.</li>
+<li><b>Merge</b>: Unir en una rama los cambios de otra (capítulo 9).</li>
+<li><b>Método</b>: Un bloque de código con nombre que una clase sabe ejecutar; lo que en otros lenguajes se llama función. Puede recibir parámetros y devolver un valor con <code>return</code> (capítulo 16).</li>
+<li><b>Método de fábrica</b>: Un método <code>static</code> que crea y devuelve objetos, en lugar de llamar directamente al constructor: <code>BotonNeon.menu(...)</code>, <code>Rotulo.titulo(...)</code>.</li>
+<li><b>Minimax</b>: Algoritmo para juegos de dos jugadores que explora las jugadas posibles suponiendo que uno busca el máximo puntaje y el otro el mínimo (capítulo 31).</li>
+<li><b>Modificador de acceso</b>: Palabra que decide quién puede usar una clase o miembro: <code>public</code> (todos), <code>protected</code> (el paquete y las subclases), sin modificador (el paquete) y <code>private</code> (solo la propia clase).</li>
+</ul>
+<h2>N</h2>
+<ul>
+<li><b>new</b>: Palabra que crea un objeto nuevo llamando a su constructor: <code>new Tablero()</code>.</li>
+<li><b>null</b>: El valor de una referencia que no apunta a ningún objeto. Usar algo que vale <code>null</code> provoca un <code>NullPointerException</code>.</li>
+</ul>
+<h2>O</h2>
+<ul>
+<li><b>Objeto</b>: Una «cosa» concreta del programa, creada a partir de una clase, con sus propios valores en los campos. Cada partida es un objeto <code>Partida</code>.</li>
+<li><b>Observer</b>: Patrón de diseño en el que un objeto avisa a otros, que se registraron como «oyentes», cuando ocurre algo. <code>addActionListener</code> y <code>OyenteCasilla</code> lo usan (capítulo 27).</li>
+<li><b>@Override</b>: Anotación que indica que un método sobrescribe a uno de la clase madre o de una interfaz. Si no coincide, el compilador avisa.</li>
+</ul>
+<h2>P</h2>
+<ul>
+<li><b>paintComponent</b>: El método que Swing llama cuando un componente necesita dibujarse. Se sobrescribe para dibujar a mano, como hacen todos los componentes neón (capítulo 37).</li>
+<li><b>Paquete</b>: Un grupo de clases con nombre, que corresponde a una carpeta: <code>javax.swing</code>, <code>totito.logica</code> (capítulo 69).</li>
+<li><b>Paquete por defecto</b>: El paquete sin nombre en el que están las clases que no declaran <code>package</code>, como todas las del Totito. Sus clases no se pueden importar desde otros paquetes.</li>
+<li><b>Parámetro</b>: La variable que un método declara para recibir un valor: en <code>marcarCasilla(int fila, int columna, char ficha)</code>, los parámetros son <code>fila</code>, <code>columna</code> y <code>ficha</code>.</li>
+<li><b>PATH</b>: Variable de entorno con la lista de carpetas donde Windows busca los programas que escribes en la terminal (capítulo 4).</li>
+<li><b>Patrón de diseño</b>: Una solución probada y con nombre para un problema de diseño que se repite: Observer, Factory, Template Method, Strategy (capítulo 27).</li>
+<li><b>Pila de llamadas</b>: La lista de métodos que se están ejecutando, cada uno esperando al que llamó. Se ve en los errores, en las líneas <code>at</code> (capítulo 16).</li>
+<li><b>Polimorfismo</b>: La capacidad de tratar objetos de clases distintas a través de un tipo común y que cada uno responda a su manera. Swing llama a <code>paintComponent</code> sin saber si el componente es un <code>BotonNeon</code> o una <code>Tarjeta</code> (capítulo 23).</li>
+<li><b>pom.xml</b>: El archivo de configuración de un proyecto Maven: nombre, versión de Java, dependencias y plugins (capítulo 5).</li>
+<li><b>PowerShell</b>: La terminal y lenguaje de comandos de Windows que usa el libro (capítulo 3).</li>
+<li><b>private</b>: Modificador que hace que un campo o método solo se pueda usar dentro de su propia clase.</li>
+<li><b>protected</b>: Modificador que permite el acceso desde el mismo paquete y desde las subclases. Los métodos <code>agregar</code> y <code>espacio</code> de <code>PantallaBase</code> son <code>protected</code>.</li>
+<li><b>Prueba automática</b>: Código que ejecuta otro código y comprueba que el resultado es el esperado, sin intervención humana (capítulo 69).</li>
+<li><b>public</b>: Modificador que permite usar una clase, campo o método desde cualquier otra clase.</li>
+<li><b>Pull</b>: Traer a tu repositorio los commits nuevos del remoto y unirlos con tu rama: <code>git pull</code>.</li>
+<li><b>Pull Request</b>: (PR) Propuesta en GitHub para unir los cambios de una rama con otra, con su revisión y conversación (capítulo 10).</li>
+<li><b>Punto de interrupción</b>: Una marca en una línea donde el depurador detiene el programa para inspeccionarlo (capítulo 62).</li>
+<li><b>Push</b>: Subir tus commits al repositorio remoto: <code>git push</code>.</li>
+</ul>
+<h2>R</h2>
+<ul>
+<li><b>Rama</b>: (<i>branch</i>) Una línea de trabajo independiente dentro de un repositorio. El Totito construyó la interfaz en la rama <code>interfaz-neon</code> (capítulo 9).</li>
+<li><b>record</b>: Forma corta de declarar en Java una clase de datos inmutable: <code>record Jugada(int fila, int columna) { }</code>.</li>
+<li><b>Recursión</b>: Cuando un método se llama a sí mismo para resolver una versión más pequeña del problema. Necesita un caso base que la detenga. <code>minimax</code> es recursivo (capítulo 16).</li>
+<li><b>Refactorizar</b>: Cambiar la estructura del código sin cambiar lo que hace, para que quede más claro o más fácil de mantener: renombrar, mover, extraer un método.</li>
+<li><b>Referencia</b>: Lo que guarda una variable de tipo objeto: no el objeto, sino «dónde está». Dos variables pueden referirse al mismo objeto (capítulo 18).</li>
+<li><b>Regresión</b>: Un error nuevo en algo que antes funcionaba, provocado por un cambio. Las pruebas automáticas existen para detectarlas.</li>
+<li><b>Release</b>: En GitHub, una versión publicada de un programa, ligada a una etiqueta y con archivos para descargar, como el instalador (capítulo 67).</li>
+<li><b>repaint</b>: Método que pide a Swing que vuelva a dibujar un componente en cuanto pueda. No dibuja en el momento: Swing llamará a <code>paintComponent</code>.</li>
+<li><b>Repositorio</b>: La carpeta de un proyecto bajo Git, con todo su historial (en la carpeta oculta <code>.git</code>). Puede estar en tu computadora (local) o en GitHub (remoto).</li>
+<li><b>return</b>: Instrucción que termina un método y, si no es <code>void</code>, devuelve un valor a quien lo llamó.</li>
+<li><b>RGB</b>: Modelo de color que mezcla rojo, verde y azul, cada uno de 0 a 255. <code>new Color(0xFF, 0x3B, 0xD4)</code> es el rosa del Totito (capítulo 35).</li>
+</ul>
+<h2>S</h2>
+<ul>
+<li><b>Semilla</b>: El número con el que arranca un generador de números aleatorios. Con la misma semilla, <code>Random</code> produce siempre la misma secuencia (capítulo 68).</li>
+<li><b>SemVer</b>: (versionado semántico) Numerar versiones como MAYOR.MENOR.PARCHE: <code>1.0.0</code>. Se sube el PARCHE al corregir errores, el MENOR al agregar funciones y el MAYOR al romper la compatibilidad (capítulo 67).</li>
+<li><b>Serializar</b>: Convertir un objeto en texto o bytes para guardarlo o enviarlo, y deserializar, el camino inverso. <code>Tarea.aLinea()</code> y <code>Tarea.desdeLinea()</code> lo hacen (capítulo 68).</li>
+<li><b>Setter</b>: Un método que cambia el valor de un campo privado, y puede validar el valor antes: <code>setInteractivo(boolean)</code>.</li>
+<li><b>SmartScreen</b>: El filtro de Windows que avisa al abrir programas descargados que no están firmados o que pocos usuarios han ejecutado (capítulo 67).</li>
+<li><b>Sobrecarga</b>: Tener varios métodos con el mismo nombre y distintos parámetros. <code>Dibujo.trazoNeon</code> tiene una versión con <code>intensidad</code> y otra sin ella (capítulo 16).</li>
+<li><b>Sobrescritura</b>: Volver a escribir en una clase hija un método heredado, para cambiar su comportamiento. Se marca con <code>@Override</code> (capítulo 23).</li>
+<li><b>SQL</b>: El lenguaje con el que se consultan y modifican las bases de datos: <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>.</li>
+<li><b>static</b>: Modificador que hace que un campo o método pertenezca a la clase y no a cada objeto. Se usa sin crear objetos: <code>Tema.fuente(...)</code> (capítulo 20).</li>
+<li><b>String</b>: La clase de Java para textos, entre comillas dobles: <code>"Juego del Totito"</code>. Sus objetos no se pueden modificar (capítulo 17).</li>
+<li><b>super</b>: Palabra que se refiere a la clase madre: <code>super(texto)</code> llama a su constructor y <code>super.paintComponent(g)</code> a su versión de un método (capítulo 22).</li>
+<li><b>Swing</b>: La biblioteca de interfaces gráficas incluida en el JDK, con la que está hecho el Totito.</li>
+<li><b>switch</b>: Instrucción que elige entre varios caminos según un valor. La forma con flechas (<code>case MENU -&gt; 30;</code>) además puede devolver un valor (capítulo 13).</li>
+</ul>
+<h2>T</h2>
+<ul>
+<li><b>this</b>: Palabra que se refiere al objeto actual. <code>this.nombre = nombre</code> distingue el campo del parámetro (capítulo 20).</li>
+<li><b>Timer (de Swing)</b>: <code>javax.swing.Timer</code>: ejecuta una acción en el hilo de eventos después de unos milisegundos, una vez o repetidamente. <code>PantallaJuego</code> lo usa para la pausa de la IA.</li>
+<li><b>Tipo de dato</b>: Lo que una variable puede guardar y qué operaciones admite: <code>int</code>, <code>double</code>, <code>boolean</code>, <code>char</code>, <code>String</code>, o cualquier clase (capítulo 12).</li>
+<li><b>try/catch/finally</b>: Estructura para manejar excepciones: <code>try</code> contiene el código que puede fallar, <code>catch</code> lo que se hace si falla y <code>finally</code> lo que se hace siempre (capítulo 26).</li>
+</ul>
+<h2>U</h2>
+<ul>
+<li><b>UTF-8</b>: La codificación de texto que representa cualquier carácter (tildes, ñ, ¡, emojis). El Totito compila con <code>-encoding UTF-8</code> para que sus textos se vean bien.</li>
+<li><b>UUID</b>: Un identificador de 128 bits prácticamente imposible de repetir. jpackage usa uno (<code>--win-upgrade-uuid</code>) para reconocer las versiones de un mismo programa (capítulo 66).</li>
+</ul>
+<h2>V</h2>
+<ul>
+<li><b>Variable</b>: Un nombre que guarda un valor de un tipo dado y puede cambiar: <code>int turno = 0;</code> (capítulo 12).</li>
+<li><b>Variable de entorno</b>: Un dato con nombre que el sistema operativo ofrece a todos los programas, como <code>PATH</code> o <code>JAVA_HOME</code> (capítulo 4).</li>
+<li><b>void</b>: Indica que un método no devuelve ningún valor: <code>public void reiniciar()</code>.</li>
+</ul>
+<h2>W</h2>
+<ul>
+<li><b>winget</b>: El administrador de paquetes de Windows: instala programas desde la terminal con un comando (capítulo 4).</li>
+<li><b>WiX</b>: (WiX Toolset) Conjunto de herramientas para crear instaladores de Windows. jpackage lo necesita para producir el <code>.exe</code> instalador (capítulo 66).</li>
+</ul>
+<p>Total: 160 términos.</p>
+<div class="caja aplica"></div>
+<div class="caja ejercicio"></div>
+</section>

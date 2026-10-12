@@ -1,0 +1,521 @@
+<section class="capitulo" id="cap19">
+<h1><span class="num">Capítulo 19</span>Encapsulamiento</h1>
+<p class="entrada">Una clase no solo junta datos y métodos: también decide quién puede tocar qué. En este capítulo aprenderás a esconder los datos de un objeto detrás de métodos que hacen cumplir sus reglas, que es lo que impide que en el Totito alguien ponga dos fichas en la misma casilla o le cambie el nombre a un jugador a media partida.</p>
+
+<h2>El problema: la puerta trasera</h2>
+<p>Al final del capítulo 18, la clase <code>Producto</code> tenía su regla «no vendas más de lo que hay» dentro del método <code>vender</code>. Pero cualquiera podía saltársela escribiendo directamente en el atributo. Mira lo que pasa con una cuenta bancaria escrita así (<code>CuentaInsegura.java</code>):</p>
+<pre class="java">public class CuentaInsegura {
+
+    public static void main(String[] args) {
+        Cuenta cuenta = new Cuenta();
+        cuenta.titular = "Marta";
+        cuenta.saldo = 1000;
+
+        // En otro rincon del programa, alguien se equivoca:
+        cuenta.saldo = cuenta.saldo - 1500;
+
+        System.out.println(cuenta.titular + " tiene Q" + cuenta.saldo);
+    }
+}
+
+class Cuenta {
+    String titular;
+    double saldo;
+}</pre>
+<pre class="ps">cd $HOME\Proyectos\Practicas
+java CuentaInsegura.java</pre>
+<pre class="salida">Marta tiene Q-500.0</pre>
+<p>Una cuenta de débito con 500 quetzales negativos. Nadie validó nada porque no había <i>dónde</i> validar: el saldo era un número al alcance de cualquier línea del programa. En un programa de diez líneas lo ves enseguida; en uno de diez mil, el error aparece en un reporte semanas después y tienes que revisar cada sitio que toca <code>saldo</code> para encontrar al culpable.</p>
+
+<h2>La idea: la ventanilla del banco</h2>
+<p>En un banco de verdad tú no entras a la bóveda a sacar billetes. Vas a la ventanilla, pides retirar 1500 quetzales y el cajero revisa tu saldo; si no alcanza, te dice que no. La bóveda está cerrada para el público; la ventanilla está abierta, pero tiene reglas. Y si mañana el banco cambia de bóveda o de sistema, a ti te da igual: la ventanilla sigue funcionando igual.</p>
+<p>Eso es el <b>encapsulamiento</b>: los datos de un objeto se guardan «dentro de una cápsula», cerrados al resto del programa, y solo se pueden consultar o cambiar a través de los métodos que la clase decide ofrecer. Esos métodos son la ventanilla: hacen cumplir las reglas.</p>
+<div class="caja concepto"><b>Encapsular</b> es ocultar el estado interno de un objeto (sus atributos) y exponer solo un conjunto de operaciones seguras (sus métodos públicos). Así, el objeto es el único responsable de que sus datos sean válidos, y el resto del programa no depende de cómo están guardados por dentro.</div>
+<p>Otra imagen: el control remoto de la televisión. Tiene botones para subir el volumen, pero no te deja poner el volumen en −8 ni en 3000. No sabes (ni te importa) cómo está hecho el circuito; solo usas los botones, y los botones no te dejan romper nada.</p>
+
+<h2>Los modificadores de acceso</h2>
+<p>Java controla quién puede ver cada atributo, método o clase con unas palabras que se ponen al principio de la declaración, llamadas <b>modificadores de acceso</b>. Hay cuatro niveles:</p>
+<table class="tabla">
+<tr><th>Modificador</th><th>Quién puede usarlo</th><th>Analogía</th><th>Ejemplo en el Totito</th></tr>
+<tr><td><code>private</code></td><td>Solo el código escrito dentro de la misma clase.</td><td>Tu diario personal.</td><td><code>private char[][] casillas;</code> en <code>Tablero</code></td></tr>
+<tr><td>(nada: acceso de paquete)</td><td>Cualquier clase del mismo paquete.</td><td>La refrigeradora de la casa: la usa toda la familia, no los vecinos.</td><td><code>void setConConfeti(boolean conConfeti)</code> en <code>PantallaResultado.TarjetaConConfeti</code></td></tr>
+<tr><td><code>protected</code></td><td>El mismo paquete y además las clases hijas (herencia).</td><td>La receta de la abuela: para la familia y para los hijos que se fueron a vivir lejos.</td><td><code>protected RoundRectangle2D forma()</code> en <code>Tarjeta</code></td></tr>
+<tr><td><code>public</code></td><td>Cualquier clase, en cualquier lugar.</td><td>El rótulo de la tienda en la calle.</td><td><code>public boolean marcarCasilla(...)</code> en <code>Tablero</code></td></tr>
+</table>
+<p>Un <b>paquete</b> es una carpeta lógica que agrupa clases relacionadas (por ejemplo, <code>java.util</code> o <code>javax.swing</code>, de donde vienen los <code>import</code> que viste en el capítulo 11). El Totito no declara paquete: todas sus clases están en el «paquete por defecto» (en NetBeans, <i>&lt;default package&gt;</i>), así que para ellas el acceso de paquete equivale casi a público. Por eso el Totito escribe <code>private</code> de forma explícita en todo lo que quiere esconder. <code>protected</code> tiene sentido con la herencia, y lo retomarás en el capítulo 22.</p>
+<h3>Símbolo por símbolo</h3>
+<pre class="java">    private char[][] casillas;</pre>
+<ul>
+<li><code>private</code> — el modificador: solo los métodos de <code>Tablero</code> pueden leer o escribir este atributo.</li>
+<li><code>char[][]</code> — el tipo: una matriz de caracteres (capítulo 15).</li>
+<li><code>casillas</code> — el nombre del atributo.</li>
+<li><code>;</code> — fin de la declaración.</li>
+</ul>
+<p>El modificador siempre va primero. Si hay varios modificadores (<code>private static final</code>, por ejemplo), el de acceso suele ir al principio por costumbre. También se aplica a métodos (<code>private void alPulsarCasilla(...)</code>), a constructores (<code>private BotonNeon(...)</code>, capítulo 20) y a clases (<code>public class Tablero</code>).</p>
+<h3>Qué pasa si intentas entrar a lo privado</h3>
+<p>El compilador no te deja. Este archivo intenta escribir en un saldo privado desde fuera de la clase:</p>
+<pre class="java">public class TocarSaldo {
+
+    public static void main(String[] args) {
+        Cuenta cuenta = new Cuenta();
+        cuenta.saldo = -500;
+    }
+}
+
+class Cuenta {
+    private double saldo;
+}</pre>
+<pre class="salida">TocarSaldo.java:5: error: saldo has private access in Cuenta
+        cuenta.saldo = -500;
+              ^
+1 error</pre>
+<p>«<code>saldo</code> tiene acceso privado en <code>Cuenta</code>». El programa ni siquiera llega a ejecutarse. Fíjate en que <code>TocarSaldo</code> y <code>Cuenta</code> están en el mismo archivo y aun así no se pueden tocar lo privado: <code>private</code> protege por <b>clase</b>, no por archivo. Esto es lo valioso: un error que antes aparecía semanas después en un reporte, ahora aparece al compilar, señalando la línea exacta.</p>
+
+<h2>La cuenta bien hecha</h2>
+<p>Ahora la versión encapsulada (<code>CuentaSegura.java</code>). Los datos son privados y la única forma de mover dinero es por la ventanilla:</p>
+<pre class="java">public class CuentaSegura {
+
+    public static void main(String[] args) {
+        Cuenta cuenta = new Cuenta("Marta");
+        cuenta.depositar(1000);
+        System.out.println("Retirar 1500: " + cuenta.retirar(1500));
+        System.out.println("Retirar 300:  " + cuenta.retirar(300));
+        System.out.println("Depositar -50: " + cuenta.depositar(-50));
+        System.out.println(cuenta.getTitular() + " tiene Q" + cuenta.getSaldo());
+    }
+}
+
+class Cuenta {
+    private final String titular;
+    private double saldo;
+
+    public Cuenta(String titular) {
+        this.titular = titular;
+    }
+
+    public boolean depositar(double monto) {
+        if (monto &lt;= 0) {
+            return false;
+        }
+        saldo = saldo + monto;
+        return true;
+    }
+
+    public boolean retirar(double monto) {
+        if (monto &lt;= 0 || monto &gt; saldo) {
+            return false;
+        }
+        saldo = saldo - monto;
+        return true;
+    }
+
+    public String getTitular() {
+        return titular;
+    }
+
+    public double getSaldo() {
+        return saldo;
+    }
+}</pre>
+<pre class="salida">Retirar 1500: false
+Retirar 300:  true
+Depositar -50: false
+Marta tiene Q700.0</pre>
+<p>Observa tres decisiones de diseño:</p>
+<ol>
+<li><b>No hay <code>setSaldo</code>.</b> El saldo no se «pone»; cambia solo por depósitos y retiros, que son las operaciones que tienen sentido en un banco. Cada una revisa sus reglas antes de tocar el dato.</li>
+<li><b>Los métodos avisan si rechazan algo</b> devolviendo <code>false</code>. Quien llama decide qué hacer (mostrar un mensaje, por ejemplo). Otra opción es lanzar una excepción; las verás en el capítulo 26.</li>
+<li><b>El titular es <code>final</code></b>: se fija en el constructor y nunca cambia. Más abajo verás por qué eso es tan útil.</li>
+</ol>
+<p>La gran ganancia: ahora la regla «el saldo nunca es negativo» se cumple <b>siempre</b>, y para estar seguro de ello solo tienes que leer <i>una</i> clase de 30 líneas, no el programa entero.</p>
+
+<h2>Getters y setters</h2>
+<p>Cuando un dato privado sí debe poder leerse desde fuera, se ofrece un método que lo devuelve. A ese método se le llama <b>getter</b> (del inglés <i>get</i>, «obtener»), y si se permite cambiarlo, el método que lo cambia es un <b>setter</b> (<i>set</i>, «poner»). Los nombres siguen una convención que respetan casi todos los programas Java del mundo:</p>
+<ul>
+<li><code>getNombre()</code> para leer el atributo <code>nombre</code>;</li>
+<li><code>setNombre(String nombre)</code> para cambiarlo;</li>
+<li><code>isActivo()</code> (o, en español, nombres como <code>estaAprobado()</code> o <code>esTurnoDeIA()</code>) para los <code>boolean</code>.</li>
+</ul>
+<p>En el Totito se mezcla el prefijo inglés <code>get</code>/<code>set</code> (porque es una convención que reconocen las herramientas y otros programadores) con el resto del nombre en español: <code>getNombre</code>, <code>getFicha</code>, <code>getTablero</code>, <code>setOyente</code>, <code>setInteractivo</code>. Es una decisión común en equipos que programan en español.</p>
+<h3>Anatomía de un getter</h3>
+<pre class="java">    public String getNombre() {
+        return nombre;
+    }</pre>
+<ul>
+<li><code>public</code> — se puede llamar desde cualquier clase: es la ventanilla.</li>
+<li><code>String</code> — el tipo que devuelve, el mismo del atributo.</li>
+<li><code>getNombre</code> — el nombre, según la convención.</li>
+<li><code>()</code> — no recibe nada.</li>
+<li><code>return nombre;</code> — devuelve el valor del atributo de este objeto.</li>
+</ul>
+<h3>Un setter con reglas</h3>
+<p>Un setter que solo hace <code>this.nota = nota;</code> no protege nada: es casi lo mismo que un atributo público. El valor de un setter está en lo que <b>revisa</b> o <b>provoca</b>. En un sistema escolar (<code>Escuela.java</code>):</p>
+<pre class="java">public class Escuela {
+
+    public static void main(String[] args) {
+        Alumno alumno = new Alumno("Sofia");
+        alumno.setNota(88);
+        System.out.println("Poner 150: " + alumno.setNota(150));
+        System.out.println("Poner -5:  " + alumno.setNota(-5));
+        System.out.println(alumno.getNombre() + " tiene " + alumno.getNota()
+                + (alumno.estaAprobado() ? " (aprobada)" : " (reprobada)"));
+    }
+}
+
+class Alumno {
+    public static final int NOTA_MINIMA = 61;
+
+    private final String nombre;
+    private int nota;
+
+    public Alumno(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public int getNota() {
+        return nota;
+    }
+
+    /** Solo acepta notas de 0 a 100. Devuelve false si la rechaza. */
+    public boolean setNota(int nota) {
+        if (nota &lt; 0 || nota &gt; 100) {
+            return false;
+        }
+        this.nota = nota;
+        return true;
+    }
+
+    public boolean estaAprobado() {
+        return nota &gt;= NOTA_MINIMA;
+    }
+}</pre>
+<pre class="salida">Poner 150: false
+Poner -5:  false
+Sofia tiene 88 (aprobada)</pre>
+<p>Fíjate en <code>estaAprobado()</code>: no es el getter de ningún atributo, sino una pregunta calculada. Quien usa <code>Alumno</code> no necesita saber que la nota mínima es 61 (en Guatemala es lo habitual en muchos colegios; en otro país podría ser 60 o 70). Si cambia, cambia una línea en un solo lugar.</p>
+<h3>Setters que hacen algo más: los del Totito</h3>
+<p>En la interfaz del Totito, varios setters no se limitan a guardar el valor: además piden que el componente se vuelva a dibujar. Por ejemplo, en <code>src/PanelTablero.java</code> (capítulo 48):</p>
+<pre class="java">    public void setInteractivo(boolean interactivo) {
+        this.interactivo = interactivo;
+        actualizarCursor();
+        repaint();
+    }</pre>
+<p>Si <code>interactivo</code> fuera un atributo público y alguien escribiera <code>tablero.interactivo = true;</code>, el valor cambiaría pero la pantalla no: el cursor seguiría siendo la flecha normal y nada se repintaría hasta que, por casualidad, otra cosa provocara un dibujo. El setter garantiza que «cambiar el dato» y «actualizar lo que se ve» ocurran siempre juntos. Lo mismo hacen <code>Rotulo.setTexto</code> (capítulo 46) y <code>TarjetaJugador.setComputadora</code> (capítulo 49), que además guarda lo que el usuario había escrito para devolvérselo si vuelve al modo de dos jugadores.</p>
+<h3>Cuándo NO poner un setter</h3>
+<p>Un error muy común al empezar es generar automáticamente un getter y un setter para cada atributo (NetBeans hasta tiene un menú para hacerlo). Eso devuelve la puerta trasera, solo que más larga. Pregúntate por cada atributo:</p>
+<ul>
+<li>¿Tiene que verlo alguien de fuera? Si no, ni getter.</li>
+<li>¿Tiene sentido que alguien lo <b>cambie</b> directamente? Muchas veces no: el saldo cambia por depósitos; las casillas cambian por jugadas; el nombre de un jugador no cambia a media partida.</li>
+<li>Si sí puede cambiar, ¿qué reglas debe cumplir el valor nuevo y qué más debe ocurrir al cambiarlo?</li>
+</ul>
+<p>En vez de pedir los datos a un objeto para decidir tú, pídele que haga el trabajo: no hagas <code>if (cuenta.getSaldo() &gt;= monto) cuenta.setSaldo(cuenta.getSaldo() - monto);</code> desde fuera; llama <code>cuenta.retirar(monto)</code> y deja que la cuenta decida. A esta idea se le llama «dile, no le preguntes» (<i>tell, don't ask</i>).</p>
+
+<h2>Por qué <code>casillas</code> es <code>private</code> en el Tablero</h2>
+<p>Este es el comienzo de <code>src/Tablero.java</code>, la primera clase que escribirás en el capítulo 29:</p>
+<pre class="java">public class Tablero {
+
+    public static final char VACIA = ' ';
+
+    private char[][] casillas;
+
+    public Tablero() {
+        casillas = new char[3][3];
+        reiniciar();
+    }</pre>
+<p>La matriz de casillas es privada, y nada en la clase la devuelve entera. Para leer hay <code>obtenerCasilla(fila, columna)</code>; para escribir, <code>marcarCasilla(fila, columna, ficha)</code>; para vaciar, <code>reiniciar()</code>. Imagina que fuera pública. Cualquier clase podría hacer cualquiera de estas cosas:</p>
+<ul>
+<li><code>tablero.casillas[1][1] = 'O';</code> encima de una X: hacer trampa borrando la ficha del rival.</li>
+<li><code>tablero.casillas[1][1] = 'Z';</code>: una ficha que no existe, y <code>verificarGanador()</code> podría declarar ganador a «Z».</li>
+<li><code>tablero.casillas[3][0] = 'X';</code>: un índice fuera de rango, y el programa se cae con <code>ArrayIndexOutOfBoundsException</code>.</li>
+<li><code>tablero.casillas = new char[4][4];</code>: cambiar el tamaño, y los ciclos de 0 a 2 dejarían de revisar la cuarta fila.</li>
+<li><code>tablero.casillas = null;</code>: y la siguiente jugada termina en un <code>NullPointerException</code>.</li>
+</ul>
+<p>Y hay una segunda razón, igual de importante: <b>libertad para cambiar por dentro</b>. Hoy el tablero es un <code>char[3][3]</code>. Mañana podrías guardarlo como un arreglo de 9 posiciones, o como un texto de 9 letras. Como nadie de fuera toca <code>casillas</code>, solo tendrías que reescribir los métodos de <code>Tablero</code>; <code>Partida</code>, <code>IA_Minimax</code>, <code>PanelTablero</code> y <code>PruebaConsola</code> seguirían llamando a <code>obtenerCasilla(fila, columna)</code> sin enterarse del cambio. Si <code>casillas</code> fuera público y diez clases lo usaran directamente, cambiarlo significaría corregir diez clases.</p>
+<div class="caja consejo"><b>Empieza por <code>private</code></b> La regla práctica: todo atributo nace <code>private</code>. Solo abres algo cuando hay un motivo claro, y entonces lo abres de la forma más estrecha posible (un getter mejor que un setter; un método con reglas mejor que un setter). En todo el Totito no hay un solo atributo de instancia público; lo único público que no es un método son constantes <code>static final</code> como <code>Tablero.VACIA</code>, que no se pueden cambiar (capítulo 20).</div>
+
+<h2>Invariantes: las promesas de una clase</h2>
+<p>Un <b>invariante</b> es una condición que la clase promete que <b>siempre</b> es cierta para cualquiera de sus objetos, pase lo que pase, desde que el constructor termina. Es como la regla de un portero de edificio: «aquí no entra nadie sin anotarse». Si el portero la cumple siempre, quien está dentro puede confiar en que todos los que ve se anotaron.</p>
+<p>Los invariantes del <code>Tablero</code> son:</p>
+<ol>
+<li>Siempre hay exactamente 3×3 casillas.</li>
+<li>Cada casilla contiene <code>VACIA</code> o una ficha.</li>
+<li>Una casilla ocupada no se vuelve a ocupar (solo <code>reiniciar()</code> la vacía).</li>
+</ol>
+<p>El constructor establece los dos primeros (crea la matriz de 3×3 y la llena de <code>VACIA</code> con <code>reiniciar()</code>), y el único método que escribe una ficha los defiende. Es <code>marcarCasilla</code>:</p>
+<pre class="java">    public boolean marcarCasilla(int fila, int columna, char ficha) {
+        if (fila &lt; 0 || fila &gt; 2 || columna &lt; 0 || columna &gt; 2) {
+            return false;
+        }
+        if (casillas[fila][columna] != VACIA) {
+            return false;
+        }
+        casillas[fila][columna] = ficha;
+        return true;
+    }</pre>
+<ul>
+<li>El primer <code>if</code> es el portero de los límites: con los operadores <code>||</code> (capítulo 13) rechaza cualquier fila o columna fuera de 0 a 2. Si no estuviera, una jugada en la fila 3 haría caer el programa.</li>
+<li>El segundo <code>if</code> es el portero de la regla del juego: si la casilla no está vacía, no se toca. Si no estuviera, un doble clic sobre una X la convertiría en O.</li>
+<li>Solo si pasa los dos controles se escribe la ficha y se responde <code>true</code>. A esta forma de escribir (comprobar primero, salir pronto con <code>return</code>, y dejar el trabajo para el final) se le llama <b>cláusulas de guarda</b>.</li>
+</ul>
+<p>Compruébalo con una versión del tablero que copia esas mismas líneas (<code>TableroProtegido.java</code>):</p>
+<pre class="java">public class TableroProtegido {
+
+    public static void main(String[] args) {
+        Tablero tablero = new Tablero();
+        System.out.println("X en 1,1 -&gt; " + tablero.marcarCasilla(1, 1, 'X'));
+        System.out.println("O en 1,1 -&gt; " + tablero.marcarCasilla(1, 1, 'O'));
+        System.out.println("O en 3,0 -&gt; " + tablero.marcarCasilla(3, 0, 'O'));
+        System.out.println("O en 0,-1 -&gt; " + tablero.marcarCasilla(0, -1, 'O'));
+        System.out.println("O en 0,0 -&gt; " + tablero.marcarCasilla(0, 0, 'O'));
+        System.out.println("Casilla 1,1 = " + tablero.obtenerCasilla(1, 1));
+        System.out.println("Casilla 0,0 = " + tablero.obtenerCasilla(0, 0));
+    }
+}
+
+class Tablero {
+    public static final char VACIA = ' ';
+
+    private char[][] casillas;
+
+    public Tablero() {
+        casillas = new char[3][3];
+        for (int fila = 0; fila &lt; 3; fila++) {
+            for (int columna = 0; columna &lt; 3; columna++) {
+                casillas[fila][columna] = VACIA;
+            }
+        }
+    }
+
+    public boolean marcarCasilla(int fila, int columna, char ficha) {
+        if (fila &lt; 0 || fila &gt; 2 || columna &lt; 0 || columna &gt; 2) {
+            return false;
+        }
+        if (casillas[fila][columna] != VACIA) {
+            return false;
+        }
+        casillas[fila][columna] = ficha;
+        return true;
+    }
+
+    public char obtenerCasilla(int fila, int columna) {
+        return casillas[fila][columna];
+    }
+}</pre>
+<pre class="salida">X en 1,1 -&gt; true
+O en 1,1 -&gt; false
+O en 3,0 -&gt; false
+O en 0,-1 -&gt; false
+O en 0,0 -&gt; true
+Casilla 1,1 = X
+Casilla 0,0 = O</pre>
+<p>La O que intentó pisar la X fue rechazada, igual que las jugadas fuera del tablero, y la X sigue en su sitio. Gracias a esto, el resto del juego puede confiar a ciegas: <code>verificarGanador()</code> no necesita preguntarse si hay letras raras, y la IA del capítulo 31 puede llamar a <code>marcarCasilla</code> sobre sus copias sin miedo.</p>
+<h3>Los invariantes de la Partida</h3>
+<p><code>Partida</code> (capítulo 38) se monta encima del tablero y agrega sus propias promesas: los turnos se alternan, una partida terminada no acepta más jugadas y el marcador solo sube cuando de verdad alguien gana. Todo eso vive en su método <code>jugar</code>, y por eso <code>turno</code>, <code>estado</code>, <code>victorias</code> y <code>empates</code> son privados:</p>
+<pre class="java">    public boolean jugar(int fila, int columna) {
+        if (estado != Estado.EN_CURSO) {
+            return false;
+        }
+        if (!tablero.marcarCasilla(fila, columna, jugadores[turno].getFicha())) {
+            return false;
+        }</pre>
+<p>La primera guarda impide jugar después de una victoria (sin ella, alguien podría seguir poniendo fichas sobre un tablero ya ganado y sumar dos victorias en una misma partida). La segunda delega en el portero del tablero: si la casilla no vale, la partida tampoco cambia de turno. La pantalla de juego (capítulo 59) solo tiene que llamar <code>partida.jugar(fila, columna)</code> y redibujar si devolvió <code>true</code>; no repite ni una regla.</p>
+
+<h2>Inmutabilidad: el Jugador que no cambia</h2>
+<p>Algunos objetos no deberían cambiar nunca después de nacer. Tu fecha de nacimiento, el número de serie de una computadora o un billete de 20 quetzales: si quieres «otro valor», es otro objeto. Un objeto así se llama <b>inmutable</b>.</p>
+<p><code>Jugador</code> es inmutable. Mira de nuevo <code>src/Jugador.java</code> (capítulo 30):</p>
+<pre class="java">public class Jugador {
+
+    private final String nombre;
+    private final char ficha;
+
+    public Jugador(String nombre, char ficha) {
+        this.nombre = nombre;
+        this.ficha = ficha;
+    }</pre>
+<p>Cada atributo lleva dos protecciones:</p>
+<ul>
+<li><code>private</code>: nadie de fuera puede tocarlo.</li>
+<li><code>final</code>: <b>ni siquiera la propia clase</b> puede cambiarlo después del constructor. Se le asigna valor una sola vez y queda fijo. (El capítulo 20 cuenta todos los usos de <code>final</code>.)</li>
+</ul>
+<p>Y no hay ningún setter. El compilador hace cumplir esto con dos errores distintos. Si alguien agrega a <code>Jugador</code> un método para cambiar el nombre:</p>
+<pre class="java">    public void cambiarNombre(String nuevo) {
+        this.nombre = nuevo;
+    }</pre>
+<pre class="salida">CambiarNombre.java:19: error: cannot assign a value to final variable nombre
+        this.nombre = nuevo;
+            ^
+1 error</pre>
+<p>Y si un constructor se olvida de darle valor a un atributo <code>final</code> (aquí, un constructor que solo recibe el nombre):</p>
+<pre class="java">    public Jugador(String nombre) {
+        this.nombre = nombre;
+    }</pre>
+<pre class="salida">OlvidarFicha.java:14: error: variable ficha might not have been initialized
+    }
+    ^
+1 error</pre>
+<p>«La variable <code>ficha</code> podría no haber sido inicializada». Es decir, <code>final</code> obliga a que cada jugador nazca completo: no puede existir un jugador sin ficha.</p>
+<h3>Por qué conviene que el jugador sea inmutable</h3>
+<p>El mismo objeto <code>Jugador</code> lo comparten muchas partes del juego a la vez: la <code>Partida</code> lo guarda en su arreglo <code>jugadores</code>, el <code>PanelMarcador</code> lee su nombre y su ficha para dibujar el marcador, la pantalla de juego escribe «Turno de Ana» y la <code>PantallaResultado</code> escribe «¡Ganó Ana!». Recuerda del capítulo 18 que todos ellos tienen <b>referencias al mismo objeto</b>. Si alguno pudiera cambiar la ficha de Ana de X a O a media partida, los demás verían el cambio sin aviso: el tablero tendría X de una jugadora que ahora «juega con O», y <code>verificarGanador()</code> declararía un ganador que no corresponde a nadie. Con un objeto inmutable puedes repartir referencias con total tranquilidad: nadie puede estropearlo.</p>
+<p>Para empezar otra partida con otros nombres no se modifica el jugador: <code>PantallaConfiguracion</code> crea dos <code>Jugador</code> nuevos. Crear objetos es barato; perseguir un error de datos compartidos, carísimo.</p>
+<p>Ya conoces otra clase inmutable: <code>String</code>. Por eso <code>texto.toUpperCase()</code> no cambia <code>texto</code>, sino que devuelve un <code>String</code> nuevo (capítulo 17). <code>IA_Minimax</code> sigue la misma idea: sus dos fichas, <code>fichaIA</code> y <code>fichaJugador</code>, son <code>private final</code>.</p>
+<div class="caja cuidado"><b><code>final</code> no siempre significa «no cambia nada»</b> En <code>Partida</code> está la línea <code>private final int[] victorias = new int[2];</code> y, sin embargo, <code>jugar</code> hace <code>victorias[turno]++</code>. ¿Cómo? <code>final</code> fija la <b>referencia</b>: la variable <code>victorias</code> apuntará siempre al mismo arreglo. Pero el <b>contenido</b> de ese arreglo sí puede cambiar. Lo mismo con <code>private final Tablero tablero</code>: siempre es el mismo tablero, pero sus casillas cambian con cada jugada. Un objeto solo es inmutable si todos sus atributos son <code>final</code> <b>y</b> además son primitivos u objetos inmutables (como <code>String</code> y <code>char</code> en <code>Jugador</code>).</div>
+
+<h2>Fugas: cuando un getter abre la bóveda</h2>
+<p>Ojo con una trampa sutil. Poner <code>private</code> en un atributo no sirve de mucho si después un getter entrega la referencia a ese mismo objeto mutable: quien la recibe puede modificar el original por dentro. A eso se le llama una <b>fuga de encapsulamiento</b>. Es como si el cajero, en vez de darte tus billetes, te prestara la llave de la bóveda.</p>
+<p>Con arreglos se ve muy claro (<code>FugaDeArreglo.java</code>):</p>
+<pre class="java">import java.util.Arrays;
+
+public class FugaDeArreglo {
+
+    public static void main(String[] args) {
+        Boleta boleta = new Boleta(new int[]{85, 90, 78});
+
+        int[] prestadas = boleta.getNotasConFuga();
+        prestadas[0] = 0;   // alguien "solo queria mirar"...
+        System.out.println("Tras la fuga:  " + Arrays.toString(boleta.getNotasSeguras()));
+
+        int[] copia = boleta.getNotasSeguras();
+        copia[1] = 0;       // esto solo cambia la copia
+        System.out.println("Tras la copia: " + Arrays.toString(boleta.getNotasSeguras()));
+    }
+}
+
+class Boleta {
+    private final int[] notas;
+
+    public Boleta(int[] notas) {
+        this.notas = notas.clone();          // guardo mi propia copia
+    }
+
+    /** MAL: entrega la referencia al arreglo interno. */
+    public int[] getNotasConFuga() {
+        return notas;
+    }
+
+    /** BIEN: entrega una copia; el original queda protegido. */
+    public int[] getNotasSeguras() {
+        return notas.clone();
+    }
+}</pre>
+<pre class="salida">Tras la fuga:  [0, 90, 78]
+Tras la copia: [0, 90, 78]</pre>
+<p>El 85 se convirtió en 0 a través del getter con fuga, aunque <code>notas</code> es <code>private final</code>. En cambio, modificar lo que devolvió <code>getNotasSeguras()</code> no afectó a la boleta: el segundo 90 sigue intacto. El método <code>clone()</code> de un arreglo crea uno nuevo con los mismos valores. Fíjate también en el constructor: guarda un <code>clone()</code> de lo que recibe, para que quien le pasó el arreglo no pueda cambiarlo después desde fuera. A esto se le llama <b>copia defensiva</b>.</p>
+<h3>La fuga que el Totito acepta, y por qué</h3>
+<p>Seamos honestos: el Totito tiene una fuga parecida. <code>Partida</code> ofrece:</p>
+<pre class="java">    public Tablero getTablero() {
+        return tablero;
+    }</pre>
+<p>Devuelve el tablero <b>real</b>. Con él, cualquiera podría saltarse los turnos de la partida llamando <code>marcarCasilla</code> directamente. Este programa lo demuestra con versiones mini de las dos clases (<code>TrampaPorElGetter.java</code>):</p>
+<pre class="java">public class TrampaPorElGetter {
+
+    public static void main(String[] args) {
+        MiniPartida partida = new MiniPartida();
+        partida.jugar(1, 1);                              // X juega bien, por la puerta
+        System.out.println("Turno de: " + partida.getFichaEnTurno());
+
+        // Truco: saltarse a la partida y escribir en su tablero
+        partida.getTablero().marcarCasilla(0, 0, 'X');
+        partida.getTablero().marcarCasilla(2, 2, 'X');
+
+        System.out.println("Turno de: " + partida.getFichaEnTurno() + " (la partida no se entero)");
+        partida.getTablero().imprimir();
+    }
+}
+
+class MiniPartida {
+    private final Tablero tablero = new Tablero();
+    private char fichaEnTurno = 'X';
+
+    public boolean jugar(int fila, int columna) {
+        if (!tablero.marcarCasilla(fila, columna, fichaEnTurno)) {
+            return false;
+        }
+        fichaEnTurno = fichaEnTurno == 'X' ? 'O' : 'X';
+        return true;
+    }
+
+    public char getFichaEnTurno() {
+        return fichaEnTurno;
+    }
+
+    public Tablero getTablero() {
+        return tablero;                                   // entrega el tablero REAL
+    }
+}
+
+class Tablero {
+    private final char[][] casillas = {
+        {' ', ' ', ' '}, {' ', ' ', ' '}, {' ', ' ', ' '}
+    };
+
+    public boolean marcarCasilla(int fila, int columna, char ficha) {
+        if (fila &lt; 0 || fila &gt; 2 || columna &lt; 0 || columna &gt; 2 || casillas[fila][columna] != ' ') {
+            return false;
+        }
+        casillas[fila][columna] = ficha;
+        return true;
+    }
+
+    public void imprimir() {
+        for (char[] fila : casillas) {
+            System.out.println(" " + fila[0] + " | " + fila[1] + " | " + fila[2]);
+        }
+    }
+}</pre>
+<pre class="salida">Turno de: O
+Turno de: O (la partida no se entero)
+ X |   |  
+   | X |  
+   |   | X</pre>
+<p>Tres X en diagonal, y la partida sigue creyendo que le toca a O. El tablero protegió <i>sus</i> reglas (ninguna casilla se pisó), pero las reglas de la partida (los turnos) quedaron fuera de juego porque alguien entró por el tablero en vez de por la partida.</p>
+<p>¿Por qué el Totito lo deja así? Porque en el juego real <code>getTablero()</code> solo se usa para <b>leer</b>: <code>PantallaJuego</code> y <code>PantallaResultado</code> lo pasan a <code>PanelTablero.mostrar(...)</code> para dibujarlo, y nadie más lo pide. Es un programa pequeño escrito por una sola persona, y la alternativa tiene un costo. Pero conviene que conozcas las tres formas de cerrar esa fuga, para cuando el programa crezca:</p>
+<ol>
+<li><b>Devolver una copia</b>: <code>return tablero.obtenerCopia();</code>. Seguro y sencillo; cuesta crear un tablero nuevo en cada llamada (en el Totito sería insignificante).</li>
+<li><b>Ofrecer solo lo necesario</b>: en vez de entregar el tablero, que <code>Partida</code> tenga su propio <code>obtenerCasilla(fila, columna)</code> que pregunte al tablero.</li>
+<li><b>Entregar una vista de solo lectura</b>: una interfaz con <code>obtenerCasilla</code> y sin <code>marcarCasilla</code>. Las interfaces llegan en el capítulo 24.</li>
+</ol>
+<p>Y fíjate en que el Totito sí se protege en el otro sentido. <code>PanelTablero.mostrar</code> (capítulo 48) no se guarda la referencia al tablero: copia cada casilla a su propia matriz <code>fichas</code>, con <code>fichas[fila][columna] = tablero.obtenerCasilla(fila, columna);</code>. Así, el dibujo nunca depende de un objeto que otro podría cambiar mientras Swing está pintando. Y el constructor de <code>Partida</code> hace <code>this.jugadores = new Jugador[]{jugador1, jugador2};</code>: crea su propio arreglo en lugar de aceptar uno de fuera que alguien podría modificar después. Son copias defensivas, igual que la de <code>Boleta</code>.</p>
+
+<h2>También se encapsulan los métodos</h2>
+<p><code>private</code> no es solo para atributos. Un método privado es un «ayudante interno»: lo usa la clase para organizar su trabajo, pero no forma parte de lo que ofrece al resto del programa. En el Totito:</p>
+<ul>
+<li><code>IA_Minimax.minimax(...)</code> (capítulo 31) es <code>private</code>: hacia fuera, la IA solo ofrece <code>calcularMejorJugada(tablero)</code>. Cómo piense por dentro es asunto suyo.</li>
+<li><code>Tema.elegirFamilia()</code> (capítulo 40) es <code>private</code>: se usa una sola vez, al cargar la clase, para escoger la fuente.</li>
+<li><code>PantallaJuego.alPulsarCasilla</code>, <code>despuesDeJugada</code>, <code>programarTurnoIA</code> y <code>esperar</code> (capítulo 59) son privados: son los engranajes de la pantalla. Lo público es <code>comenzar(partida)</code>.</li>
+</ul>
+<p>Cada método público es una <b>promesa</b>: otras clases lo van a usar y, si mañana lo cambias o lo borras, se rompen. Un método privado lo puedes renombrar, partir en dos o eliminar sin miedo, porque sabes que nadie de fuera lo usa. Cuanto menos público tenga una clase, más fácil es mejorarla.</p>
+
+<h2>¿Qué habría pasado sin encapsulamiento?</h2>
+<p>La primera ventana del Totito, <code>JuegoMain</code> (capítulo 33), ya usa <code>Tablero</code> y <code>Jugador</code> a través de sus métodos. Gracias a eso, cuando en la Parte VII se construye la interfaz de neón, esas clases se reutilizan <b>tal cual</b>, sin cambiar una sola línea, como dice el comentario al inicio de <code>Partida.java</code>: «Reutiliza tal cual las clases originales del proyecto». Si <code>JuegoMain</code> hubiera metido la mano en <code>casillas</code> directamente, cualquier cambio en el tablero habría obligado a revisar también la ventana vieja, y la nueva interfaz habría tenido que repetir todas las validaciones. El encapsulamiento es lo que permite que una clase escrita hoy siga sirviendo, sin tocarla, en el programa de mañana.</p>
+
+<h2>Resumen</h2>
+<ul>
+<li>Encapsular es ocultar los datos de un objeto y ofrecer solo operaciones que respetan sus reglas: la bóveda cerrada y la ventanilla abierta.</li>
+<li>Los modificadores de acceso son <code>private</code> (solo la clase), acceso de paquete (sin palabra), <code>protected</code> (paquete e hijas) y <code>public</code> (todos). Empieza siempre por <code>private</code>.</li>
+<li>Los getters y setters siguen la convención <code>getX</code>/<code>setX</code>; un setter vale por lo que valida o provoca, y muchas veces lo correcto es no tener setter, sino operaciones con sentido (<code>depositar</code>, <code>marcarCasilla</code>).</li>
+<li>Un invariante es una promesa que la clase cumple siempre; <code>Tablero.marcarCasilla</code> la defiende con cláusulas de guarda que rechazan jugadas fuera de rango o en casillas ocupadas.</li>
+<li><code>Jugador</code> es inmutable gracias a <code>private final</code> y a no tener setters; por eso se puede compartir sin peligro entre la partida, el marcador y las pantallas.</li>
+<li><code>final</code> fija la referencia, no el contenido: un arreglo <code>final</code> puede cambiar por dentro.</li>
+<li>Un getter que devuelve un objeto mutable interno provoca una fuga; se cierra con copias defensivas, métodos más específicos o vistas de solo lectura.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> Cada vez que un dato tenga reglas, enciérralo y dale una ventanilla:
+<ul>
+<li><b>Banco:</b> el saldo es privado y solo cambia con <code>depositar</code>, <code>retirar</code> y <code>transferir</code>, que validan montos y dejan registro. Nunca un <code>setSaldo</code>.</li>
+<li><b>Escuela:</b> <code>Alumno.setNota</code> rechaza valores fuera de 0 a 100, y el carné del alumno es <code>final</code>: no cambia nunca después de la inscripción.</li>
+<li><b>Tienda:</b> <code>Producto.existencias</code> es privado; <code>vender(cantidad)</code> no deja bajar de cero y <code>reabastecer(cantidad)</code> no acepta negativos. Un <code>Producto</code> con código y nombre <code>final</code> se puede compartir entre el inventario y las facturas.</li>
+<li><b>Otro juego:</b> la vida de un personaje es privada; <code>recibirDanio(puntos)</code> nunca la deja por debajo de 0 y <code>curar(puntos)</code> nunca por encima del máximo. La lista de enemigos se entrega como copia para que la pantalla no pueda borrar enemigos por error.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b><ol>
+<li>Toma la clase <code>Producto</code> de <code>Tienda.java</code> (capítulo 18), haz privados sus tres atributos y agrega <code>getNombre()</code>, <code>getPrecio()</code> y <code>getExistencias()</code>. Comprueba que <code>pan.existencias = -10;</code> desde <code>main</code> ya no compila, y copia el mensaje de error.</li>
+<li>Agrega a <code>Cuenta</code> (de <code>CuentaSegura.java</code>) un método <code>transferir(double monto, Cuenta destino)</code> que solo mueva el dinero si el retiro tuvo éxito. Pista: usa los propios métodos <code>retirar</code> y <code>depositar</code>, no el atributo <code>saldo</code> del destino.</li>
+<li>En <code>Alumno</code>, el atributo <code>nombre</code> es <code>final</code>. Intenta escribirle un <code>setNombre</code> y lee el error. Después piensa: ¿qué datos de un alumno real deberían ser <code>final</code> y cuáles no?</li>
+<li>Arregla la fuga de <code>TrampaPorElGetter</code> de dos formas: (a) que <code>getTablero()</code> devuelva una copia (escribe un método <code>obtenerCopia()</code> en el <code>Tablero</code> mini); (b) quita <code>getTablero()</code> y da a <code>MiniPartida</code> un método <code>obtenerCasilla(fila, columna)</code>. Ejecuta ambas versiones y comprueba que el truco ya no funciona.</li>
+<li>Diseña una clase <code>Termostato</code> con temperatura deseada entre 16 y 30 grados: métodos <code>subir()</code> y <code>bajar()</code> que cambian de 1 en 1 sin salirse del rango, y <code>getTemperatura()</code>. Escribe el invariante en un comentario encima de la clase. Pista: el constructor también debe dejar el objeto cumpliendo el invariante.</li>
+</ol></div>
+</section>

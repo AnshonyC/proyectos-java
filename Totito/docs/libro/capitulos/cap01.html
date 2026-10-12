@@ -1,0 +1,239 @@
+<section class="capitulo" id="cap01">
+<h1><span class="num">Capítulo 1</span>Cómo usar este libro</h1>
+<p class="entrada">Antes de instalar nada ni escribir una sola línea de código, conviene saber a dónde vas a llegar, por qué camino y cómo leer lo que viene. Este capítulo es el mapa: qué vas a construir, cómo está organizado el libro, qué significa cada recuadro y cada tipo de letra, cuánto tiempo calcular y qué hacer cuando algo no funcione (porque va a pasar, y está bien).</p>
+
+<h2>Qué vas a construir</h2>
+<p>A lo largo del libro vas a programar, desde la primera línea hasta el instalador final, el <b>Juego del Totito</b>: el clásico tres en raya (en otros países le dicen «gato», «tres en línea» o <i>tic-tac-toe</i>). Dos jugadores se turnan para marcar con <code>X</code> y con <code>O</code> las casillas de un tablero de 3×3, y gana quien logre tres fichas iguales en fila, en columna o en diagonal. Si se llenan las nueve casillas sin que nadie lo logre, es empate.</p>
+<p>No va a ser un totito cualquiera. Así se ve la pantalla de inicio del programa terminado:</p>
+<figure><img src="capturas/1-menu.png"><figcaption>El menú principal del Totito terminado: fondo oscuro, botones con borde de neón y un encabezado con el logotipo y el botón de cerrar. Todo lo que ves está dibujado con código Java, sin imágenes.</figcaption></figure>
+<p>Y así se ve cuando alguien gana la partida:</p>
+<figure><img src="capturas/5-victoria.png"><figcaption>La pantalla de victoria: el trofeo, el nombre del ganador, el tablero final con la raya sobre las tres fichas ganadoras, confeti y dos botones para seguir jugando o volver al menú.</figcaption></figure>
+<p>Cuando termines el libro tendrás un programa que:</p>
+<ul>
+<li>Permite jugar a <b>dos personas</b> en la misma computadora, o a una persona <b>contra la computadora</b>.</li>
+<li>Tiene una <b>inteligencia artificial que nunca pierde</b>: usa un algoritmo llamado <i>Minimax</i>, que «imagina» todas las partidas posibles antes de decidir su jugada. Lo vas a entender y a escribir tú en el capítulo 31.</li>
+<li>Tiene <b>cinco pantallas</b>: menú, instrucciones, configuración (nombres, símbolo y modo de juego), la partida y el resultado (victoria o empate), con un marcador que suma las partidas ganadas.</li>
+<li>Tiene una <b>interfaz con estilo neón</b>: colores rosa, azul y morado que parecen brillar sobre un fondo oscuro. Ese brillo no es una imagen pegada: es un truco de dibujo que vas a aprender en la Parte VI y aplicar en la Parte VII.</li>
+<li>Se instala en Windows con un <b>instalador <code>.exe</code></b> con su propio icono, acceso directo en el escritorio y entrada en el menú Inicio, como cualquier programa comercial.</li>
+<li>Está <b>publicado en GitHub</b>, con su historial completo de cambios y una página de descarga, para que cualquier persona del mundo pueda bajarlo.</li>
+</ul>
+
+<h2>Qué vas a aprender de verdad</h2>
+<p>El totito es la excusa. Lo que en realidad te llevas son cinco habilidades que sirven para cualquier programa que quieras hacer después:</p>
+<table class="tabla">
+<tr><th>Habilidad</th><th>Qué significa</th><th>Dónde aparece en el Totito</th></tr>
+<tr><td><b>Java</b></td><td>Un lenguaje de programación: un idioma con reglas muy estrictas que la computadora entiende.</td><td>Todo el juego está escrito en Java.</td></tr>
+<tr><td><b>Programación orientada a objetos (POO)</b></td><td>Una manera de organizar un programa en piezas llamadas <i>clases</i>, cada una con una sola responsabilidad.</td><td>El tablero, los jugadores, la IA, cada botón y cada pantalla son clases distintas.</td></tr>
+<tr><td><b>Diseño de interfaces y color</b></td><td>Cómo convertir un dibujo de cómo debe verse un programa en código que lo dibuje igual.</td><td>La interfaz neón parte de cuatro imágenes de diseño que vas a «traducir» a Java.</td></tr>
+<tr><td><b>Git y GitHub</b></td><td>Git guarda el historial de tu proyecto; GitHub lo guarda en internet y permite compartirlo.</td><td>Cada paso importante del Totito queda guardado como un <i>commit</i>.</td></tr>
+<tr><td><b>Distribución</b></td><td>Convertir tu código en algo que otra persona pueda instalar con doble clic.</td><td>El <code>.exe</code> instalador y la página de descarga en GitHub.</td></tr>
+</table>
+<p>¿Por qué un totito y no algo más grande, como una tienda en línea? Porque sus reglas caben en un párrafo, y eso deja toda tu atención libre para aprender a programar en lugar de gastarla en entender el problema. Y, a la vez, es lo bastante completo como para recorrer el ciclo entero de un programa real: pensar la lógica, separar responsabilidades, dibujar una interfaz cuidada, probar, guardar versiones, empaquetar y publicar. Ese ciclo es exactamente el mismo en un programa de facturación o en un videojuego; solo cambia el tamaño.</p>
+
+<h2>Lo que necesitas saber antes de empezar</h2>
+<p><b>Nada de programación.</b> Este libro supone que nunca escribiste código. Solo necesitas saber usar una computadora con Windows: abrir programas, guardar archivos, navegar por carpetas en el Explorador de archivos y usar el navegador de internet. Todo lo demás se explica cuando aparece por primera vez.</p>
+<p>La regla que sigue el libro es: <b>nada se da por sabido</b>. Si en una línea de código hay un punto y coma, vas a saber por qué está ahí. Si hay una llave <code>{</code>, vas a saber qué abre y dónde se cierra. Si un archivo existe, vas a saber qué problema resuelve y qué pasaría si no estuviera. A veces eso hará que una explicación parezca «demasiado» detallada; es a propósito. Es mucho más fácil saltarte un párrafo que ya entendiste que adivinar lo que nadie te explicó.</p>
+
+<div class="caja concepto"><b>Programar es dar instrucciones exactas.</b> Una computadora no «entiende lo que quisiste decir»: hace exactamente lo que le escribiste, ni más ni menos. Por eso un punto y coma olvidado puede impedir que un programa funcione. No es que la computadora sea tonta; es que es literal. Aprender a programar es, en gran parte, aprender a ser preciso.</div>
+
+<h2>Cómo está organizado el libro</h2>
+<p>El libro tiene nueve partes y cinco apéndices. El orden no es casual: cada parte se apoya en la anterior.</p>
+<table class="tabla">
+<tr><th>Parte</th><th>Capítulos</th><th>Qué haces ahí</th><th>Por qué en ese lugar</th></tr>
+<tr><td>I. Antes de programar</td><td>1–5</td><td>Conoces tu PC, aprendes a usar PowerShell, instalas las herramientas y creas la carpeta del proyecto.</td><td>Sin herramientas instaladas no se puede practicar nada de lo que sigue.</td></tr>
+<tr><td>II. Git y GitHub</td><td>6–10</td><td>Aprendes a guardar el historial del proyecto y a subirlo a internet.</td><td>Va antes del código para que guardes cada avance desde el primer día, como en un trabajo real.</td></tr>
+<tr><td>III. Fundamentos de Java</td><td>11–17</td><td>Variables, decisiones, repeticiones, arreglos, métodos y texto.</td><td>Son las «palabras» y la «gramática» del idioma.</td></tr>
+<tr><td>IV. Programación orientada a objetos</td><td>18–27</td><td>Clases, objetos, herencia, interfaces, buenas prácticas y patrones.</td><td>Es la forma de organizar un programa grande sin que se vuelva un enredo.</td></tr>
+<tr><td>V. El Totito v0.1</td><td>28–33</td><td>Escribes la lógica del juego, la IA y una primera ventana sencilla.</td><td>Primero que funcione; después, que se vea bonito.</td></tr>
+<tr><td>VI. Diseño visual</td><td>34–37</td><td>Color, tipografía, espaciado y cómo dibuja Java en pantalla.</td><td>Necesitas estas ideas para entender cada línea de la interfaz neón.</td></tr>
+<tr><td>VII. El Totito v1.0</td><td>38–61</td><td>Construyes la interfaz neón completa, archivo por archivo.</td><td>Es la parte más larga: aquí se juntan Java, POO y diseño.</td></tr>
+<tr><td>VIII. Probar, empaquetar y compartir</td><td>62–67</td><td>Depuras, creas el <code>.jar</code>, el icono, el <code>.exe</code> y la publicación en GitHub.</td><td>Un programa que solo funciona en tu PC todavía no está terminado.</td></tr>
+<tr><td>IX. Más allá del Totito</td><td>68–69</td><td>Cinco proyectos guiados y qué estudiar después.</td><td>Para que compruebes que lo aprendido sirve fuera de este juego.</td></tr>
+<tr><td>Apéndices A–E</td><td>—</td><td>Chuletas de PowerShell, Git y NetBeans, errores comunes y glosario.</td><td>Para consultar rápido cuando ya sabes qué buscas.</td></tr>
+</table>
+<p>Hay dos tipos de capítulos. Los de <b>teoría y pasos</b> (como este) explican ideas y te guían con comandos. Los de <b>código línea por línea</b> (Partes V y VII, y el capítulo 64) muestran un archivo completo del Totito con sus números de línea, partido en trozos pequeños, y debajo de cada trozo explican cada línea: qué hace, por qué está ahí y qué pasaría si no estuviera. En esos capítulos verás notas como «<b>L12</b>», que significa «línea 12 del archivo».</p>
+
+<h2>Cómo leerlo</h2>
+<h3>En orden, al menos la primera vez</h3>
+<p>Cada capítulo usa lo que explicaron los anteriores. Si saltas de la Parte I a la Parte VII porque quieres ver los colores neón cuanto antes, vas a encontrar palabras como <code>extends</code>, <code>@Override</code> o <code>Graphics2D</code> sin saber qué son. Los capítulos remiten unos a otros («como viste en el capítulo 19…»), así que si algo no te suena, vuelve al capítulo indicado: no es retroceder, es asentar.</p>
+<h3>Escribe el código tú mismo</h3>
+<p>Copiar y pegar es más rápido, pero se aprende mucho menos. Cuando escribes cada línea, tus dedos y tus ojos se acostumbran a la forma del lenguaje: dónde van los paréntesis, dónde el punto y coma, cómo se escriben los nombres. Además, vas a cometer errores de escritura, y corregirlos es una de las mejores prácticas posibles, porque es exactamente lo que harás en tus propios proyectos. Si un archivo es muy largo y decides pegarlo, al menos léelo línea por línea con la explicación del libro al lado.</p>
+<h3>Haz los ejercicios</h3>
+<p>Cada capítulo termina con ejercicios graduados: los primeros son fáciles y los últimos te obligan a pensar. Leer y entender no es lo mismo que saber hacer; los ejercicios son el puente. Si uno te bloquea más de media hora, sigue adelante y vuelve después: muchas veces la respuesta aparece sola dos capítulos más adelante.</p>
+<h3>Ten un cuaderno de errores</h3>
+<p>Puede ser una libreta o un archivo de texto. Cada vez que algo falle, anota tres cosas: qué intentabas hacer, el mensaje de error exacto y cómo lo resolviste. En pocas semanas tendrás tu propio manual de soluciones, y vas a notar que la mayoría de los errores se repiten.</p>
+
+<h2>Convenciones: cómo leer lo que ves en la página</h2>
+<p>El libro usa varios estilos de texto y de recuadro. Cada uno tiene un significado fijo, así que vale la pena aprenderlos ahora.</p>
+<h3>Bloques de código y comandos</h3>
+<p><b>Comandos de PowerShell.</b> PowerShell es la «terminal» de Windows: una ventana donde le das órdenes a la computadora escribiendo en lugar de hacer clic (la conocerás a fondo en el capítulo 3). Los comandos aparecen así:</p>
+<pre class="ps">cd $HOME\Proyectos\Totito
+# Esta línea empieza con # y es un comentario: no se escribe, solo explica
+java -version</pre>
+<p>Reglas para leer estos bloques:</p>
+<ul>
+<li>El indicador <code>PS&gt;</code> que ves al principio de cada línea <b>no se escribe</b>: es la forma en que PowerShell te dice «estoy listo, escribe». En tu ventana verás algo como <code>PS C:\Users\ana&gt;</code>.</li>
+<li><b>Una línea es un comando.</b> Escribes la línea completa y presionas <b>Enter</b>. Luego la siguiente.</li>
+<li>Las líneas que empiezan con <code>#</code> son <b>comentarios</b>: notas para ti. PowerShell las ignora; no hace falta escribirlas.</li>
+<li>Si una línea termina con un acento grave <code>`</code>, el comando continúa en la línea siguiente (lo verás en el capítulo 3).</li>
+</ul>
+<p><b>Salida.</b> Lo que la computadora responde aparece en un bloque aparte, para que puedas comparar con lo que ves en tu pantalla:</p>
+<pre class="salida">openjdk version "21.0.8" 2025-07-15 LTS</pre>
+<p>Los números de versión, fechas, nombres de usuario y tamaños de tu salida casi nunca serán idénticos a los del libro. Lo importante es que la <b>forma</b> sea parecida y que no aparezcan palabras como <code>error</code> o <code>no se reconoce</code>.</p>
+<p><b>Código Java.</b> Los ejemplos de código aparecen así:</p>
+<pre class="java">// Esto es un comentario de Java
+System.out.println("Hola, Totito");</pre>
+<p><b>Otros archivos de texto</b> (configuración, listas de archivos ignorados, documentos) se muestran en un bloque neutro:</p>
+<pre class="texto">target/
+*.class</pre>
+<p><b>Código dentro de una frase.</b> Cuando un nombre de archivo, un comando o una palabra de Java aparece en medio del texto, se escribe con <code>letra de máquina de escribir</code>, como <code>pom.xml</code> o <code>public</code>. Así sabes que hay que escribirlo exactamente igual, con las mismas mayúsculas y minúsculas.</p>
+<h3>Rutas, menús y teclas</h3>
+<ul>
+<li><b><code>&lt;tu-usuario&gt;</code></b> significa «pon aquí tu nombre de usuario de Windows». Si tu usuario es <code>ana</code>, <code>C:\Users\&lt;tu-usuario&gt;\Proyectos</code> se convierte en <code>C:\Users\ana\Proyectos</code>. Los signos <code>&lt;</code> y <code>&gt;</code> no se escriben.</li>
+<li><b>Menús con flechas:</b> <i>Run → Clean and Build Project</i> significa «abre el menú <i>Run</i> y elige <i>Clean and Build Project</i>».</li>
+<li><b>Teclas:</b> <b>Shift+F11</b> significa «mantén presionada Shift y, sin soltarla, presiona F11». La tecla <b>Win</b> es la del logotipo de Windows.</li>
+<li><b>NetBeans está en inglés.</b> El programa que usarás para escribir código (capítulo 4) no tiene versión en español, así que el libro da el nombre de cada menú tal como aparece en pantalla y, la primera vez, su traducción.</li>
+</ul>
+<h3>Los recuadros</h3>
+<p>Hay siete tipos de recuadro. Este es su significado:</p>
+<div class="caja concepto"><b>Concepto.</b> Una idea clave que conviene entender bien antes de seguir. Si solo pudieras releer una cosa del capítulo, sería esta.</div>
+<div class="caja consejo"><b>Consejo.</b> Una buena práctica, un atajo o un truco que te ahorra tiempo. No es obligatorio, pero lo usan los programadores con experiencia.</div>
+<div class="caja cuidado"><b>Cuidado.</b> Un error común o una acción que puede salir mal (por ejemplo, borrar algo que no se recupera). Léelos siempre.</div>
+<div class="caja git"><b>Git.</b> El paso de Git del capítulo: guardar el avance en el historial o subirlo a GitHub. A partir de la Parte II los vas a ejecutar siempre.</div>
+<div class="caja hito"><b>Hito.</b> Un momento en que lograste algo visible: una ventana que se abre, un juego que funciona, un instalador listo. Vale la pena detenerse y celebrarlo.</div>
+<p>Y dos que aparecen al final de todos los capítulos:</p>
+<ul>
+<li><b>Aplícalo fuera del Totito:</b> cómo se usa lo que acabas de aprender en otros proyectos reales, con ejemplos concretos. El objetivo del libro no es que sepas hacer un totito, sino que sepas hacer <i>tus</i> programas.</li>
+<li><b>Ejercicios:</b> de tres a cinco prácticas, de la más fácil a la más difícil, a veces con una pista.</li>
+</ul>
+<h3>Comentarios sin tildes en el código</h3>
+<p>Vas a notar que, dentro de los archivos <code>.java</code>, los comentarios (las notas para personas que el programa ignora) están escritos <b>sin tildes ni eñes</b>: «diseno» en lugar de «diseño», «version» en lugar de «versión». Es una costumbre prudente: algunos programas antiguos o mal configurados leen mal los caracteres especiales y los convierten en símbolos raros como <code>Ã±</code>. Los textos que el jugador ve en pantalla («¡Ganó Luis!») sí llevan tildes, porque el proyecto está configurado para leer los archivos en UTF-8, una forma de guardar texto que incluye todos los caracteres del español. Lo verás en el capítulo 5.</p>
+
+<h2>La ruta del Totito, de la primera ventana al instalador</h2>
+<p>El Totito no aparece de golpe con su interfaz neón. Crece por etapas, como crecen los programas reales. Cada etapa termina con algo que funciona y que queda guardado en Git. Este es el recorrido completo:</p>
+<svg viewBox="0 0 900 210" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="900" height="210" rx="14" fill="#1C1740"/>
+<rect x="20" y="40" width="150" height="80" rx="10" fill="none" stroke="#C8BCF6" stroke-width="2"/>
+<text x="95" y="72" fill="#C8BCF6" font-size="16" text-anchor="middle" font-family="sans-serif">Proyecto</text>
+<text x="95" y="96" fill="#C8BCF6" font-size="13" text-anchor="middle" font-family="sans-serif">caps. 5 y 8</text>
+<rect x="195" y="40" width="150" height="80" rx="10" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<text x="270" y="72" fill="#2F84FF" font-size="16" text-anchor="middle" font-family="sans-serif">v0.1.0</text>
+<text x="270" y="96" fill="#C8BCF6" font-size="13" text-anchor="middle" font-family="sans-serif">caps. 29–33</text>
+<rect x="370" y="40" width="150" height="80" rx="10" fill="none" stroke="#FF3BD4" stroke-width="3"/>
+<text x="445" y="72" fill="#FF3BD4" font-size="16" text-anchor="middle" font-family="sans-serif">v1.0.0 neón</text>
+<text x="445" y="96" fill="#C8BCF6" font-size="13" text-anchor="middle" font-family="sans-serif">caps. 38–61</text>
+<rect x="545" y="40" width="150" height="80" rx="10" fill="none" stroke="#A05CFF" stroke-width="3"/>
+<text x="620" y="72" fill="#A05CFF" font-size="16" text-anchor="middle" font-family="sans-serif">.jar y .exe</text>
+<text x="620" y="96" fill="#C8BCF6" font-size="13" text-anchor="middle" font-family="sans-serif">caps. 63–66</text>
+<rect x="720" y="40" width="160" height="80" rx="10" fill="none" stroke="#FF3BD4" stroke-width="3"/>
+<text x="800" y="72" fill="#FF3BD4" font-size="16" text-anchor="middle" font-family="sans-serif">Release</text>
+<text x="800" y="96" fill="#C8BCF6" font-size="13" text-anchor="middle" font-family="sans-serif">cap. 67</text>
+<line x1="172" y1="80" x2="192" y2="80" stroke="#C8BCF6" stroke-width="2"/>
+<line x1="347" y1="80" x2="367" y2="80" stroke="#C8BCF6" stroke-width="2"/>
+<line x1="522" y1="80" x2="542" y2="80" stroke="#C8BCF6" stroke-width="2"/>
+<line x1="697" y1="80" x2="717" y2="80" stroke="#C8BCF6" stroke-width="2"/>
+<text x="450" y="160" fill="#C8BCF6" font-size="14" text-anchor="middle" font-family="sans-serif">Cada etapa funciona por sí sola y queda guardada en Git antes de pasar a la siguiente.</text>
+</svg>
+<table class="tabla">
+<tr><th>Etapa</th><th>Capítulos</th><th>Qué tienes al terminarla</th></tr>
+<tr><td><b>El proyecto vacío</b></td><td>5 y 8</td><td>Una carpeta con la configuración del proyecto, abierta en NetBeans, guardada en Git y subida a tu cuenta de GitHub en un repositorio llamado <code>totito</code>.</td></tr>
+<tr><td><b>La lógica</b></td><td>29–31</td><td>Las clases que saben jugar al totito: el tablero y sus reglas (<code>Tablero</code>), los jugadores (<code>Jugador</code>) y la IA (<code>IA_Minimax</code>). Todavía no hay nada que ver.</td></tr>
+<tr><td><b>La prueba en consola</b></td><td>32</td><td>Un pequeño programa que juega partidas escribiendo el tablero con letras en la terminal. Así compruebas que la lógica funciona antes de dibujar nada.</td></tr>
+<tr><td><b>Totito v0.1.0</b></td><td>33</td><td>La primera ventana: un tablero sencillo de botones blancos sobre fondo gris claro donde juegas contra la IA. Es feo, pero es un juego de verdad. Se marca en Git con la etiqueta <code>v0.1.0</code>.</td></tr>
+<tr><td><b>La interfaz neón</b></td><td>38–61</td><td>Pieza por pieza, en una rama de Git aparte llamada <code>interfaz-neon</code>: los colores, el efecto neón, los botones, las tarjetas, las cinco pantallas. Al final se une a la rama principal mediante un <i>pull request</i> y se marca como <code>v1.0.0</code>.</td></tr>
+<tr><td><b>El <code>.jar</code></b></td><td>63</td><td>Un solo archivo con todo el juego, que se abre en cualquier PC que tenga Java.</td></tr>
+<tr><td><b>El icono</b></td><td>64</td><td>El archivo <code>totito.ico</code>, generado por un programa Java que también escribes tú.</td></tr>
+<tr><td><b>La carpeta portable</b></td><td>65</td><td>Una carpeta con <code>Totito.exe</code> y su propio Java dentro: funciona en una PC que no tenga Java instalado.</td></tr>
+<tr><td><b>El instalador</b></td><td>66</td><td>Un <code>.exe</code> que instala el Totito como cualquier programa, con acceso directo y entrada en el menú Inicio.</td></tr>
+<tr><td><b>La publicación</b></td><td>67</td><td>Una página de descarga (<i>Release</i>) en GitHub con el instalador, para compartir el enlace con quien quieras.</td></tr>
+</table>
+<p>Los números como <code>v0.1.0</code> y <code>v1.0.0</code> son <b>versiones</b>. Por ahora basta con saber que el <code>0</code> inicial significa «todavía no está listo para el público» y el <code>1</code> significa «primera versión completa». El capítulo 67 explica el sistema completo.</p>
+<div class="caja concepto"><b>Primero que funcione, después que sea bonito.</b> Esta es una de las lecciones más importantes del libro y la razón de que exista la v0.1. Si intentas hacer la lógica y la interfaz neón a la vez y algo falla, no sabrás si el problema está en las reglas del juego o en el dibujo. Separándolas, cada error tiene un solo lugar donde buscarlo.</div>
+
+<h2>Las herramientas que vas a usar</h2>
+<p>En el capítulo 4 instalarás todo, pero conviene que ya conozcas los nombres:</p>
+<table class="tabla">
+<tr><th>Herramienta</th><th>Para qué sirve</th></tr>
+<tr><td><b>PowerShell</b></td><td>La terminal de Windows: ya viene instalada. Con ella instalas las demás herramientas y ejecutas comandos.</td></tr>
+<tr><td><b>JDK 21 (Eclipse Temurin)</b></td><td>El «kit de desarrollo de Java»: el traductor que convierte tu código en algo que la computadora ejecuta, más el motor que lo ejecuta.</td></tr>
+<tr><td><b>Apache NetBeans</b></td><td>El editor donde escribes el código. Te avisa de errores mientras escribes, compila y ejecuta con un clic. Trae incluido Maven, la herramienta que organiza la compilación.</td></tr>
+<tr><td><b>Git</b></td><td>Guarda el historial de cambios del proyecto en tu computadora.</td></tr>
+<tr><td><b>GitHub y GitHub CLI (<code>gh</code>)</b></td><td>GitHub es el sitio web donde guardas el proyecto en internet; <code>gh</code> es su comando para usarlo desde PowerShell.</td></tr>
+<tr><td><b>WiX Toolset</b></td><td>Lo usará Java en el capítulo 66 para fabricar el instalador <code>.exe</code>. Se instala hasta entonces.</td></tr>
+</table>
+<p>Todas son <b>gratuitas</b> y de uso libre, también para proyectos comerciales. No vas a necesitar pagar nada en todo el libro.</p>
+
+<h2>Cuánto tiempo calcular</h2>
+<p>Depende de tu ritmo, y no es una carrera. Esta tabla es una estimación para alguien que empieza de cero, lee con calma, escribe el código y hace la mayoría de los ejercicios:</p>
+<table class="tabla">
+<tr><th>Parte</th><th>Horas aproximadas</th><th>Comentario</th></tr>
+<tr><td>I. Antes de programar</td><td>4–6</td><td>Incluye las descargas; con internet lento puede tomar más.</td></tr>
+<tr><td>II. Git y GitHub</td><td>5–8</td><td>Mucho es concepto; la práctica se repite en todo el libro.</td></tr>
+<tr><td>III. Fundamentos de Java</td><td>12–18</td><td>La parte más importante para los ejercicios: no la apresures.</td></tr>
+<tr><td>IV. Programación orientada a objetos</td><td>12–18</td><td>Las ideas tardan en «encajar»; es normal releer.</td></tr>
+<tr><td>V. Totito v0.1</td><td>6–10</td><td>El capítulo de Minimax pide paciencia.</td></tr>
+<tr><td>VI. Diseño visual</td><td>5–8</td><td>Más lectura que código.</td></tr>
+<tr><td>VII. Totito v1.0</td><td>20–30</td><td>Muchos archivos, pero cada uno es corto.</td></tr>
+<tr><td>VIII. Empaquetar y compartir</td><td>5–8</td><td>Incluye instalar WiX y probar el instalador.</td></tr>
+<tr><td>IX. Más allá</td><td>a tu gusto</td><td>Los proyectos guiados pueden llevar días cada uno.</td></tr>
+<tr><td><b>Total</b></td><td><b>75–105 horas</b></td><td>Con una hora al día, unos tres meses.</td></tr>
+</table>
+<p>Algunas recomendaciones sobre el ritmo:</p>
+<ul>
+<li><b>Sesiones cortas y frecuentes</b> funcionan mejor que una maratón de domingo. Entre 45 y 90 minutos, varios días a la semana. El cerebro asienta lo aprendido mientras descansas.</li>
+<li><b>Termina cada sesión en un punto estable:</b> al final de un capítulo o después de un commit de Git. Así, al volver, sabes exactamente dónde quedaste y el proyecto compila.</li>
+<li><b>Al retomar, relee el resumen</b> del último capítulo antes de seguir. Son dos minutos que ahorran media hora de confusión.</li>
+</ul>
+
+<h2>Cómo no frustrarse</h2>
+<p>Vas a ver errores. Muchos. Los programadores con veinte años de experiencia también los ven todos los días. La diferencia no es que ellos no se equivoquen, sino que saben qué hacer cuando se equivocan. Esto es lo que hacen:</p>
+<h3>1. Leer el mensaje de error, de verdad</h3>
+<p>El primer impulso es ver texto rojo y entrar en pánico. Pero el mensaje casi siempre dice <b>qué</b> falló y <b>dónde</b>. Por ejemplo, un error de Java como este:</p>
+<pre class="salida">Tablero.java:[27,9] ';' expected</pre>
+<p>se lee así: en el archivo <code>Tablero.java</code>, línea 27, columna 9, se esperaba un punto y coma. No hace falta entenderlo todo: con el archivo y la línea ya sabes dónde mirar. El Apéndice D reúne los errores más comunes y su solución.</p>
+<h3>2. Comparar carácter por carácter</h3>
+<p>Si tu código no funciona y el del libro sí, la diferencia existe aunque no la veas. Los sospechosos habituales: una mayúscula que debía ser minúscula (<code>string</code> en lugar de <code>String</code>), un punto y coma que falta, una llave sin cerrar, comillas tipográficas <code>“ ”</code> en lugar de comillas rectas <code>" "</code>, o un nombre de archivo que no coincide con el nombre de la clase.</p>
+<h3>3. La regla de los veinte minutos</h3>
+<p>Si llevas veinte minutos atascado en lo mismo, haz otra cosa: levántate, toma agua, camina. Es sorprendente cuántas veces la solución aparece al volver. Si aun así no sale, anota el problema en tu cuaderno de errores, sigue con el siguiente capítulo y regresa después.</p>
+<h3>4. Explicárselo a alguien (aunque sea a un pato)</h3>
+<p>Existe una técnica famosa llamada <i>depuración con pato de goma</i>: le explicas tu código, en voz alta y línea por línea, a un objeto cualquiera. Al obligarte a decir qué hace cada línea, muchas veces descubres la que no hace lo que creías.</p>
+<h3>5. Buscar bien y preguntar bien</h3>
+<p>Copia el mensaje de error exacto (sin tu nombre de usuario ni tus rutas) y búscalo en internet: casi siempre alguien tuvo el mismo problema. Si preguntas en un foro o a otra persona, incluye cuatro cosas: qué intentabas hacer, qué hiciste exactamente (los comandos o el código), qué esperabas que pasara y qué pasó en realidad, con el mensaje de error completo. Una pregunta así se responde en minutos; un «no me funciona» no se puede responder.</p>
+<h3>6. Usar los asistentes de inteligencia artificial con criterio</h3>
+<p>Un asistente de IA puede explicarte un mensaje de error o una línea que no entiendes, y eso es útil. Pero si le pides que escriba el código por ti, te saltas justo la parte en que se aprende. Úsalo como un profesor al que le preguntas, no como alguien que hace la tarea.</p>
+<h3>7. No compararte</h3>
+<p>Cada persona tiene su ritmo y su punto de partida. Lo único que importa es que hoy entiendas algo que ayer no. Y cuando llegues a un recuadro de <b>Hito</b>, detente un momento: lo que acabas de lograr hace unas semanas te parecía imposible.</p>
+<div class="caja consejo"><b>Los errores son información, no fracasos.</b> Cada mensaje de error te dice algo sobre cómo funciona Java. Cuando hayas resuelto el mismo error tres veces, ya no te volverá a detener: lo reconocerás de inmediato. Por eso este libro no esconde los errores típicos; te los muestra a propósito.</div>
+<div class="caja cuidado"><b>No sigas si el paso anterior falló.</b> Si un comando da error o un proyecto no compila, resuélvelo antes de continuar. Los errores se acumulan: un problema de instalación del capítulo 4 puede aparecer disfrazado en el capítulo 33, y entonces es mucho más difícil reconocerlo.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Vas a construir el Juego del Totito completo: lógica, IA que nunca pierde, interfaz neón de cinco pantallas, instalador <code>.exe</code> y publicación en GitHub.</li>
+<li>El totito es la excusa para aprender Java, programación orientada a objetos, diseño de interfaces, Git/GitHub y distribución de programas.</li>
+<li>El libro tiene nueve partes que se apoyan unas en otras: léelo en orden, escribe el código tú mismo y haz los ejercicios.</li>
+<li>Los comandos de PowerShell se escriben sin el <code>PS&gt;</code>, una línea a la vez; <code>&lt;tu-usuario&gt;</code> se reemplaza por tu usuario de Windows.</li>
+<li>Cada tipo de recuadro tiene un significado fijo: concepto, consejo, cuidado, Git, hito, aplícalo y ejercicios.</li>
+<li>El Totito crece por etapas: proyecto vacío, lógica, v0.1.0 con ventana sencilla, v1.0.0 con interfaz neón, <code>.jar</code>, <code>.exe</code> y Release.</li>
+<li>Calcula entre 75 y 105 horas; mejor sesiones cortas y frecuentes que terminen en un punto estable.</li>
+<li>Los errores son normales: léelos, compara con cuidado, descansa si te atascas y pregunta con información completa.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> La forma de trabajar de este capítulo sirve para cualquier proyecto:
+<ul>
+<li><b>Un sistema de inventario para una tienda:</b> igual que el Totito, empieza por una «v0.1» que solo guarde y liste productos en la terminal; la pantalla bonita viene después, cuando la lógica ya está probada.</li>
+<li><b>Una app para llevar tus gastos:</b> antes de empezar, escribe en una frase qué hará la versión 1.0 y una lista de etapas, cada una con algo que funcione al terminarla.</li>
+<li><b>Aprender cualquier otra herramienta</b> (Excel avanzado, Python, diseño gráfico): sesiones cortas, un cuaderno de errores y la regla de los veinte minutos funcionan igual.</li>
+<li><b>Pedir ayuda en el trabajo:</b> la fórmula «qué intentaba, qué hice, qué esperaba, qué pasó» sirve para reportar cualquier problema, sea de un programa, de una impresora o de un trámite.</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Crea tu cuaderno de errores (en papel o en un archivo de texto) con cuatro columnas: fecha, qué intentaba, mensaje de error y solución. Lo usarás desde el capítulo 3.</li>
+<li>Sin mirar el capítulo, escribe qué significa cada tipo de recuadro: concepto, consejo, cuidado, Git, hito. Luego compara.</li>
+<li>Calcula tu propio plan: ¿cuántas horas por semana puedes dedicarle? Con la tabla de tiempos, estima en qué mes llegarías a la v0.1.0 (capítulo 33) y en cuál a la v1.0.0 (capítulo 61).</li>
+<li>Piensa en un programa que te gustaría hacer cuando termines el libro. Divídelo en tres etapas al estilo del Totito: una «v0.1» mínima que funcione, una «v1.0» completa y una forma de compartirlo. Pista: la v0.1 debería poder hacerse sin ninguna pantalla bonita.</li>
+<li>Toma un error que te haya pasado alguna vez con la computadora (una impresora que no imprime, una app que no abre) y redacta una pregunta de ayuda con las cuatro partes: qué intentabas, qué hiciste, qué esperabas y qué pasó.</li>
+</ol>
+</div>
+</section>

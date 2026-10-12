@@ -1,0 +1,1547 @@
+<section class="capitulo" id="cap68">
+<h1><span class="num">Capítulo 68</span>Aplica lo aprendido: cinco proyectos guiados</h1>
+<p class="entrada">El Totito fue la excusa: lo que de verdad construiste es una forma de trabajar. En este capítulo la llevas a cinco programas distintos —Conecta 4, Buscaminas, un gestor de tareas, una calculadora neón y el inventario de una tienda— y ves, pieza por pieza, qué se copia tal cual, qué se adapta y qué es nuevo en cada uno.</p>
+
+<h2>Lo que de verdad aprendiste</h2>
+<p>Si te preguntan «¿qué sabes hacer?», la respuesta honesta no es «un totito». Es esto:</p>
+<table class="tabla">
+<tr><th>Lo que hiciste en el Totito</th><th>La idea general que hay detrás</th><th>Dónde lo viste</th></tr>
+<tr><td><code>Tablero</code> y <code>Partida</code> no saben nada de Swing</td><td>Separar la <b>lógica</b> (las reglas) de la <b>interfaz</b> (lo que se ve). La lógica se prueba sola y sirve para cualquier pantalla.</td><td>Capítulos 27, 29 y 38</td></tr>
+<tr><td><code>PruebaConsola</code> antes de la primera ventana</td><td>Probar las reglas en la consola, donde todo es texto y rápido, antes de dibujar nada.</td><td>Capítulo 32</td></tr>
+<tr><td><code>Tema</code> guarda todos los colores y fuentes</td><td>Un único lugar para el aspecto: cambiar el estilo es tocar un archivo.</td><td>Capítulo 40</td></tr>
+<tr><td><code>BotonNeon</code>, <code>Tarjeta</code>, <code>Rotulo</code>…</td><td>Componentes reutilizables: se escriben una vez y se usan en todas las pantallas (y en otros programas).</td><td>Capítulos 43 a 47</td></tr>
+<tr><td><code>PanelTablero</code> solo dibuja y avisa de los clics</td><td>La vista no decide: muestra el estado y pasa los eventos a quien manda (el patrón Observer).</td><td>Capítulos 27 y 48</td></tr>
+<tr><td><code>PantallaBase</code> + <code>Navegacion</code> + <code>PanelPrincipal</code></td><td>Una aplicación de varias pantallas en la que ninguna pantalla conoce a las demás.</td><td>Capítulos 39, 55 y 61</td></tr>
+<tr><td>Un commit por paso, ramas, PR, etiquetas</td><td>Construir por pasos pequeños que siempre compilan, con un historial que cuenta la historia.</td><td>Partes II y VII</td></tr>
+<tr><td><code>.jar</code>, <code>jpackage</code>, instalador, Release</td><td>Convertir el código en algo que otra persona instala con doble clic.</td><td>Capítulos 63 a 67</td></tr>
+</table>
+<p>Ninguna de esas ideas es exclusiva de los juegos. Un sistema de facturación, una app de notas o un punto de venta se construyen con exactamente las mismas piezas. Los cinco proyectos de este capítulo lo demuestran.</p>
+
+<h2>La receta para cualquier proyecto nuevo</h2>
+<p>Antes de los proyectos, la receta que vas a seguir en todos. Es el mismo camino que recorrió el libro, resumido:</p>
+<ol>
+<li><b>Descríbelo en una frase y dibuja sus pantallas.</b> En papel sirve. «Un Buscaminas de 9×9 con 10 minas, cronómetro y banderas». Haz un inventario de las piezas que se repiten, como en el capítulo 34.</li>
+<li><b>Busca los sustantivos y los verbos.</b> Los sustantivos importantes de la frase suelen ser <b>clases</b> (casilla, tablero, mina, partida) y los verbos, <b>métodos</b> (abrir, marcar, ganar). Es un truco viejo y funciona.</li>
+<li><b>Escribe primero la lógica, sin Swing,</b> y pruébala en la consola con un programa como <code>PruebaConsola</code>. Si las reglas no funcionan en texto, tampoco funcionarán con colores.</li>
+<li><b>Crea el proyecto y su repositorio</b> (capítulos 5 y 8): <code>pom.xml</code>, <code>.gitignore</code>, <code>README.md</code>, primer commit, <code>gh repo create</code>.</li>
+<li><b>Copia el kit neón</b> del Totito (la sección siguiente explica cuál es).</li>
+<li><b>Construye las pantallas de una en una</b>, mirándolas con una <code>VistaPrevia</code> (capítulo 56).</li>
+<li><b>Únelas</b> con tu propio <code>PanelPrincipal</code> y tu propia interfaz <code>Navegacion</code>.</li>
+<li><b>Empaqueta y publica</b> con los comandos de los capítulos 63 a 67, cambiando el nombre, el icono y el UUID.</li>
+</ol>
+<div class="caja consejo"><b>Un commit por paso de la receta</b> Cada paso de la lista termina en algo que compila y que puedes enseñar. Ese es el momento del commit. Si algún día un paso se tuerce, vuelves al commit anterior y no pierdes nada (capítulo 9).</div>
+
+<h2>El kit neón: lo que viaja de proyecto en proyecto</h2>
+<p>No todas las clases del Totito se pueden llevar a otro programa. Unas dependen de las reglas del totito (necesitan a <code>Tablero</code>, <code>Partida</code> o <code>Jugador</code>) y otras solo dependen del estilo. Para saber cuáles se pueden copiar basta con mirar qué otras clases usa cada una:</p>
+<table class="tabla">
+<tr><th>Archivo</th><th>Usa a</th><th>¿Se copia tal cual?</th></tr>
+<tr><td><code>Tema.java</code></td><td>(ninguna clase del proyecto)</td><td><b>Sí.</b> Si quieres otros colores, cambias aquí y todo cambia.</td></tr>
+<tr><td><code>Dibujo.java</code></td><td><code>Tema</code></td><td><b>Sí.</b> <code>trazoNeon</code>, <code>textoNeon</code>, <code>fijarTamano</code>, <code>recortar</code>…</td></tr>
+<tr><td><code>Iconos.java</code></td><td><code>Dibujo</code>, <code>Tema</code></td><td><b>Sí.</b> Y le agregas los iconos nuevos que necesites.</td></tr>
+<tr><td><code>BotonNeon.java</code></td><td><code>Iconos</code>, <code>Dibujo</code>, <code>Tema</code></td><td><b>Sí.</b> Admite <code>null</code> como icono si el botón es solo texto.</td></tr>
+<tr><td><code>Tarjeta.java</code></td><td><code>Dibujo</code>, <code>Tema</code></td><td><b>Sí.</b></td></tr>
+<tr><td><code>Rotulo.java</code></td><td><code>Iconos</code>, <code>Dibujo</code>, <code>Tema</code></td><td><b>Sí.</b></td></tr>
+<tr><td><code>CampoTexto.java</code></td><td><code>Dibujo</code>, <code>Tema</code></td><td><b>Sí</b>, pero fíjate en <code>MAXIMO = 14</code>: para textos largos hay que cambiar ese número.</td></tr>
+<tr><td><code>OpcionModo</code>, <code>PasoInstruccion</code>, <code>IconoResultado</code></td><td>Solo el kit</td><td><b>Sí</b>, si las necesitas (opciones con icono, pasos numerados, trofeo).</td></tr>
+<tr><td><code>Encabezado.java</code></td><td><code>BotonNeon</code>, <code>Iconos</code>, <code>Dibujo</code>, <code>Tema</code></td><td><b>Casi.</b> Compila, pero tiene escritos «Juego del », «Totito» y el lema. Hay que cambiar esos textos (o, mejor, recibirlos en el constructor).</td></tr>
+<tr><td><code>PantallaBase.java</code></td><td><code>Encabezado</code>, <code>Navegacion</code></td><td><b>Casi.</b> Solo usa <code>navegacion::salir</code>, así que compila con tu propia <code>Navegacion</code> si esta tiene un método <code>salir()</code>. Pinta X y O de adorno: cámbialas por algo de tu programa.</td></tr>
+<tr><td><code>Navegacion.java</code>, <code>PanelPrincipal.java</code></td><td>Las pantallas del Totito</td><td><b>No</b>: se reescriben con tus pantallas, pero con <b>el mismo patrón</b>.</td></tr>
+<tr><td><code>PanelTablero</code>, <code>PanelMarcador</code>, <code>TarjetaJugador</code>, <code>SelectorSimbolo</code></td><td><code>Tablero</code>, <code>Partida</code>, <code>Jugador</code></td><td><b>No tal cual</b>: son el punto de partida para escribir las tuyas.</td></tr>
+</table>
+<p>Llamaremos <b>kit neón</b> a los siete primeros: <code>Tema</code>, <code>Dibujo</code>, <code>Iconos</code>, <code>BotonNeon</code>, <code>Tarjeta</code>, <code>Rotulo</code> y <code>CampoTexto</code>. Se comprobó que esos siete archivos compilan solos, sin ningún otro archivo del Totito al lado. Eso no es casualidad: es el resultado del bajo acoplamiento del capítulo 27. Como ninguno de ellos sabe que existe un totito, sirven para cualquier cosa.</p>
+
+<h3>Crear un proyecto nuevo con el kit</h3>
+<p>Los cinco proyectos empiezan igual. Este es el ejemplo con Conecta 4; para los demás cambia solo el nombre de la carpeta. Abre PowerShell (no hace falta estar en ninguna carpeta concreta, porque todas las rutas son completas):</p>
+<pre class="ps">$origen = "$HOME\Proyectos\Totito"
+$destino = "$HOME\Proyectos\Conecta4"
+New-Item -ItemType Directory -Force "$destino\src" | Out-Null
+Copy-Item "$origen\pom.xml", "$origen\.gitignore" $destino
+$kit = "Tema", "Dibujo", "Iconos", "BotonNeon", "Tarjeta", "Rotulo", "CampoTexto"
+foreach ($clase in $kit) { Copy-Item "$origen\src\$clase.java" "$destino\src\" }
+Get-ChildItem "$destino\src"</pre>
+<p>Línea por línea:</p>
+<ul>
+<li><code>$origen = …</code> y <code>$destino = …</code> guardan las dos rutas en <b>variables</b> de PowerShell (capítulo 3) para no repetirlas. Las comillas dobles dejan que <code>$HOME</code> se reemplace por tu carpeta de usuario.</li>
+<li><code>New-Item -ItemType Directory -Force "$destino\src"</code> crea la carpeta del proyecto y, dentro, <code>src</code>, de una vez. <code>-Force</code> evita el error si ya existía. <code>| Out-Null</code> descarta el mensaje que imprime.</li>
+<li><code>Copy-Item "a", "b" $destino</code> copia varios archivos a la vez: la coma separa los elementos de una <b>lista</b>.</li>
+<li><code>$kit = "Tema", "Dibujo", …</code> es otra lista, ahora con los nombres de las clases.</li>
+<li><code>foreach ($clase in $kit) { … }</code> es el «for-each» de PowerShell, igual que el de Java del capítulo 14: repite la copia una vez por cada nombre.</li>
+<li><code>Get-ChildItem</code> lista lo que quedó en <code>src</code>, para comprobarlo.</li>
+</ul>
+<p>Después abre el <code>pom.xml</code> nuevo en NetBeans o en el Bloc de notas y cambia tres cosas: el nombre del proyecto y, en los dos lugares donde aparece, la clase principal:</p>
+<pre class="texto">&lt;artifactId&gt;Conecta4&lt;/artifactId&gt;
+...
+&lt;exec.mainClass&gt;Conecta4App&lt;/exec.mainClass&gt;
+...
+&lt;mainClass&gt;Conecta4App&lt;/mainClass&gt;</pre>
+<p>El <code>artifactId</code> es el nombre con el que NetBeans muestra el proyecto y el nombre del <code>.jar</code> (<code>target\Conecta4-1.0-SNAPSHOT.jar</code>). Si lo dejas como <code>Totito</code>, tendrás dos proyectos con el mismo nombre en NetBeans y el <code>.jar</code> se llamará igual que el del juego: una confusión segura. Escribe también un <code>README.md</code> nuevo (capítulo 5) y, al final, abre la carpeta en NetBeans con <i>File → Open Project</i>.</p>
+<div class="caja git"><b>Git</b> Cada proyecto es un repositorio propio, con su historia. Desde la carpeta del proyecto nuevo:
+<pre class="ps">cd $HOME\Proyectos\Conecta4
+git init -b main
+git add .
+git commit -m "Estructura inicial y kit neon copiado del Totito"
+gh repo create conecta4 --public --source=. --remote=origin --push</pre>
+<code>git init -b main</code> crea el repositorio con la rama principal ya llamada <code>main</code>. El último comando crea el repositorio en GitHub, lo conecta como <code>origin</code> y sube el commit, todo de una vez (capítulo 8).</div>
+<div class="caja cuidado"><b>Copiar tiene un precio</b> Al copiar el kit tienes <b>dos</b> <code>BotonNeon.java</code>: el del Totito y el de Conecta 4. Si mañana corriges un error en uno, el otro sigue con el error. Para dos o tres proyectos es aceptable. Cuando sean más, lo profesional es convertir el kit en una <b>librería</b>: un <code>.jar</code> propio que todos los proyectos usan como dependencia en su <code>pom.xml</code>. Para eso hacen falta los paquetes del capítulo 69.</div>
+
+<h2>Proyecto 1: Conecta 4</h2>
+<h3>Qué es</h3>
+<p>Dos jugadores sueltan fichas por turnos en un tablero vertical de <b>6 filas y 7 columnas</b>. La ficha cae hasta el hueco libre más bajo de la columna. Gana quien forme <b>cuatro en línea</b>: horizontal, vertical o diagonal. Es el pariente más cercano del Totito: casi todo lo que hiciste sirve, y lo nuevo cabe en dos ideas, la gravedad y la búsqueda de cuatro en un tablero grande.</p>
+
+<h3>Sus clases, comparadas con las del Totito</h3>
+<table class="tabla">
+<tr><th>Clase</th><th>Responsabilidad</th><th>En el Totito era…</th></tr>
+<tr><td><code>TableroConecta</code></td><td>Las 42 casillas, soltar una ficha (con gravedad), ¿columna llena?, ¿cuatro en línea?</td><td><code>Tablero</code></td></tr>
+<tr><td><code>Jugador</code></td><td>Nombre y ficha</td><td><code>Jugador</code>, <b>sin cambiar nada</b></td></tr>
+<tr><td><code>PartidaConecta</code></td><td>Turnos, estado (en curso, victoria, empate), marcador, modo contra la IA</td><td><code>Partida</code>, con <code>jugar(columna)</code> en lugar de <code>jugar(fila, columna)</code></td></tr>
+<tr><td><code>IA_Conecta</code></td><td>Elegir columna con Minimax <b>limitado en profundidad</b></td><td><code>IA_Minimax</code></td></tr>
+<tr><td><code>PanelConecta</code></td><td>Dibujar el tablero y las fichas; avisar de qué <b>columna</b> se pulsó</td><td><code>PanelTablero</code></td></tr>
+<tr><td><code>PantallaJuegoConecta</code></td><td>Unir panel, marcador y turno; hacer jugar a la IA</td><td><code>PantallaJuego</code></td></tr>
+<tr><td><code>PanelPrincipal</code>, <code>Navegacion</code>, <code>Conecta4App</code></td><td>Cambiar de pantalla y arrancar</td><td>Los mismos, con otras pantallas</td></tr>
+</table>
+
+<h3>Qué se reutiliza tal cual y qué cambia</h3>
+<ul>
+<li><b>Tal cual:</b> el kit neón, <code>Jugador</code>, <code>PantallaBase</code> (con tu <code>Navegacion</code>), y con muy pocos cambios <code>PantallaMenu</code>, <code>PantallaInstrucciones</code> (otros textos) y <code>PantallaConfiguracion</code>. <code>Tema.colorDeFicha</code> ya da rosa para <code>'X'</code> y azul para <code>'O'</code>: internamente las fichas pueden seguir siendo <code>'X'</code> y <code>'O'</code> aunque en pantalla dibujes discos de esos colores.</li>
+<li><b>Cambia:</b> el tamaño del tablero (de 3×3 a 6×7), la forma de jugar (se elige columna, no casilla), la forma de detectar la victoria (ya no sirve escribir las 8 líneas a mano como en <code>buscarLineaGanadora</code>: en un 6×7 hay 69 líneas de cuatro) y la IA.</li>
+<li><b>Nuevo:</b> la animación de la ficha cayendo.</li>
+</ul>
+
+<h3>El reto principal: la gravedad y el «cuatro en línea»</h3>
+<p>La <b>gravedad</b> parece física, pero en el código es solo el orden de un ciclo. En el Totito, <code>marcarCasilla(fila, columna, ficha)</code> recibía la fila. Aquí el jugador solo elige la columna y la fila se <i>calcula</i>: se recorre la columna <b>de abajo hacia arriba</b> (la fila 5 es la de abajo, la 0 la de arriba) y la ficha se queda en el primer hueco vacío. Si no hay ninguno, la columna está llena.</p>
+<p>Para el <b>cuatro en línea</b> hay una idea mejor que revisar todo el tablero: la única ficha que puede haber formado una línea nueva es <b>la que acaba de caer</b>. Así que basta con mirar las cuatro direcciones que pasan por ella. Cada dirección se escribe como un par <code>{df, dc}</code>: cuánto cambia la fila y cuánto la columna en cada paso.</p>
+<table class="tabla">
+<tr><th>Dirección</th><th>{df, dc}</th><th>Se recorre hacia…</th></tr>
+<tr><td>Horizontal —</td><td>{0, 1}</td><td>derecha y, con {0, −1}, izquierda</td></tr>
+<tr><td>Vertical |</td><td>{1, 0}</td><td>abajo y arriba</td></tr>
+<tr><td>Diagonal \</td><td>{1, 1}</td><td>abajo-derecha y arriba-izquierda</td></tr>
+<tr><td>Diagonal /</td><td>{1, −1}</td><td>abajo-izquierda y arriba-derecha</td></tr>
+</table>
+<p>Para cada dirección se cuentan las fichas iguales hacia un lado, luego hacia el otro (con los signos cambiados), y se suma 1 por la ficha recién puesta. Si da 4 o más, hay ganador. Este truco de «vectores de dirección» es el mismo que usan los programas de ajedrez para mover la torre o el alfil, y el que usarás en cualquier juego de cuadrícula.</p>
+
+<h3>Código de arranque</h3>
+<p>Primero la lógica, como en el capítulo 29. Crea <code>src\TableroConecta.java</code>:</p>
+<pre class="java">import java.util.Arrays;
+
+/**
+ * Tablero de Conecta 4: 6 filas y 7 columnas. Las fichas "caen" hasta la
+ * casilla libre mas baja de la columna elegida. Igual que Tablero en el
+ * Totito, solo guarda el estado y sabe las reglas: no conoce la interfaz.
+ */
+public class TableroConecta {
+
+    public static final int FILAS = 6;
+    public static final int COLUMNAS = 7;
+    public static final char VACIA = ' ';
+
+    private final char[][] casillas = new char[FILAS][COLUMNAS];
+
+    public TableroConecta() {
+        reiniciar();
+    }
+
+    public void reiniciar() {
+        for (char[] fila : casillas) {
+            Arrays.fill(fila, VACIA);
+        }
+    }
+
+    /**
+     * La gravedad: recorre la columna DE ABAJO HACIA ARRIBA y deja la ficha
+     * en la primera casilla vacia. Devuelve la fila donde cayo, o -1 si la
+     * columna no existe o ya esta llena.
+     */
+    public int soltarFicha(int columna, char ficha) {
+        if (columna &lt; 0 || columna &gt;= COLUMNAS) {
+            return -1;
+        }
+        for (int fila = FILAS - 1; fila &gt;= 0; fila--) {
+            if (casillas[fila][columna] == VACIA) {
+                casillas[fila][columna] = ficha;
+                return fila;
+            }
+        }
+        return -1;
+    }
+
+    public boolean columnaLlena(int columna) {
+        return casillas[0][columna] != VACIA;
+    }
+
+    public boolean tableroLleno() {
+        for (int columna = 0; columna &lt; COLUMNAS; columna++) {
+            if (!columnaLlena(columna)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public char obtenerCasilla(int fila, int columna) {
+        return casillas[fila][columna];
+    }
+
+    /**
+     * true si la ficha que acaba de caer en (fila, columna) forma cuatro en
+     * linea. Solo se revisan las 4 direcciones que pasan por esa casilla.
+     */
+    public boolean hayCuatro(int fila, int columna) {
+        char ficha = casillas[fila][columna];
+        int[][] direcciones = {{0, 1}, {1, 0}, {1, 1}, {1, -1}};   // -  |  \  /
+        for (int[] d : direcciones) {
+            int seguidas = 1
+                    + contar(fila, columna, d[0], d[1], ficha)
+                    + contar(fila, columna, -d[0], -d[1], ficha);
+            if (seguidas &gt;= 4) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Cuenta fichas iguales a partir de (fila, columna) avanzando (df, dc), sin contar la de partida. */
+    private int contar(int fila, int columna, int df, int dc, char ficha) {
+        int total = 0;
+        int f = fila + df;
+        int c = columna + dc;
+        while (f &gt;= 0 &amp;&amp; f &lt; FILAS &amp;&amp; c &gt;= 0 &amp;&amp; c &lt; COLUMNAS &amp;&amp; casillas[f][c] == ficha) {
+            total++;
+            f += df;
+            c += dc;
+        }
+        return total;
+    }
+
+    /** El tablero en texto, para probar en la consola. */
+    public String comoTexto() {
+        StringBuilder sb = new StringBuilder();
+        for (char[] fila : casillas) {
+            sb.append('|');
+            for (char ficha : fila) {
+                sb.append(ficha == VACIA ? '.' : ficha).append('|');
+            }
+            sb.append('\n');
+        }
+        sb.append(" 0 1 2 3 4 5 6\n");
+        return sb.toString();
+    }
+}</pre>
+<p>Lo nuevo respecto a <code>Tablero</code>:</p>
+<ul>
+<li><code>FILAS</code> y <code>COLUMNAS</code> son constantes (capítulo 20). En <code>Tablero</code> el 3 estaba escrito en cada ciclo; aquí, si quisieras un tablero de 7×8, cambias dos números y nada más. Es la lección de los «números mágicos» del capítulo 27.</li>
+<li><code>Arrays.fill(fila, VACIA)</code> llena un arreglo entero con un valor. Hace lo mismo que el <code>for</code> interno de <code>Tablero.reiniciar()</code>, en una línea. <code>PanelTablero</code> ya lo usaba.</li>
+<li>En <code>soltarFicha</code>, el ciclo <code>for (int fila = FILAS - 1; fila &gt;= 0; fila--)</code> cuenta <b>hacia atrás</b>: empieza en 5 y baja hasta 0. Esa línea <i>es</i> la gravedad.</li>
+<li>Devolver la fila (o <code>-1</code>) en lugar de <code>true</code>/<code>false</code> le da a quien llama dos datos en uno: si se pudo, y dónde cayó. <code>hayCuatro</code> necesita esa fila.</li>
+<li>En <code>contar</code>, el <code>while</code> avanza mientras siga dentro del tablero <b>y</b> la ficha sea igual. El orden de las condiciones importa: Java evalúa <code>&amp;&amp;</code> de izquierda a derecha y se detiene en la primera falsa (capítulo 13), así que nunca llega a leer <code>casillas[f][c]</code> fuera del arreglo.</li>
+<li><code>comoTexto()</code> usa un <code>StringBuilder</code>, que es la forma eficiente de armar un texto pedazo a pedazo con <code>append</code>.</li>
+</ul>
+<p>Y su prueba en consola, <code>src\PruebaConecta.java</code>, que hace el papel de <code>PruebaConsola</code>:</p>
+<pre class="java">/** Prueba de TableroConecta en la consola, como PruebaConsola en el Totito. */
+public class PruebaConecta {
+
+    public static void main(String[] args) {
+        TableroConecta tablero = new TableroConecta();
+        int[] columnas = {3, 3, 4, 4, 5, 2, 6};   // X y O se turnan; X empieza
+        char ficha = 'X';
+        for (int columna : columnas) {
+            int fila = tablero.soltarFicha(columna, ficha);
+            System.out.println(ficha + " cae en la columna " + columna + ", fila " + fila);
+            if (tablero.hayCuatro(fila, columna)) {
+                System.out.println("¡Cuatro en línea de " + ficha + "!");
+                break;
+            }
+            ficha = ficha == 'X' ? 'O' : 'X';
+        }
+        System.out.print(tablero.comoTexto());
+    }
+}</pre>
+<p>Compílalo y ejecútalo desde la carpeta del proyecto:</p>
+<pre class="ps">javac -encoding UTF-8 -d out src\*.java
+java -cp out PruebaConecta</pre>
+<pre class="salida">X cae en la columna 3, fila 5
+O cae en la columna 3, fila 4
+X cae en la columna 4, fila 5
+O cae en la columna 4, fila 4
+X cae en la columna 5, fila 5
+O cae en la columna 2, fila 5
+X cae en la columna 6, fila 5
+¡Cuatro en línea de X!
+|.|.|.|.|.|.|.|
+|.|.|.|.|.|.|.|
+|.|.|.|.|.|.|.|
+|.|.|.|.|.|.|.|
+|.|.|.|O|O|.|.|
+|.|.|O|X|X|X|X|
+ 0 1 2 3 4 5 6</pre>
+<div class="caja consejo"><b>Desde NetBeans</b> Las clases de prueba como <code>PruebaConecta</code> no son la clase principal del proyecto, así que F6 no las ejecuta. Ábrela y usa clic derecho → <i>Run File</i> (Shift+F6), igual que hacías antes del capítulo 61 con las clases del Totito. Lo mismo vale para <code>PruebaMinas</code>, <code>PruebaTareas</code>, <code>PruebaCalculadora</code> y <code>PruebaInventario</code>.</div>
+<p>Sigue la traza de la última jugada: la X cae en (fila 5, columna 6). En horizontal, hacia la derecha no hay nada (la columna 7 no existe): 0. Hacia la izquierda encuentra X en las columnas 5, 4 y 3, y se detiene en la O de la columna 2: 3. Total: 1 + 0 + 3 = 4. ¡Victoria!</p>
+
+<h3>La interfaz: lo que hereda de PanelTablero</h3>
+<p><code>PanelConecta</code> se escribe copiando <code>PanelTablero</code> y cambiando tres cosas:</p>
+<ul>
+<li>El tamaño: 7 columnas por 6 filas en lugar de 3×3. Los métodos <code>centroX(columna)</code> y <code>centroY(fila)</code> se quedan igual, solo cambian las cuentas.</li>
+<li>El clic: ya no interesa la fila. La columna se calcula con la misma fórmula de <code>actualizarCasillaEncima</code>: <code>(int) Math.floor((x - MARGEN - RELLENO) / tam)</code>. La interfaz del oyente pasa a ser <code>void columnaPulsada(int columna)</code>.</li>
+<li>El resaltado: en lugar de iluminar una casilla, se ilumina <b>toda la columna</b> bajo el ratón, y la ficha fantasma se dibuja arriba del tablero, donde «se sostiene» antes de soltarla.</li>
+</ul>
+<p>Las fichas se dibujan como discos: un <code>Ellipse2D</code> relleno con <code>Tema.conAlfa(color, 200)</code> y su borde con <code>Dibujo.trazoNeon</code>. Para la <b>animación</b> de la caída sirve el mismo <code>javax.swing.Timer</code> de <code>PantallaJuego.esperar</code> (capítulo 59), pero repetido: cada 15 milisegundos aumenta la <code>y</code> de la ficha que cae y llama a <code>repaint()</code>; cuando llega a su fila, se detiene el temporizador y recién entonces se avisa a la partida.</p>
+
+<h3>La IA: Minimax ya no alcanza</h3>
+<p>En el Totito, <code>IA_Minimax</code> recorría <b>todas</b> las partidas posibles porque son pocas. En Conecta 4 hay unos 4,5 billones de posiciones posibles: recorrerlas todas tardaría años. La solución clásica tiene tres partes:</p>
+<ol>
+<li><b>Profundidad limitada.</b> El método <code>minimax</code> recibe ya una <code>profundidad</code>. Se agrega un caso base más: si la profundidad llega, por ejemplo, a 6, se deja de simular.</li>
+<li><b>Una función de evaluación.</b> Al cortar no hay ganador, así que hay que <i>estimar</i> qué tan buena es la posición: por ejemplo, +5 por cada grupo de cuatro casillas con tres fichas propias y una vacía, −5 por cada uno del rival y +3 por cada ficha en la columna central (la más valiosa).</li>
+<li><b>Poda alfa-beta.</b> Un refinamiento de Minimax que deja de explorar ramas que ya se sabe que no se van a elegir. El resultado es idéntico y mucho más rápido.</li>
+</ol>
+<p>Con profundidad 6 y probando primero las columnas del centro, la IA responde en una fracción de segundo y es difícil de ganar. Bajar la profundidad es la forma natural de hacer los <b>niveles de dificultad</b> que el README del Totito dejaba como idea pendiente.</p>
+
+<h3>Pasos y commits</h3>
+<ol>
+<li>Proyecto, kit y repositorio — <code>Estructura inicial y kit neon copiado del Totito</code></li>
+<li><code>TableroConecta</code> — <code>TableroConecta: gravedad y cuatro en linea</code></li>
+<li><code>PruebaConecta</code> — <code>Prueba del tablero en consola</code></li>
+<li><code>Jugador</code> (copiado) y <code>PartidaConecta</code> — <code>PartidaConecta: turnos, estado y marcador</code></li>
+<li><code>Navegacion</code>, <code>Encabezado</code> con el título nuevo y <code>PantallaBase</code> — <code>Base de pantallas y navegacion</code></li>
+<li><code>PanelConecta</code> — <code>PanelConecta: tablero 6x7 y clic por columna</code></li>
+<li>Pantallas y <code>Conecta4App</code> — <code>Primera version jugable de dos jugadores</code> + etiqueta <code>v0.1.0</code></li>
+<li>Animación — <code>Animacion de la ficha cayendo</code></li>
+<li><code>IA_Conecta</code> — <code>IA con Minimax limitado y poda alfa-beta</code> + etiqueta <code>v1.0.0</code></li>
+</ol>
+
+<h2>Proyecto 2: Buscaminas</h2>
+<h3>Qué es</h3>
+<p>Un tablero de casillas tapadas; algunas esconden minas. Al abrir una casilla sin mina aparece un número: cuántas minas hay en sus <b>8 vecinas</b>. Con clic derecho se pone una <b>bandera</b> donde crees que hay mina. Ganas al abrir todas las casillas sin mina; pierdes al abrir una mina. Los niveles clásicos son Principiante (9×9, 10 minas), Intermedio (16×16, 40) y Experto (16×30, 99).</p>
+
+<h3>Sus clases, comparadas con las del Totito</h3>
+<table class="tabla">
+<tr><th>Clase</th><th>Responsabilidad</th><th>En el Totito era…</th></tr>
+<tr><td><code>Casilla</code></td><td>¿Tiene mina?, ¿está abierta?, ¿tiene bandera?, ¿cuántas minas vecinas?</td><td>Un simple <code>char</code> dentro de <code>Tablero</code></td></tr>
+<tr><td><code>TableroMinas</code></td><td>Repartir minas, contar vecinas, abrir (con la apertura en cascada), ¿ganado?</td><td><code>Tablero</code></td></tr>
+<tr><td><code>Nivel</code> (enum)</td><td>PRINCIPIANTE, INTERMEDIO, EXPERTO con sus filas, columnas y minas</td><td><code>Partida.Modo</code></td></tr>
+<tr><td><code>PartidaMinas</code></td><td>Estado (en curso, ganada, perdida), banderas restantes, segundos transcurridos</td><td><code>Partida</code></td></tr>
+<tr><td><code>PanelMinas</code></td><td>Dibujar la cuadrícula; clic izquierdo = abrir, clic derecho = bandera</td><td><code>PanelTablero</code></td></tr>
+<tr><td><code>PanelContador</code></td><td>Minas restantes y cronómetro</td><td><code>PanelMarcador</code></td></tr>
+<tr><td>Pantallas, <code>PanelPrincipal</code>, <code>MinasApp</code></td><td>Menú, elegir nivel, juego, resultado</td><td>Las mismas ideas</td></tr>
+</table>
+<div class="caja concepto"><b>¿Cuándo un dato merece su propia clase?</b> En el Totito cada casilla era un <code>char</code>: un solo dato. En el Buscaminas cada casilla tiene <b>cuatro</b> datos que van juntos. Cuando varios datos describen a la misma cosa, se agrupan en una clase (capítulo 18). La alternativa —cuatro matrices paralelas, <code>boolean[][] mina</code>, <code>boolean[][] abierta</code>…— funciona, pero es fácil desordenarlas.</div>
+
+<h3>Qué se reutiliza tal cual y qué cambia</h3>
+<ul>
+<li><b>Tal cual:</b> el kit neón, <code>PantallaBase</code>, la idea de <code>PanelPrincipal</code> con <code>CardLayout</code>, <code>IconoResultado</code> para la pantalla de victoria y el <code>javax.swing.Timer</code> de <code>PantallaJuego</code>, que aquí sirve de cronómetro (un <code>Timer</code> de 1000 ms que se repite).</li>
+<li><b>Cambia:</b> el panel del tablero (cuadrícula variable, números de colores, banderas y minas dibujadas con <code>Path2D</code> como los iconos de <code>Iconos</code>) y el ratón: <code>SwingUtilities.isRightMouseButton(e)</code> distingue el clic derecho dentro de <code>mousePressed</code>.</li>
+<li><b>Desaparece:</b> la IA y los dos jugadores. Es un juego de una persona.</li>
+</ul>
+
+<h3>El reto principal: la apertura recursiva</h3>
+<p>Cuando abres una casilla con 0 minas alrededor, el juego abre sola cada una de sus vecinas; si alguna de esas también tiene 0, abre las suyas, y así hasta toparse con números. Es lo que hace que un solo clic destape media pantalla. Escribirlo con ciclos es enredado; con <b>recursión</b> (capítulo 16) es casi igual a como se dice en español:</p>
+<p><i>Abrir una casilla</i> es: si está fuera del tablero, o ya abierta, o tiene bandera, no hacer nada. Si no, abrirla. Si tenía mina, perdiste. Si tiene 0 vecinas con mina, <i>abrir cada una de sus 8 vecinas</i>.</p>
+<p>La frase en cursiva aparece dentro de su propia definición: eso es la recursión. Igual que en <code>IA_Minimax.minimax</code>, la función tiene <b>casos base</b> que la detienen (fuera, ya abierta, bandera, mina) y un <b>caso recursivo</b> que se llama a sí misma con un problema «más pequeño» (cada llamada abre una casilla más, y las casillas no son infinitas). El caso base «ya abierta» es el que evita el ciclo eterno: sin él, la casilla A abriría a su vecina B, B volvería a abrir a A, A a B…, hasta que la pila de llamadas se llena y Java lanza <code>StackOverflowError</code>.</p>
+<p>Otra decisión: las minas se reparten <b>después del primer clic</b> y lejos de él, para que nunca se pierda en la primera jugada (lo hacen casi todas las versiones del juego). Y el reparto usa un <code>Random</code> con <b>semilla</b>: el mismo número de semilla produce siempre el mismo tablero, lo que permite repetir una prueba exactamente igual. En el juego real se crea con <code>System.nanoTime()</code> como semilla para que cada partida sea distinta.</p>
+
+<h3>Código de arranque</h3>
+<p><code>src\Casilla.java</code> es una clase de datos con sus <i>getters</i> (capítulo 19). <code>alternarBandera</code> protege una regla —no se pone bandera en una casilla abierta—, así que no es un simple <i>setter</i>:</p>
+<pre class="java">/**
+ * Una casilla del Buscaminas. En el Totito bastaba un char por casilla;
+ * aqui cada casilla guarda cuatro datos, asi que merece su propia clase.
+ */
+public class Casilla {
+
+    private boolean mina;
+    private boolean abierta;
+    private boolean bandera;
+    private int minasVecinas;
+
+    public boolean tieneMina() {
+        return mina;
+    }
+
+    public void ponerMina() {
+        mina = true;
+    }
+
+    public boolean estaAbierta() {
+        return abierta;
+    }
+
+    public void abrir() {
+        abierta = true;
+    }
+
+    public boolean tieneBandera() {
+        return bandera;
+    }
+
+    public void alternarBandera() {
+        if (!abierta) {
+            bandera = !bandera;
+        }
+    }
+
+    public int getMinasVecinas() {
+        return minasVecinas;
+    }
+
+    public void setMinasVecinas(int minasVecinas) {
+        this.minasVecinas = minasVecinas;
+    }
+}</pre>
+<p><code>src\TableroMinas.java</code>, con la recursión en <code>abrirDesde</code>:</p>
+<pre class="java">import java.util.Random;
+
+/**
+ * Tablero del Buscaminas: reparte las minas, cuenta las vecinas y abre
+ * casillas. Las minas se ponen DESPUES del primer clic, lejos de el, para
+ * que nunca se pierda en la primera jugada.
+ */
+public class TableroMinas {
+
+    private final Casilla[][] casillas;
+    private final int filas;
+    private final int columnas;
+    private final int totalMinas;
+    private final Random azar;
+    private boolean minasPuestas;
+    private int abiertas;
+
+    /** @param semilla el mismo numero da siempre el mismo tablero (util para probar). */
+    public TableroMinas(int filas, int columnas, int totalMinas, long semilla) {
+        this.filas = filas;
+        this.columnas = columnas;
+        this.totalMinas = totalMinas;
+        this.azar = new Random(semilla);
+        casillas = new Casilla[filas][columnas];
+        for (int f = 0; f &lt; filas; f++) {
+            for (int c = 0; c &lt; columnas; c++) {
+                casillas[f][c] = new Casilla();
+            }
+        }
+    }
+
+    /** Abre la casilla. Devuelve false si habia una mina (partida perdida). */
+    public boolean abrir(int fila, int columna) {
+        if (!minasPuestas) {
+            ponerMinas(fila, columna);
+        }
+        return abrirDesde(fila, columna);
+    }
+
+    /**
+     * El corazon del juego, RECURSIVO: si la casilla no tiene minas
+     * alrededor, se abren tambien sus 8 vecinas, y las vecinas de esas...
+     */
+    private boolean abrirDesde(int fila, int columna) {
+        if (!dentro(fila, columna)) {
+            return true;                         // caso base 1: fuera del tablero
+        }
+        Casilla casilla = casillas[fila][columna];
+        if (casilla.estaAbierta() || casilla.tieneBandera()) {
+            return true;                         // caso base 2: ya abierta o marcada
+        }
+        casilla.abrir();
+        abiertas++;
+        if (casilla.tieneMina()) {
+            return false;                        // caso base 3: ¡boom!
+        }
+        if (casilla.getMinasVecinas() == 0) {    // caso recursivo
+            for (int df = -1; df &lt;= 1; df++) {
+                for (int dc = -1; dc &lt;= 1; dc++) {
+                    if (df != 0 || dc != 0) {
+                        abrirDesde(fila + df, columna + dc);
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private void ponerMinas(int filaSegura, int columnaSegura) {
+        int puestas = 0;
+        while (puestas &lt; totalMinas) {
+            int f = azar.nextInt(filas);
+            int c = azar.nextInt(columnas);
+            boolean cercaDelClic = Math.abs(f - filaSegura) &lt;= 1 &amp;&amp; Math.abs(c - columnaSegura) &lt;= 1;
+            if (!casillas[f][c].tieneMina() &amp;&amp; !cercaDelClic) {
+                casillas[f][c].ponerMina();
+                puestas++;
+            }
+        }
+        for (int f = 0; f &lt; filas; f++) {
+            for (int c = 0; c &lt; columnas; c++) {
+                casillas[f][c].setMinasVecinas(contarVecinas(f, c));
+            }
+        }
+        minasPuestas = true;
+    }
+
+    private int contarVecinas(int fila, int columna) {
+        int total = 0;
+        for (int df = -1; df &lt;= 1; df++) {
+            for (int dc = -1; dc &lt;= 1; dc++) {
+                int f = fila + df;
+                int c = columna + dc;
+                if ((df != 0 || dc != 0) &amp;&amp; dentro(f, c) &amp;&amp; casillas[f][c].tieneMina()) {
+                    total++;
+                }
+            }
+        }
+        return total;
+    }
+
+    private boolean dentro(int fila, int columna) {
+        return fila &gt;= 0 &amp;&amp; fila &lt; filas &amp;&amp; columna &gt;= 0 &amp;&amp; columna &lt; columnas;
+    }
+
+    public void alternarBandera(int fila, int columna) {
+        casillas[fila][columna].alternarBandera();
+    }
+
+    /** Se gana cuando todo lo que no es mina esta abierto. */
+    public boolean ganado() {
+        return abiertas == filas * columnas - totalMinas;
+    }
+
+    /** # cerrada, F bandera, * mina, . sin vecinas, 1-8 minas alrededor. */
+    public String comoTexto() {
+        StringBuilder sb = new StringBuilder();
+        for (Casilla[] fila : casillas) {
+            for (Casilla casilla : fila) {
+                char simbolo;
+                if (!casilla.estaAbierta()) {
+                    simbolo = casilla.tieneBandera() ? 'F' : '#';
+                } else if (casilla.tieneMina()) {
+                    simbolo = '*';
+                } else if (casilla.getMinasVecinas() == 0) {
+                    simbolo = '.';
+                } else {
+                    simbolo = (char) ('0' + casilla.getMinasVecinas());
+                }
+                sb.append(simbolo).append(' ');
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
+}</pre>
+<p>Algunas líneas que merecen explicación:</p>
+<ul>
+<li><code>casillas = new Casilla[filas][columnas];</code> crea la matriz, pero <b>vacía</b>: cada posición vale <code>null</code>. Por eso el doble <code>for</code> siguiente hace <code>new Casilla()</code> en cada una. Olvidarlo produce un <code>NullPointerException</code> en el primer clic (capítulo 18).</li>
+<li><code>abrir</code> es <code>public</code> y <code>abrirDesde</code> es <code>private</code>: el que usa la clase solo pide «abre aquí»; la recursión es un detalle interno.</li>
+<li><code>(df != 0 || dc != 0)</code> recorre las 9 posiciones del cuadrado de 3×3 y se salta la del centro, que es la propia casilla.</li>
+<li><code>(char) ('0' + casilla.getMinasVecinas())</code> convierte el número 3 en el carácter <code>'3'</code>: los dígitos están seguidos en la tabla de caracteres, así que <code>'0' + 3</code> es <code>'3'</code> (capítulo 12, casting).</li>
+</ul>
+<p>Y una prueba de un clic en el centro, <code>src\PruebaMinas.java</code>:</p>
+<pre class="java">/** Un clic en el centro de un tablero de 9x9 con 10 minas. */
+public class PruebaMinas {
+
+    public static void main(String[] args) {
+        TableroMinas tablero = new TableroMinas(9, 9, 10, 42);
+        boolean sigueVivo = tablero.abrir(4, 4);
+        System.out.println("¿Sigue vivo? " + sigueVivo + "   ¿Ganó? " + tablero.ganado());
+        System.out.print(tablero.comoTexto());
+    }
+}</pre>
+<pre class="ps">javac -encoding UTF-8 -d out src\*.java
+java -cp out PruebaMinas</pre>
+<pre class="salida">¿Sigue vivo? true   ¿Ganó? false
+. . . . . . 1 # # 
+. . . . . . 1 4 # 
+. . . . . . . 2 # 
+. . . . . . . 1 1 
+. 1 1 1 . . . . . 
+1 2 # 1 . 1 1 1 . 
+# # # 2 . 1 # 1 . 
+# # # 2 2 2 2 1 . 
+# # # # # # 1 . . </pre>
+<p>Un solo clic en la fila 4, columna 4 abrió toda la zona de puntos: cada <code>.</code> es una casilla con 0 minas vecinas que, a su vez, abrió a sus vecinas. La cascada se detuvo en los números, que forman el «borde» de la zona. Como la semilla es 42, tú verás exactamente el mismo tablero.</p>
+<div class="caja cuidado"><b>Recursión y tableros gigantes</b> Cada llamada recursiva ocupa un lugar en la pila (capítulo 16). En un 16×30 no pasa nada, pero en un tablero de 1000×1000 casi vacío la cadena de llamadas sería tan larga que Java lanzaría <code>StackOverflowError</code>. La solución es cambiar la pila de llamadas por una <b>lista de espera</b> propia (una cola): se mete la primera casilla y, mientras queden pendientes, se saca una, se abre y, si tiene 0, se meten sus vecinas. Hace lo mismo sin recursión. Se probó que da exactamente el mismo tablero que la versión recursiva:
+<pre class="java">    /** Igual que abrirDesde, pero con una lista de espera en vez de recursion. */
+    private boolean abrirConCola(int fila, int columna) {
+        if (casillas[fila][columna].tieneMina()) {
+            casillas[fila][columna].abrir();
+            return false;
+        }
+        ArrayDeque&lt;int[]&gt; pendientes = new ArrayDeque&lt;&gt;();
+        pendientes.add(new int[]{fila, columna});
+        while (!pendientes.isEmpty()) {
+            int[] p = pendientes.poll();
+            if (!dentro(p[0], p[1])) {
+                continue;
+            }
+            Casilla casilla = casillas[p[0]][p[1]];
+            if (casilla.estaAbierta() || casilla.tieneBandera()) {
+                continue;
+            }
+            casilla.abrir();
+            abiertas++;
+            if (casilla.getMinasVecinas() == 0) {
+                for (int df = -1; df &lt;= 1; df++) {
+                    for (int dc = -1; dc &lt;= 1; dc++) {
+                        if (df != 0 || dc != 0) {
+                            pendientes.add(new int[]{p[0] + df, p[1] + dc});
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }</pre>
+(Necesita <code>import java.util.ArrayDeque;</code> arriba del archivo.)</div>
+
+<h3>Pasos y commits</h3>
+<ol>
+<li>Proyecto, kit y repositorio — <code>Estructura inicial y kit neon copiado del Totito</code></li>
+<li><code>Casilla</code> — <code>Casilla: mina, abierta, bandera y vecinas</code></li>
+<li><code>TableroMinas</code> y <code>PruebaMinas</code> — <code>TableroMinas: reparto de minas y apertura recursiva</code></li>
+<li><code>Nivel</code> y <code>PartidaMinas</code> — <code>PartidaMinas: estado, banderas y cronometro</code></li>
+<li><code>PanelMinas</code> — <code>PanelMinas: cuadricula, numeros y clic derecho</code></li>
+<li>Pantallas y <code>MinasApp</code> — <code>Primera version jugable</code> + <code>v0.1.0</code></li>
+<li>Pantalla de resultado y mejores tiempos — <code>Resultado y mejores tiempos por nivel</code> + <code>v1.0.0</code></li>
+</ol>
+
+<h2>Proyecto 3: Gestor de tareas</h2>
+<h3>Qué es</h3>
+<p>Una lista de pendientes con estilo neón: escribes una tarea, eliges su prioridad (alta, media, baja), la marcas como hecha o la borras. Y lo más importante: al cerrar el programa y volver a abrirlo, <b>tus tareas siguen ahí</b>. Es el primer proyecto del libro que no es un juego y el primero que <b>guarda datos</b>.</p>
+
+<h3>Sus clases, comparadas con las del Totito</h3>
+<table class="tabla">
+<tr><th>Clase</th><th>Responsabilidad</th><th>En el Totito era…</th></tr>
+<tr><td><code>Tarea</code> (con el enum <code>Prioridad</code>)</td><td>Título, prioridad y si está hecha; convertirse en una línea de texto y volver</td><td><code>Jugador</code> (clase de datos) + <code>Partida.Modo</code> (enum)</td></tr>
+<tr><td><code>ListaTareas</code></td><td>Agregar, eliminar, contar pendientes, <b>guardar y cargar</b> el archivo</td><td><code>Partida</code> (la lógica que la pantalla consulta)</td></tr>
+<tr><td><code>FilaTarea</code></td><td>Una tarea en pantalla: casilla de «hecha», título, color de prioridad y botón de borrar</td><td><code>TarjetaJugador</code> (una <code>Tarjeta</code> con cosas dentro)</td></tr>
+<tr><td><code>PantallaTareas</code></td><td>Campo para escribir, botón «Agregar», la lista con barra de desplazamiento</td><td><code>PantallaConfiguracion</code></td></tr>
+<tr><td><code>TareasApp</code></td><td>La ventana; carga al abrir y guarda al cerrar</td><td><code>TotitoApp</code></td></tr>
+</table>
+
+<h3>Qué se reutiliza tal cual y qué cambia</h3>
+<ul>
+<li><b>Tal cual:</b> el kit neón (<code>BotonNeon.pildora("Agregar", …)</code>, <code>Tarjeta</code> para cada fila, <code>Rotulo.seccion("— PENDIENTES —", …)</code>, <code>CampoTexto</code> para escribir) y <code>PantallaBase.fila(...)</code> para poner el campo y el botón uno al lado del otro.</li>
+<li><b>Cambia:</b> <code>CampoTexto.MAXIMO</code> vale 14 porque así cabía un nombre en el marcador; una tarea necesita más (por ejemplo 60). Al ser una constante, se cambia en un solo lugar.</li>
+<li><b>Cambia:</b> como solo hay una pantalla, no hace falta <code>Navegacion</code> ni <code>CardLayout</code>; si luego agregas una pantalla de «Estadísticas» o «Ajustes», vuelven.</li>
+<li><b>Nuevo:</b> el archivo, y un <code>JScrollPane</code> para cuando las tareas no quepan. Para que se vea el fondo neón a través de él, hay que hacer transparentes el panel y su ventana interior: <code>scroll.setOpaque(false)</code> y <code>scroll.getViewport().setOpaque(false)</code>.</li>
+</ul>
+
+<h3>El reto principal: guardar los datos en un archivo</h3>
+<p>Todo lo que vive en variables desaparece al cerrar el programa: la memoria RAM se libera. Para que algo dure hay que escribirlo en el disco, en un <b>archivo</b>. Hay que decidir cuatro cosas:</p>
+<ol>
+<li><b>El formato:</b> cómo se escribe una tarea como texto. Aquí, una línea por tarea con tres campos separados por punto y coma: <code>hecha;PRIORIDAD;titulo</code>. Es legible, se puede abrir con el Bloc de notas y es fácil de leer de vuelta.</li>
+<li><b>La codificación:</b> UTF-8, siempre y escrita explícitamente, para que «capítulo» no se convierta en «capÃ­tulo» (es el mismo problema de las tildes del capítulo 5).</li>
+<li><b>El lugar:</b> no junto al <code>.exe</code> —en <code>C:\Program Files</code> un programa normal no tiene permiso de escritura (capítulo 66)—, sino en la carpeta del usuario: <code>C:\Users\&lt;tu-usuario&gt;\TareasNeon\tareas.txt</code>. Java la obtiene con <code>System.getProperty("user.home")</code>.</li>
+<li><b>Cuándo guardar:</b> lo más seguro es guardar <b>cada vez que algo cambia</b> (agregar, marcar, borrar). Si solo guardas al cerrar, un corte de luz te hace perder todo lo de la sesión.</li>
+</ol>
+<p>El detalle fino está en el formato: ¿y si el título tiene un punto y coma, como «Estudiar el capítulo 68; hacer ejercicios»? Si partieras la línea en todos los <code>;</code> saldrían cuatro trozos y el título quedaría cortado. Por eso el título va <b>al final</b> y se usa <code>split(";", 3)</code>: el 3 significa «como mucho tres trozos», así que todo lo que venga después del segundo punto y coma, incluidos otros <code>;</code>, queda en el tercero.</p>
+
+<h3>Código de arranque</h3>
+<p><code>src\Tarea.java</code>:</p>
+<pre class="java">/** Una tarea pendiente: lo que hay que hacer, su prioridad y si ya se hizo. */
+public class Tarea {
+
+    public enum Prioridad { ALTA, MEDIA, BAJA }
+
+    private final String titulo;
+    private final Prioridad prioridad;
+    private boolean hecha;
+
+    public Tarea(String titulo, Prioridad prioridad) {
+        if (titulo == null || titulo.isBlank()) {
+            throw new IllegalArgumentException("La tarea necesita un titulo");
+        }
+        this.titulo = titulo.strip();
+        this.prioridad = prioridad;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public Prioridad getPrioridad() {
+        return prioridad;
+    }
+
+    public boolean estaHecha() {
+        return hecha;
+    }
+
+    public void setHecha(boolean hecha) {
+        this.hecha = hecha;
+    }
+
+    /** Una linea del archivo:  hecha;PRIORIDAD;titulo  (el titulo va al final). */
+    public String aLinea() {
+        return hecha + ";" + prioridad + ";" + titulo;
+    }
+
+    /** Lo contrario de aLinea(): reconstruye la tarea a partir de una linea. */
+    public static Tarea desdeLinea(String linea) {
+        String[] partes = linea.split(";", 3);   // 3 = como mucho 3 trozos
+        Tarea tarea = new Tarea(partes[2], Prioridad.valueOf(partes[1]));
+        tarea.setHecha(Boolean.parseBoolean(partes[0]));
+        return tarea;
+    }
+}</pre>
+<ul>
+<li>El constructor <b>rechaza</b> un título vacío con <code>IllegalArgumentException</code>, igual que <code>Partida</code> rechaza dos jugadores con la misma ficha (capítulo 26). Así nunca existe una tarea inválida. <code>isBlank()</code> es <code>true</code> si el texto está vacío o solo tiene espacios; <code>strip()</code> quita los espacios de los extremos.</li>
+<li><code>aLinea()</code> y <code>desdeLinea()</code> son una pareja: una convierte el objeto en texto y la otra hace el camino inverso. A esto se le llama <b>serializar</b> y <b>deserializar</b>. <code>desdeLinea</code> es <code>static</code> porque se llama cuando todavía no hay ninguna tarea: es un <b>método de fábrica</b>, como <code>BotonNeon.menu(...)</code>.</li>
+<li><code>Prioridad.valueOf("ALTA")</code> convierte el texto en el valor del enum, y <code>Boolean.parseBoolean("true")</code> el texto en <code>boolean</code>. Concatenar un enum (<code>"" + prioridad</code>) escribe su nombre: <code>ALTA</code>.</li>
+</ul>
+<p><code>src\ListaTareas.java</code>:</p>
+<pre class="java">import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * La lista de tareas y su archivo. Hace con las tareas lo que Partida hace
+ * con el Tablero: la interfaz le pide cosas y despues le pregunta como quedo.
+ */
+public class ListaTareas {
+
+    private final List&lt;Tarea&gt; tareas = new ArrayList&lt;&gt;();
+    private final Path archivo;
+
+    public ListaTareas(Path archivo) {
+        this.archivo = archivo;
+    }
+
+    /** Donde se guardan en Windows:  C:\Users\&lt;tu-usuario&gt;\TareasNeon\tareas.txt */
+    public static Path archivoPorDefecto() {
+        return Path.of(System.getProperty("user.home"), "TareasNeon", "tareas.txt");
+    }
+
+    public void agregar(Tarea tarea) {
+        tareas.add(tarea);
+    }
+
+    public void eliminar(int indice) {
+        tareas.remove(indice);
+    }
+
+    /** Vista de solo lectura: quien la pida no puede borrar a escondidas. */
+    public List&lt;Tarea&gt; getTareas() {
+        return Collections.unmodifiableList(tareas);
+    }
+
+    public int pendientes() {
+        int total = 0;
+        for (Tarea tarea : tareas) {
+            if (!tarea.estaHecha()) {
+                total++;
+            }
+        }
+        return total;
+    }
+
+    /** Escribe todas las tareas, una por linea, en UTF-8 (para que las tildes no se rompan). */
+    public void guardar() throws IOException {
+        Files.createDirectories(archivo.getParent());
+        List&lt;String&gt; lineas = new ArrayList&lt;&gt;();
+        for (Tarea tarea : tareas) {
+            lineas.add(tarea.aLinea());
+        }
+        Files.write(archivo, lineas, StandardCharsets.UTF_8);
+    }
+
+    /** Lee el archivo si existe. La primera vez que se usa el programa no existe: lista vacia. */
+    public void cargar() throws IOException {
+        tareas.clear();
+        if (!Files.exists(archivo)) {
+            return;
+        }
+        for (String linea : Files.readAllLines(archivo, StandardCharsets.UTF_8)) {
+            if (!linea.isBlank()) {
+                tareas.add(Tarea.desdeLinea(linea));
+            }
+        }
+    }
+}</pre>
+<ul>
+<li><code>List&lt;Tarea&gt;</code> y <code>ArrayList</code>: una lista que crece sola, a diferencia del arreglo de tamaño fijo del capítulo 15. Lo que va entre <code>&lt;</code> y <code>&gt;</code> dice qué guarda.</li>
+<li><code>Path</code> representa una ruta de archivo. <code>Path.of(a, b, c)</code> la arma con el separador correcto del sistema (<code>\</code> en Windows), sin que tengas que escribirlo.</li>
+<li><code>Files.createDirectories</code> crea la carpeta <code>TareasNeon</code> si no existe (y no se queja si ya existe). <code>Files.write</code> escribe todas las líneas de una vez y <code>Files.readAllLines</code> las lee.</li>
+<li><code>throws IOException</code>: escribir en disco puede fallar (disco lleno, sin permiso, archivo abierto por otro programa). Java te <b>obliga</b> a decidir qué hacer con ese posible error: o lo atrapas con <code>try/catch</code> o avisas con <code>throws</code> que lo resuelva quien llame (capítulo 26). Aquí lo resuelve la pantalla, mostrando un <code>JOptionPane.showMessageDialog</code> con el problema.</li>
+<li><code>Collections.unmodifiableList</code> entrega la lista «de solo lectura»: la pantalla puede recorrerla, pero si intentara borrar algo saltaría un error. Las tareas solo se cambian a través de los métodos de <code>ListaTareas</code>: eso es encapsulamiento (capítulo 19).</li>
+</ul>
+<p>La prueba guarda tres tareas y las lee en una lista <b>nueva</b>, que es lo que pasará cuando el programa se vuelva a abrir. <code>src\PruebaTareas.java</code>:</p>
+<pre class="java">import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+/** Guarda tres tareas, las vuelve a leer en una lista NUEVA y muestra el archivo. */
+public class PruebaTareas {
+
+    public static void main(String[] args) throws IOException {
+        Path archivo = Path.of("prueba-tareas", "tareas.txt");
+
+        ListaTareas lista = new ListaTareas(archivo);
+        lista.agregar(new Tarea("Comprar pan", Tarea.Prioridad.MEDIA));
+        lista.agregar(new Tarea("Estudiar el capítulo 68; hacer ejercicios", Tarea.Prioridad.ALTA));
+        Tarea pagar = new Tarea("Pagar la luz", Tarea.Prioridad.ALTA);
+        pagar.setHecha(true);
+        lista.agregar(pagar);
+        lista.guardar();
+
+        ListaTareas otra = new ListaTareas(archivo);   // como si el programa se abriera otra vez
+        otra.cargar();
+        for (Tarea t : otra.getTareas()) {
+            System.out.println((t.estaHecha() ? "[x] " : "[ ] ") + t.getTitulo() + "  (" + t.getPrioridad() + ")");
+        }
+        System.out.println("Pendientes: " + otra.pendientes());
+        System.out.println("--- lo que quedo escrito en tareas.txt ---");
+        Files.readAllLines(archivo).forEach(System.out::println);
+    }
+}</pre>
+<pre class="ps">javac -encoding UTF-8 -d out src\*.java
+java -cp out PruebaTareas</pre>
+<pre class="salida">[ ] Comprar pan  (MEDIA)
+[ ] Estudiar el capítulo 68; hacer ejercicios  (ALTA)
+[x] Pagar la luz  (ALTA)
+Pendientes: 2
+--- lo que quedo escrito en tareas.txt ---
+false;MEDIA;Comprar pan
+false;ALTA;Estudiar el capítulo 68; hacer ejercicios
+true;ALTA;Pagar la luz</pre>
+<p>El título con punto y coma sobrevivió entero. La prueba deja el archivo en <code>prueba-tareas\tareas.txt</code>, dentro de la carpeta del proyecto; ábrelo con el Bloc de notas y verás esas tres líneas. Agrega <code>prueba-tareas/</code> al <code>.gitignore</code> para no subirlo.</p>
+<p>En la ventana real, <code>TareasApp</code> carga la lista al arrancar y, por si acaso, guarda también al cerrar. Como la ventana se cierra con la X, se usa un <code>WindowAdapter</code> (la misma idea que el <code>MouseAdapter</code> de <code>PanelTablero</code>) con su método <code>windowClosing</code>.</p>
+<div class="caja consejo"><b>Cuando el formato propio se queda corto</b> Una línea con punto y coma va muy bien para datos simples. Si una tarea tuviera subtareas, etiquetas y fechas, el formato habitual es <b>JSON</b>, con una librería como Jackson o Gson que convierte objetos a texto y de vuelta. Y si los datos son muchos o los comparten varias personas, el paso siguiente es una base de datos (capítulo 69).</div>
+
+<h3>Pasos y commits</h3>
+<ol>
+<li>Proyecto, kit y repositorio — <code>Estructura inicial y kit neon copiado del Totito</code></li>
+<li><code>Tarea</code> — <code>Tarea: titulo, prioridad y estado</code></li>
+<li><code>ListaTareas</code> y <code>PruebaTareas</code> — <code>ListaTareas: guardar y cargar en UTF-8</code></li>
+<li><code>FilaTarea</code> — <code>FilaTarea: tarjeta de una tarea</code></li>
+<li><code>PantallaTareas</code> y <code>TareasApp</code> — <code>Pantalla principal con lista desplazable</code> + <code>v0.1.0</code></li>
+<li>Filtros (todas, pendientes, hechas) y orden por prioridad — <code>Filtros y orden por prioridad</code> + <code>v1.0.0</code></li>
+</ol>
+
+<h2>Proyecto 4: Calculadora neón</h2>
+<h3>Qué es</h3>
+<p>Una calculadora de cuatro operaciones con la estética del Totito: visor con el número brillante y una cuadrícula de botones de neón, que también se maneja con el teclado. Es el proyecto ideal para comprobar que el kit sirve fuera de los juegos: casi todo lo visual ya está hecho.</p>
+
+<h3>Sus clases, comparadas con las del Totito</h3>
+<table class="tabla">
+<tr><th>Clase</th><th>Responsabilidad</th><th>En el Totito era…</th></tr>
+<tr><td><code>Calculadora</code></td><td>La lógica: qué hace cada tecla y qué se muestra. Nada de Swing.</td><td><code>Partida</code></td></tr>
+<tr><td><code>PanelCalculadora</code></td><td>Visor, cuadrícula de botones, teclado; traduce cada tecla a una llamada de <code>Calculadora</code></td><td><code>PantallaJuego</code></td></tr>
+<tr><td><code>Visor</code> (clase interna)</td><td>Dibujar el número grande con halo, alineado a la derecha</td><td><code>Rotulo</code> / <code>PanelMarcador</code></td></tr>
+<tr><td><code>CalculadoraApp</code></td><td>Crear la ventana con el panel dentro</td><td><code>TotitoApp</code></td></tr>
+</table>
+
+<h3>Qué se reutiliza tal cual y qué cambia</h3>
+<ul>
+<li><b>Tal cual:</b> <code>Tema</code>, <code>Dibujo</code> (<code>textoNeon</code>, <code>recortar</code>, <code>lineaBaseCentrada</code>, <code>fijarTamano</code>), <code>Tarjeta</code> como marco del teclado y <code>BotonNeon</code> en sus estilos <code>contorno</code> (dígitos) y <code>pildora</code> (operaciones). <code>Iconos</code> se copia aunque no se dibuje ningún icono, porque <code>BotonNeon</code> lo menciona.</li>
+<li><b>Cambia:</b> la distribución. En lugar del <code>BoxLayout</code> de <code>PantallaBase</code> se usa <code>GridLayout(5, 4, 6, 6)</code>: 5 filas, 4 columnas y 6 píxeles de separación, el layout perfecto para un teclado (capítulo 37).</li>
+<li><b>Nuevo:</b> los <b>atajos de teclado</b> con <code>InputMap</code> y <code>ActionMap</code>.</li>
+</ul>
+
+<h3>El reto principal: el estado de una calculadora y los decimales</h3>
+<p>Una calculadora parece simple hasta que la programas. Cuando pulsas <code>12 × 3 − 6 =</code>, tiene que recordar en cada momento <b>tres</b> cosas: el número acumulado, la operación pendiente y si la próxima cifra empieza un número nuevo o continúa el que se ve. Eso es una pequeña <b>máquina de estados</b>, como el <code>Estado</code> de <code>Partida</code>. La traza de <code>12x3-6=</code>:</p>
+<table class="tabla">
+<tr><th>Tecla</th><th>Pantalla</th><th>Acumulado</th><th>Pendiente</th><th>numeroNuevo</th></tr>
+<tr><td>(inicio)</td><td>0</td><td>0</td><td>(ninguna)</td><td>true</td></tr>
+<tr><td>1</td><td>1</td><td>0</td><td>(ninguna)</td><td>false</td></tr>
+<tr><td>2</td><td>12</td><td>0</td><td>(ninguna)</td><td>false</td></tr>
+<tr><td>x</td><td>12</td><td>12</td><td>x</td><td>true</td></tr>
+<tr><td>3</td><td>3</td><td>12</td><td>x</td><td>false</td></tr>
+<tr><td>−</td><td>36</td><td>36</td><td>−</td><td>true</td></tr>
+<tr><td>6</td><td>6</td><td>36</td><td>−</td><td>false</td></tr>
+<tr><td>=</td><td>30</td><td>30</td><td>(ninguna)</td><td>true</td></tr>
+</table>
+<p>El segundo reto son los <b>decimales</b>. Prueba esto en <code>jshell</code> (capítulo 11): <code>0.1 + 0.2</code>. La respuesta es <code>0.30000000000000004</code>. No es un error de Java: <code>double</code> guarda los números en binario, y 0,1 en binario tiene infinitas cifras (como 1/3 en decimal), así que se guarda redondeado. Para un juego da igual; para una calculadora o para dinero, no. La solución es <code>java.math.BigDecimal</code>, que guarda los números en decimal exacto. A cambio, no se usa con <code>+</code> y <code>*</code> sino con métodos: <code>a.add(b)</code>, <code>a.multiply(b)</code>. En la división hay que decir cuántas cifras quieres, porque 1/3 no termina nunca: <code>MathContext.DECIMAL64</code> pide 16 cifras significativas.</p>
+
+<h3>Código de arranque</h3>
+<p>La lógica, <code>src\Calculadora.java</code>:</p>
+<pre class="java">import java.math.BigDecimal;
+import java.math.MathContext;
+
+/**
+ * La logica de la calculadora, sin nada de Swing (como Partida en el
+ * Totito). Recibe "teclas" y dice que hay que mostrar en la pantalla.
+ *
+ * Usa BigDecimal en lugar de double para que 0.1 + 0.2 de 0.3 exacto.
+ */
+public class Calculadora {
+
+    private String pantalla = "0";
+    private BigDecimal acumulado = BigDecimal.ZERO;
+    private char operacionPendiente = ' ';
+    /** true justo despues de pulsar una operacion o "=": el proximo digito empieza un numero nuevo. */
+    private boolean numeroNuevo = true;
+
+    public String getPantalla() {
+        return pantalla;
+    }
+
+    public void digito(char d) {
+        if (numeroNuevo || pantalla.equals("0") || pantalla.equals("Error")) {
+            pantalla = String.valueOf(d);
+            numeroNuevo = false;
+        } else if (pantalla.length() &lt; 16) {
+            pantalla = pantalla + d;
+        }
+    }
+
+    public void punto() {
+        if (numeroNuevo || pantalla.equals("Error")) {
+            pantalla = "0.";
+            numeroNuevo = false;
+        } else if (!pantalla.contains(".")) {
+            pantalla = pantalla + ".";
+        }
+    }
+
+    /** + - x / : resuelve lo pendiente y recuerda la nueva operacion. */
+    public void operacion(char op) {
+        if (pantalla.equals("Error")) {
+            return;
+        }
+        if (!numeroNuevo) {
+            resolver();
+        }
+        operacionPendiente = op;
+        numeroNuevo = true;
+    }
+
+    public void igual() {
+        if (!pantalla.equals("Error")) {
+            resolver();
+        }
+        operacionPendiente = ' ';
+        numeroNuevo = true;
+    }
+
+    public void limpiar() {
+        pantalla = "0";
+        acumulado = BigDecimal.ZERO;
+        operacionPendiente = ' ';
+        numeroNuevo = true;
+    }
+
+    private void resolver() {
+        BigDecimal actual = new BigDecimal(pantalla);
+        switch (operacionPendiente) {
+            case '+' -&gt; acumulado = acumulado.add(actual);
+            case '-' -&gt; acumulado = acumulado.subtract(actual);
+            case 'x' -&gt; acumulado = acumulado.multiply(actual);
+            case '/' -&gt; {
+                if (actual.signum() == 0) {
+                    pantalla = "Error";      // dividir entre cero
+                    acumulado = BigDecimal.ZERO;
+                    return;
+                }
+                acumulado = acumulado.divide(actual, MathContext.DECIMAL64);
+            }
+            default -&gt; acumulado = actual;   // primer numero: aun no hay operacion
+        }
+        pantalla = acumulado.stripTrailingZeros().toPlainString();
+    }
+}</pre>
+<ul>
+<li>Los cuatro campos <code>private</code> son el estado completo de la calculadora: con ellos se puede reconstruir qué está pasando en cualquier momento.</li>
+<li><code>resolver()</code> usa el <code>switch</code> con flechas del capítulo 13. El caso <code>default</code> cubre la primera vez: si aún no hay operación, el número de la pantalla simplemente pasa a ser el acumulado.</li>
+<li><code>signum()</code> devuelve −1, 0 o 1 según el signo; <code>== 0</code> detecta la división entre cero, que con <code>BigDecimal</code> lanzaría una excepción.</li>
+<li><code>stripTrailingZeros().toPlainString()</code> quita los ceros sobrantes y escribe el número sin notación científica: <code>2.50</code> se ve como <code>2.5</code>.</li>
+</ul>
+<p>La prueba pulsa teclas como lo haría una persona. <code>src\PruebaCalculadora.java</code>:</p>
+<pre class="java">/** Pulsa teclas como lo haria una persona y muestra la pantalla. */
+public class PruebaCalculadora {
+
+    public static void main(String[] args) {
+        System.out.println("Con double: 0.1 + 0.2 = " + (0.1 + 0.2));
+
+        Calculadora calc = new Calculadora();
+        teclear(calc, "0.1+0.2=");
+        teclear(calc, "12x3-6=");
+        teclear(calc, "10/4=");
+        teclear(calc, "7/0=");
+        teclear(calc, "1/3=");
+    }
+
+    /** Cada caracter del texto es una tecla. "C" limpia antes de empezar. */
+    private static void teclear(Calculadora calc, String teclas) {
+        calc.limpiar();
+        for (char t : teclas.toCharArray()) {
+            switch (t) {
+                case '+', '-', 'x', '/' -&gt; calc.operacion(t);
+                case '=' -&gt; calc.igual();
+                case '.' -&gt; calc.punto();
+                default -&gt; calc.digito(t);
+            }
+        }
+        System.out.println("Calculadora: " + teclas + " " + calc.getPantalla());
+    }
+}</pre>
+<pre class="ps">javac -encoding UTF-8 -d out src\*.java
+java -cp out PruebaCalculadora</pre>
+<pre class="salida">Con double: 0.1 + 0.2 = 0.30000000000000004
+Calculadora: 0.1+0.2= 0.3
+Calculadora: 12x3-6= 30
+Calculadora: 10/4= 2.5
+Calculadora: 7/0= Error
+Calculadora: 1/3= 0.3333333333333333</pre>
+<p>La primera línea muestra el problema de <code>double</code>; la segunda, que <code>BigDecimal</code> lo resuelve.</p>
+<p>Ahora la interfaz, usando el kit sin tocarlo. <code>src\PanelCalculadora.java</code>:</p>
+<pre class="java">import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.KeyStroke;
+
+/**
+ * La ventana de la calculadora con el "kit neon" del Totito: Tema, Dibujo,
+ * Tarjeta y BotonNeon se copiaron sin cambiar una sola linea.
+ */
+public class PanelCalculadora extends JPanel {
+
+    private final Calculadora calc = new Calculadora();
+    private final Visor visor = new Visor();
+
+    public PanelCalculadora() {
+        super(new BorderLayout(0, 12));
+        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        add(visor, BorderLayout.NORTH);
+
+        Tarjeta teclado = new Tarjeta(Tema.MORADO);
+        teclado.setLayout(new GridLayout(5, 4, 6, 6));
+        teclado.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
+        String[] teclas = {
+            "C", "", "", "/",
+            "7", "8", "9", "x",
+            "4", "5", "6", "-",
+            "1", "2", "3", "+",
+            "0", ".", "", "="};
+        for (String tecla : teclas) {
+            teclado.add(tecla.isEmpty() ? new JLabel() : crearBoton(tecla));   // JLabel vacio = hueco
+        }
+        add(teclado, BorderLayout.CENTER);
+        conectarTeclado();
+    }
+
+    private BotonNeon crearBoton(String tecla) {
+        char t = tecla.charAt(0);
+        BotonNeon boton;
+        if (Character.isDigit(t) || t == '.') {
+            boton = BotonNeon.contorno(tecla, null, 90, 74);
+        } else if (t == '=') {
+            boton = BotonNeon.pildora(tecla, null, Tema.ROSA, Tema.MORADO, 90, 74);
+        } else {
+            boton = BotonNeon.pildora(tecla, null, Tema.AZUL, Tema.MORADO, 90, 74);
+        }
+        boton.addActionListener(e -&gt; pulsar(t));
+        return boton;
+    }
+
+    /** Que el teclado tambien funcione: cada tecla hace lo mismo que su boton. */
+    private void conectarTeclado() {
+        for (char t : "0123456789.+-x/=".toCharArray()) {
+            atajo(KeyStroke.getKeyStroke(t), t);
+        }
+        atajo(KeyStroke.getKeyStroke('*'), 'x');     // el * del teclado numerico
+        atajo(KeyStroke.getKeyStroke("ENTER"), '=');
+        atajo(KeyStroke.getKeyStroke("ESCAPE"), 'C');
+    }
+
+    private void atajo(KeyStroke teclaFisica, char tecla) {
+        String nombre = "tecla " + teclaFisica;
+        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(teclaFisica, nombre);
+        getActionMap().put(nombre, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                pulsar(tecla);
+            }
+        });
+    }
+
+    /** Traduce la tecla a la llamada de la logica y refresca el visor. */
+    private void pulsar(char t) {
+        switch (t) {
+            case 'C' -&gt; calc.limpiar();
+            case '=' -&gt; calc.igual();
+            case '.' -&gt; calc.punto();
+            case '+', '-', 'x', '/' -&gt; calc.operacion(t);
+            default -&gt; calc.digito(t);
+        }
+        visor.repaint();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2 = Dibujo.preparar(g);
+        g2.setPaint(new GradientPaint(0, 0, Tema.FONDO_ARRIBA, 0, getHeight(), Tema.FONDO_ABAJO));
+        g2.fillRect(0, 0, getWidth(), getHeight());
+        g2.dispose();
+    }
+
+    /** El numero grande, alineado a la derecha y con halo de neon. */
+    private class Visor extends JComponent {
+        Visor() {
+            Dibujo.fijarTamano(this, 400, 90);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = Dibujo.preparar(g);
+            g2.setFont(Tema.fuente(Font.BOLD, 44f));
+            FontMetrics fm = g2.getFontMetrics();
+            String texto = Dibujo.recortar(fm, calc.getPantalla(), getWidth() - 24);
+            float x = getWidth() - 12 - fm.stringWidth(texto);
+            Dibujo.textoNeon(g2, texto, x, Dibujo.lineaBaseCentrada(fm, getHeight() / 2f), Tema.CIAN, Tema.TEXTO);
+            g2.dispose();
+        }
+    }
+}</pre>
+<ul>
+<li><code>new BorderLayout(0, 12)</code>: el visor arriba (<code>NORTH</code>) y el teclado en el centro, con 12 píxeles entre ambos.</li>
+<li>El arreglo <code>teclas</code> está escrito con la misma forma que el teclado: cuatro elementos por línea. Las cadenas vacías son huecos; en ellos se pone un <code>JLabel</code> vacío, que no se ve, porque <code>GridLayout</code> necesita algo en cada celda.</li>
+<li><code>crearBoton</code> elige el estilo según la tecla y pasa <code>null</code> como icono: <code>BotonNeon</code> ya contempla ese caso y centra solo el texto.</li>
+<li><code>conectarTeclado</code>: el <b><code>InputMap</code></b> asocia una tecla física con un nombre, y el <b><code>ActionMap</code></b> asocia ese nombre con lo que hay que hacer. <code>WHEN_IN_FOCUSED_WINDOW</code> significa «aunque el foco esté en otro componente de la ventana». La acción es una <b>clase anónima</b> (capítulo 25) que llama a <code>pulsar</code>: el teclado y los botones terminan en el mismo método, así que nunca se comportan distinto.</li>
+<li><code>Visor</code> es una <b>clase interna</b> (capítulo 25): vive dentro de <code>PanelCalculadora</code> y por eso puede leer su campo <code>calc</code> directamente.</li>
+<li><code>paintComponent</code> del panel pinta el degradado de fondo con los colores de <code>Tema</code>, como hace <code>PantallaBase</code>.</li>
+</ul>
+<p>Y el arranque, <code>src\CalculadoraApp.java</code>, una versión mínima de <code>TotitoApp</code>:</p>
+<pre class="java">import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+
+/** Punto de entrada, igual que TotitoApp: una ventana con el panel dentro. */
+public class CalculadoraApp {
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -&gt; {
+            JFrame ventana = new JFrame("Calculadora neón");
+            ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            ventana.setContentPane(new PanelCalculadora());
+            ventana.pack();
+            ventana.setResizable(false);
+            ventana.setLocationRelativeTo(null);
+            ventana.setVisible(true);
+        });
+    }
+}</pre>
+<pre class="ps">javac -encoding UTF-8 -d out src\*.java
+java -cp out CalculadoraApp</pre>
+<div class="caja hito"><b>Hito</b> Se abre una ventana oscura de unos 450×570 píxeles: arriba el número en blanco con halo cian, abajo una tarjeta morada con el teclado; los dígitos son pastillas con borde morado, las operaciones son azules y el <code>=</code> es rosa. Escribe <code>12*3-6</code> y pulsa Enter: el visor muestra <code>30</code>. Todo el aspecto viene de siete archivos que no escribiste para este programa.</div>
+
+<h3>Pasos y commits</h3>
+<ol>
+<li>Proyecto, kit y repositorio — <code>Estructura inicial y kit neon copiado del Totito</code></li>
+<li><code>Calculadora</code> y su prueba — <code>Calculadora: logica con BigDecimal</code></li>
+<li><code>PanelCalculadora</code> y <code>CalculadoraApp</code> — <code>Interfaz neon con GridLayout</code> + <code>v0.1.0</code></li>
+<li>Atajos — <code>Atajos de teclado con InputMap y ActionMap</code></li>
+<li>Porcentaje, cambio de signo e historial — <code>Porcentaje, signo e historial</code> + <code>v1.0.0</code></li>
+</ol>
+
+<h2>Proyecto 5: Inventario de una tienda</h2>
+<h3>Qué es</h3>
+<p>El programa con el que una tienda de barrio sabe qué tiene: productos con código, nombre, precio en quetzales y existencias. Permite buscar, vender (descontando existencias), reponer y ver qué productos están por agotarse. Es el más «de oficina» de los cinco, y el más parecido a lo que te pedirán si algún día programas para un negocio.</p>
+
+<h3>Sus clases, comparadas con las del Totito</h3>
+<table class="tabla">
+<tr><th>Clase</th><th>Responsabilidad</th><th>En el Totito era…</th></tr>
+<tr><td><code>Producto</code></td><td>Código, nombre, precio, existencias y mínimo</td><td><code>Jugador</code>, con más datos</td></tr>
+<tr><td><code>Inventario</code></td><td>Los productos por código; vender, reponer, listar los que hay que reponer</td><td><code>Partida</code></td></tr>
+<tr><td><code>SinExistenciasException</code></td><td>Avisar de que no alcanza para una venta</td><td>(Nuevo: una excepción propia)</td></tr>
+<tr><td><code>ModeloTablaInventario</code></td><td>Decirle a una tabla qué filas y columnas mostrar</td><td>Lo que <code>PanelTablero.mostrar(tablero)</code> copiaba para dibujar</td></tr>
+<tr><td><code>TablaNeon</code></td><td>Un <code>JTable</code> con los colores del Tema, orden por columna y filtro de búsqueda</td><td><code>PanelTablero</code> (la vista que solo dibuja)</td></tr>
+<tr><td><code>PantallaInventario</code>, <code>PantallaVenta</code>, <code>PantallaReportes</code></td><td>Lista con buscador; registrar una venta; productos por reponer y valor del inventario</td><td>Las pantallas del Totito</td></tr>
+<tr><td><code>Venta</code></td><td>Fecha, producto, cantidad y total de cada venta (el historial)</td><td>(Nuevo)</td></tr>
+<tr><td><code>AlmacenInventario</code></td><td>Guardar y cargar todo, primero en un archivo (como el gestor de tareas) y después en una base de datos</td><td>(Nuevo)</td></tr>
+</table>
+
+<h3>Qué se reutiliza tal cual y qué cambia</h3>
+<ul>
+<li><b>Tal cual:</b> el kit neón, <code>PantallaBase</code>, el patrón <code>Navegacion</code> + <code>PanelPrincipal</code> (aquí sí hay varias pantallas: inventario, venta, reportes), <code>CampoTexto</code> como buscador (con <code>MAXIMO</code> más grande) y la técnica de guardar en archivo del proyecto 3.</li>
+<li><b>Cambia:</b> los iconos del menú (agrega a <code>Iconos</code> una caja, un carrito y una gráfica, siguiendo el patrón de las constantes que ya hay) y el adorno de <code>PantallaBase</code>.</li>
+<li><b>Nuevo:</b> el <code>JTable</code>, el dinero con <code>BigDecimal</code> y una excepción propia.</li>
+</ul>
+
+<h3>El reto principal: muchos datos en pantalla, y que sean correctos</h3>
+<p>Hasta ahora siempre había pocos datos a la vista: 9 casillas, un número. Un inventario puede tener 2000 productos. Dibujarlos a mano en un <code>paintComponent</code> sería absurdo; para eso Swing tiene <code>JTable</code>, una tabla con filas, columnas, selección, desplazamiento y orden. Funciona con la misma separación que el Totito:</p>
+<ul>
+<li>El <b>modelo</b> (<code>TableModel</code>) dice cuántas filas hay, cuántas columnas, cómo se llama cada una y qué valor va en cada celda. No dibuja nada.</li>
+<li>La <b>vista</b> (<code>JTable</code>) le pregunta al modelo y dibuja. Cuando los datos cambian, el modelo avisa con <code>fireTableDataChanged()</code> y la tabla se vuelve a dibujar.</li>
+</ul>
+<p>Es exactamente el par <code>Partida</code> / <code>PanelTablero</code>, pero ya hecho por Swing: tú solo escribes el modelo.</p>
+<p>La segunda mitad del reto es que los datos sean <b>correctos</b>. Dos reglas: el dinero va en <code>BigDecimal</code> (por lo visto en la calculadora: con <code>double</code>, sumar mil ventas de Q0.10 no da exactamente Q100.00), y una venta que no alcanza debe <b>fallar sin cambiar nada</b>. Para eso se crea una <b>excepción propia</b>, <code>SinExistenciasException</code>. Como hereda de <code>Exception</code> (y no de <code>RuntimeException</code>), es una excepción <i>comprobada</i>: Java obliga a quien llame a <code>vender</code> a escribir el <code>try/catch</code>. Es una forma de que el compilador te recuerde que ese caso existe.</p>
+
+<h3>Código de arranque</h3>
+<p><code>src\Producto.java</code>:</p>
+<pre class="java">import java.math.BigDecimal;
+
+/** Un producto de la tienda. El precio es BigDecimal: con dinero no se usa double. */
+public class Producto {
+
+    private final String codigo;
+    private final String nombre;
+    private BigDecimal precio;
+    private int existencias;
+    private final int minimo;
+
+    public Producto(String codigo, String nombre, BigDecimal precio, int existencias, int minimo) {
+        if (precio.signum() &lt; 0 || existencias &lt; 0) {
+            throw new IllegalArgumentException("Precio y existencias no pueden ser negativos");
+        }
+        this.codigo = codigo;
+        this.nombre = nombre;
+        this.precio = precio;
+        this.existencias = existencias;
+        this.minimo = minimo;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public BigDecimal getPrecio() {
+        return precio;
+    }
+
+    public int getExistencias() {
+        return existencias;
+    }
+
+    public boolean bajoMinimo() {
+        return existencias &lt;= minimo;
+    }
+
+    /** Solo Inventario cambia las existencias (por eso no es public). */
+    void cambiarExistencias(int diferencia) {
+        existencias += diferencia;
+    }
+}</pre>
+<p>Fíjate en <code>cambiarExistencias</code>: no tiene <code>public</code>, <code>private</code> ni <code>protected</code>. Sin modificador, el método es visible solo para las clases del mismo <b>paquete</b> (capítulo 69). Como el proyecto no usa paquetes, en la práctica lo ven todas; el comentario deja clara la intención, y cuando el proyecto se organice en paquetes la regla se cumplirá sola.</p>
+<p><code>src\SinExistenciasException.java</code>, una excepción propia en seis líneas:</p>
+<pre class="java">/** Se lanza al intentar vender mas unidades de las que hay. */
+public class SinExistenciasException extends Exception {
+
+    public SinExistenciasException(Producto producto, int pedidas) {
+        super("Solo quedan " + producto.getExistencias() + " de «" + producto.getNombre()
+                + "» y se pidieron " + pedidas);
+    }
+}</pre>
+<p><code>extends Exception</code> la convierte en excepción (herencia, capítulo 22) y <code>super(mensaje)</code> le pasa el texto al constructor de <code>Exception</code>; es el que luego devuelve <code>getMessage()</code>.</p>
+<p><code>src\Inventario.java</code>:</p>
+<pre class="java">import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/** Todos los productos, buscables por codigo, y las operaciones de la tienda. */
+public class Inventario {
+
+    /** LinkedHashMap: busca por codigo al instante y recuerda el orden en que se agregaron. */
+    private final Map&lt;String, Producto&gt; productos = new LinkedHashMap&lt;&gt;();
+
+    public void agregar(Producto producto) {
+        if (productos.containsKey(producto.getCodigo())) {
+            throw new IllegalArgumentException("Ya existe el codigo " + producto.getCodigo());
+        }
+        productos.put(producto.getCodigo(), producto);
+    }
+
+    public Producto buscar(String codigo) {
+        return productos.get(codigo);   // null si no existe
+    }
+
+    /** Vende y devuelve el total a cobrar. Si no alcanza, no cambia nada y lanza la excepcion. */
+    public BigDecimal vender(String codigo, int cantidad) throws SinExistenciasException {
+        Producto producto = productos.get(codigo);
+        if (producto == null) {
+            throw new IllegalArgumentException("No existe el codigo " + codigo);
+        }
+        if (cantidad &gt; producto.getExistencias()) {
+            throw new SinExistenciasException(producto, cantidad);
+        }
+        producto.cambiarExistencias(-cantidad);
+        return producto.getPrecio().multiply(BigDecimal.valueOf(cantidad));
+    }
+
+    public void reponer(String codigo, int cantidad) {
+        productos.get(codigo).cambiarExistencias(cantidad);
+    }
+
+    public List&lt;Producto&gt; porReponer() {
+        List&lt;Producto&gt; lista = new ArrayList&lt;&gt;();
+        for (Producto p : productos.values()) {
+            if (p.bajoMinimo()) {
+                lista.add(p);
+            }
+        }
+        return lista;
+    }
+
+    public Collection&lt;Producto&gt; todos() {
+        return productos.values();
+    }
+}</pre>
+<ul>
+<li>Un <b><code>Map</code></b> guarda parejas <i>clave → valor</i>, como un diccionario: buscas la palabra (el código <code>"A01"</code>) y obtienes la definición (el producto) al instante, sin recorrer la lista. <code>LinkedHashMap</code> además recuerda el orden en que se agregaron.</li>
+<li><code>vender</code> comprueba <b>todo antes de cambiar nada</b>: primero que el producto exista, luego que alcance, y solo entonces descuenta. Si lanzara la excepción a mitad de camino, el inventario quedaría a medias.</li>
+<li><code>BigDecimal.valueOf(cantidad)</code> convierte el <code>int</code> en <code>BigDecimal</code> para poder multiplicar.</li>
+</ul>
+<p><code>src\ModeloTablaInventario.java</code>:</p>
+<pre class="java">import java.util.ArrayList;
+import java.util.List;
+import javax.swing.table.AbstractTableModel;
+
+/**
+ * Le dice a un JTable que mostrar: cuantas filas, que columnas y que valor
+ * hay en cada celda. La JTable solo dibuja (como PanelTablero en el Totito);
+ * los datos vienen del Inventario.
+ */
+public class ModeloTablaInventario extends AbstractTableModel {
+
+    private static final String[] COLUMNAS = {"Código", "Producto", "Precio (Q)", "Existencias"};
+
+    private final Inventario inventario;
+    private List&lt;Producto&gt; filas;
+
+    public ModeloTablaInventario(Inventario inventario) {
+        this.inventario = inventario;
+        this.filas = new ArrayList&lt;&gt;(inventario.todos());
+    }
+
+    /** Llamar despues de vender o reponer: la tabla se vuelve a dibujar. */
+    public void refrescar() {
+        filas = new ArrayList&lt;&gt;(inventario.todos());
+        fireTableDataChanged();
+    }
+
+    @Override
+    public int getRowCount() {
+        return filas.size();
+    }
+
+    @Override
+    public int getColumnCount() {
+        return COLUMNAS.length;
+    }
+
+    @Override
+    public String getColumnName(int columna) {
+        return COLUMNAS[columna];
+    }
+
+    @Override
+    public Object getValueAt(int fila, int columna) {
+        Producto p = filas.get(fila);
+        return switch (columna) {
+            case 0 -&gt; p.getCodigo();
+            case 1 -&gt; p.getNombre();
+            case 2 -&gt; p.getPrecio();
+            default -&gt; p.getExistencias();
+        };
+    }
+
+    /** Producto de una fila, para saber cual eligio el usuario. */
+    public Producto getProducto(int fila) {
+        return filas.get(fila);
+    }
+}</pre>
+<p><code>AbstractTableModel</code> es una clase abstracta (capítulo 24): ya trae casi todo, y te obliga a escribir solo tres métodos, <code>getRowCount</code>, <code>getColumnCount</code> y <code>getValueAt</code>. <code>getColumnName</code> es opcional; sin él, las columnas se llamarían A, B, C. La tabla llama a <code>getValueAt</code> una vez por cada celda visible, cada vez que se dibuja. Es el mismo principio de <code>paintComponent</code>: Swing pregunta, tú respondes.</p>
+<p>La prueba en consola usa el modelo exactamente como lo usaría la tabla. <code>src\PruebaInventario.java</code>:</p>
+<pre class="java">import java.math.BigDecimal;
+
+/** Una mañana en la tienda, en la consola. */
+public class PruebaInventario {
+
+    public static void main(String[] args) {
+        Inventario inv = new Inventario();
+        inv.agregar(new Producto("A01", "Arroz 1 lb", new BigDecimal("5.50"), 40, 10));
+        inv.agregar(new Producto("F02", "Frijol negro 1 lb", new BigDecimal("8.75"), 12, 10));
+        inv.agregar(new Producto("C03", "Café molido 400 g", new BigDecimal("32.00"), 3, 5));
+
+        try {
+            System.out.println("Venta: 3 de arroz = Q" + inv.vender("A01", 3));
+            System.out.println("Venta: 2 de frijol = Q" + inv.vender("F02", 2));
+            System.out.println("Venta: 5 de café = Q" + inv.vender("C03", 5));
+        } catch (SinExistenciasException e) {
+            System.out.println("No se pudo vender: " + e.getMessage());
+        }
+
+        ModeloTablaInventario modelo = new ModeloTablaInventario(inv);
+        for (int fila = 0; fila &lt; modelo.getRowCount(); fila++) {
+            System.out.printf("%-4s %-18s %7s %4s%n", modelo.getValueAt(fila, 0), modelo.getValueAt(fila, 1),
+                    modelo.getValueAt(fila, 2), modelo.getValueAt(fila, 3));
+        }
+        System.out.print("Por reponer:");
+        for (Producto p : inv.porReponer()) {
+            System.out.print(" " + p.getNombre());
+        }
+        System.out.println();
+    }
+}</pre>
+<pre class="ps">javac -encoding UTF-8 -d out src\*.java
+java -cp out PruebaInventario</pre>
+<pre class="salida">Venta: 3 de arroz = Q16.50
+Venta: 2 de frijol = Q17.50
+No se pudo vender: Solo quedan 3 de «Café molido 400 g» y se pidieron 5
+A01  Arroz 1 lb            5.50   37
+F02  Frijol negro 1 lb     8.75   10
+C03  Café molido 400 g    32.00    3
+Por reponer: Frijol negro 1 lb Café molido 400 g</pre>
+<p>La tercera venta pedía 5 cafés y solo había 3: la excepción saltó, el <code>catch</code> mostró su mensaje y las existencias del café siguen en 3. <code>printf</code> con <code>%-18s</code> rellena con espacios hasta 18 caracteres, alineando a la izquierda (es <code>String.format</code> del capítulo 17, imprimiendo directamente).</p>
+<p>Por último, una tabla con el aspecto neón. Este componente, <code>src\TablaNeon.java</code>, no sabe nada de productos: sirve para cualquier tabla de cualquier programa, así que es candidato a sumarse a tu kit.</p>
+<pre class="java">import java.awt.Color;
+import java.awt.Component;
+import java.awt.Font;
+import java.util.regex.Pattern;
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.RowFilter;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+
+/**
+ * Un JTable con los colores del Tema y un filtro de busqueda. Sirve para
+ * cualquier tabla (inventario, clientes, ventas...): solo cambia el modelo.
+ */
+public class TablaNeon extends JTable {
+
+    private final TableRowSorter&lt;TableModel&gt; ordenador;
+
+    public TablaNeon(TableModel modelo) {
+        super(modelo);
+        ordenador = new TableRowSorter&lt;&gt;(modelo);
+        setRowSorter(ordenador);                  // clic en un titulo = ordenar por esa columna
+
+        setRowHeight(34);
+        setFont(Tema.fuente(Font.PLAIN, 15f));
+        setForeground(Tema.TEXTO);
+        setBackground(Tema.FONDO_ARRIBA);
+        setGridColor(Tema.conAlfa(Tema.LAVANDA, 40));
+        setSelectionBackground(Tema.conAlfa(Tema.ROSA, 110));
+        setSelectionForeground(Tema.TEXTO);
+        setFillsViewportHeight(true);
+
+        getTableHeader().setFont(Tema.fuente(Font.BOLD, 14f));
+        getTableHeader().setBackground(Tema.FONDO_ABAJO);
+        getTableHeader().setForeground(Tema.LAVANDA);
+        getTableHeader().setReorderingAllowed(false);
+
+        // Filas alternas un poco mas claras, para que el ojo siga la linea.
+        setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable tabla, Object valor, boolean elegida,
+                                                           boolean foco, int fila, int columna) {
+                JLabel celda = (JLabel) super.getTableCellRendererComponent(tabla, valor, elegida, foco, fila, columna);
+                celda.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+                if (!elegida) {
+                    celda.setBackground(fila % 2 == 0 ? Tema.FONDO_ARRIBA : new Color(0x26, 0x1F, 0x52));
+                }
+                return celda;
+            }
+        });
+    }
+
+    /** Muestra solo las filas que contienen el texto (sin importar mayusculas). Vacio = todas. */
+    public void filtrar(String texto) {
+        if (texto == null || texto.isBlank()) {
+            ordenador.setRowFilter(null);
+        } else {
+            ordenador.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(texto.strip())));
+        }
+    }
+
+    /** La tabla dentro de su barra de desplazamiento, sin el borde gris de Swing. */
+    public JScrollPane conDesplazamiento() {
+        JScrollPane panel = new JScrollPane(this);
+        panel.setBorder(BorderFactory.createEmptyBorder());
+        panel.getViewport().setBackground(Tema.FONDO_ARRIBA);
+        return panel;
+    }
+}</pre>
+<ul>
+<li><code>TableRowSorter</code> agrega dos cosas a la tabla: clic en el título de una columna para <b>ordenar</b> y la posibilidad de <b>filtrar</b> filas.</li>
+<li><code>RowFilter.regexFilter("(?i)" + Pattern.quote(texto))</code> deja ver solo las filas que contienen el texto en alguna columna. <code>(?i)</code> significa «sin distinguir mayúsculas» y <code>Pattern.quote</code> hace que caracteres como el punto se busquen tal cual. Conéctalo a un <code>CampoTexto</code> con un <code>DocumentListener</code> y tendrás búsqueda mientras escribes.</li>
+<li>El <b>renderer</b> es el objeto que dibuja cada celda. Se hereda de <code>DefaultTableCellRenderer</code> (que es un <code>JLabel</code>) y se sobrescribe un método para cambiar el fondo de las filas pares e impares: herencia y polimorfismo, capítulos 22 y 23.</li>
+<li><code>conDesplazamiento()</code> mete la tabla en un <code>JScrollPane</code>. Una tabla siempre va dentro de uno: es el que muestra los títulos de las columnas y la barra cuando hay muchas filas.</li>
+</ul>
+<p>En la pantalla se usa así: <code>TablaNeon tabla = new TablaNeon(new ModeloTablaInventario(inventario));</code> y se agrega <code>tabla.conDesplazamiento()</code> dentro de una <code>Tarjeta</code>. Se comprobó que con el filtro <code>"a0"</code> y cuatro productos (A01, F02, C03, A04) la tabla deja visibles solo las dos filas de código A0.</p>
+
+<h3>Pasos y commits</h3>
+<ol>
+<li>Proyecto, kit y repositorio — <code>Estructura inicial y kit neon copiado del Totito</code></li>
+<li><code>Producto</code>, <code>SinExistenciasException</code> e <code>Inventario</code> — <code>Inventario: productos, ventas y reposicion</code></li>
+<li><code>ModeloTablaInventario</code> y <code>PruebaInventario</code> — <code>Modelo de tabla y prueba en consola</code></li>
+<li><code>TablaNeon</code> — <code>TablaNeon: JTable con el tema, orden y filtro</code></li>
+<li><code>PantallaInventario</code> con buscador — <code>Pantalla de inventario con busqueda</code> + <code>v0.1.0</code></li>
+<li><code>PantallaVenta</code> y <code>Venta</code> — <code>Registro de ventas</code></li>
+<li><code>AlmacenInventario</code> en archivo — <code>Guardar y cargar el inventario</code></li>
+<li><code>PantallaReportes</code> — <code>Reporte de productos por reponer</code> + <code>v1.0.0</code></li>
+<li>(Después del capítulo 69) Base de datos — <code>Inventario en SQLite con JDBC</code> + <code>v1.1.0</code></li>
+</ol>
+
+<h2>Resumen visual: qué se llevó cada proyecto</h2>
+<table class="tabla">
+<tr><th>Pieza del Totito</th><th>Conecta 4</th><th>Buscaminas</th><th>Tareas</th><th>Calculadora</th><th>Inventario</th></tr>
+<tr><td>Kit neón (7 archivos)</td><td>Tal cual</td><td>Tal cual</td><td>Tal cual</td><td>Tal cual</td><td>Tal cual</td></tr>
+<tr><td><code>Jugador</code></td><td>Tal cual</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td><code>Tablero</code></td><td>Adaptado</td><td>Adaptado</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td><code>Partida</code> (lógica sin Swing)</td><td>Adaptada</td><td>Adaptada</td><td>La idea</td><td>La idea</td><td>La idea</td></tr>
+<tr><td><code>IA_Minimax</code></td><td>Adaptada</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td><code>PanelTablero</code></td><td>Adaptado</td><td>Adaptado</td><td>—</td><td>—</td><td>La idea (modelo/vista)</td></tr>
+<tr><td><code>PantallaBase</code>, <code>Encabezado</code></td><td>Casi tal cual</td><td>Casi tal cual</td><td>Casi tal cual</td><td>Solo el fondo</td><td>Casi tal cual</td></tr>
+<tr><td><code>Navegacion</code> + <code>PanelPrincipal</code></td><td>El patrón</td><td>El patrón</td><td>(una pantalla)</td><td>(una pantalla)</td><td>El patrón</td></tr>
+<tr><td><code>javax.swing.Timer</code></td><td>Animación</td><td>Cronómetro</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>Prueba en consola</td><td>Sí</td><td>Sí</td><td>Sí</td><td>Sí</td><td>Sí</td></tr>
+<tr><td>Empaquetado (cap. 63–67)</td><td>Sí</td><td>Sí</td><td>Sí</td><td>Sí</td><td>Sí</td></tr>
+</table>
+<p>Para empaquetar cualquiera de ellos, los comandos de <code>jpackage</code> del capítulo 66 sirven cambiando cuatro datos: <code>--name</code>, <code>--main-jar</code>, <code>--main-class</code> y, muy importante, <code>--win-upgrade-uuid</code>. Ese UUID identifica al programa ante Windows: si dos programas distintos usaran el mismo, el instalador de uno «actualizaría» (es decir, reemplazaría) al otro. Genera uno nuevo para cada proyecto con <code>[guid]::NewGuid()</code> en PowerShell.</p>
+
+<h2>Más ideas para seguir practicando</h2>
+<ul>
+<li><b>Ahorcado:</b> un <code>String</code> secreto, un <code>Set&lt;Character&gt;</code> de letras probadas y un muñeco dibujado por partes con <code>Path2D</code>.</li>
+<li><b>Snake o Pong:</b> un <code>Timer</code> que avanza el juego 60 veces por segundo y teclas con <code>InputMap</code>. Es tu primer «bucle de juego».</li>
+<li><b>Sudoku:</b> un tablero de 9×9 y un resolvedor con <b>backtracking</b>, una recursión que prueba un número, sigue y, si se atasca, deshace y prueba otro. Es primo hermano de Minimax.</li>
+<li><b>Control de gastos:</b> el gestor de tareas más <code>BigDecimal</code> y una gráfica de barras dibujada con <code>fillRect</code>.</li>
+<li><b>Conversor de quetzales a dólares:</b> dos <code>CampoTexto</code>, un <code>BigDecimal</code> y una tarjeta. Una tarde de trabajo, y te sirve.</li>
+<li><b>Agenda de contactos:</b> el inventario con otras columnas. Si lo terminas, has entendido el patrón modelo/vista.</li>
+</ul>
+
+<h2>Resumen</h2>
+<ul>
+<li>Lo que aprendiste no es «un totito»: es separar lógica e interfaz, probar en consola, centralizar el estilo, crear componentes reutilizables, navegar entre pantallas y publicar.</li>
+<li>El <b>kit neón</b> (<code>Tema</code>, <code>Dibujo</code>, <code>Iconos</code>, <code>BotonNeon</code>, <code>Tarjeta</code>, <code>Rotulo</code>, <code>CampoTexto</code>) compila solo y se copia tal cual a cualquier proyecto.</li>
+<li>Conecta 4 enseña la <b>gravedad</b> (un ciclo de abajo hacia arriba) y los <b>vectores de dirección</b>; su IA necesita Minimax con profundidad limitada.</li>
+<li>Buscaminas enseña la <b>apertura recursiva</b>, sus casos base, y cómo cambiarla por una cola cuando la recursión es demasiado profunda.</li>
+<li>El gestor de tareas enseña a <b>guardar datos</b>: formato, UTF-8, la carpeta del usuario y cuándo guardar.</li>
+<li>La calculadora demuestra que el kit sirve fuera de los juegos y enseña <code>BigDecimal</code>, <code>GridLayout</code> y los atajos de teclado.</li>
+<li>El inventario enseña <code>JTable</code> con su modelo, <code>Map</code>, dinero exacto y <b>excepciones propias</b>.</li>
+<li>La receta es siempre la misma: frase y bocetos → clases → lógica probada en consola → kit → pantallas → unir → empaquetar, con un commit por paso.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> Los cinco proyectos son plantillas de programas reales:
+<ul>
+<li>El <b>Buscaminas</b> es un «recorrido de vecinos»: el bote de pintura de Paint, que rellena un área del mismo color, usa exactamente la misma apertura en cascada.</li>
+<li>El <b>gestor de tareas</b> es la base de cualquier programa que recuerda cosas: notas, recordatorios, la configuración de un juego (volumen, último nombre usado).</li>
+<li>La <b>calculadora</b> es una máquina de estados con teclado, como un cajero automático o la pantalla de un microondas.</li>
+<li>El <b>inventario</b> es, con otras columnas, un sistema de clientes, de alumnos y notas, de citas de una clínica o un punto de venta.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b><ol>
+<li>Crea el proyecto <code>Calculadora</code> con los comandos de PowerShell del capítulo, copia el kit y haz funcionar <code>CalculadoraApp</code>. Después cambia en <code>Tema</code> el color <code>ROSA</code> por un verde (<code>0x3B, 0xFF, 0x9E</code>) y observa qué partes cambian. Pista: el botón <code>=</code> usa <code>Tema.ROSA</code>.</li>
+<li>En <code>TableroConecta</code>, haz que <code>FILAS</code> valga 7 y <code>COLUMNAS</code> 8, y ajusta <code>comoTexto()</code> para que la línea de números de abajo se genere con un ciclo en lugar de estar escrita a mano.</li>
+<li>Agrega a <code>TableroMinas</code> un método <code>banderasPuestas()</code> y otro <code>revelarMinas()</code> que abra todas las minas (para mostrarlas al perder). Pruébalos en <code>PruebaMinas</code>.</li>
+<li>Agrega a <code>Tarea</code> una fecha límite con <code>java.time.LocalDate</code> y guárdala en el archivo. Pista: el título debe seguir siendo el último campo; <code>LocalDate.toString()</code> da <code>2026-10-12</code> y <code>LocalDate.parse("2026-10-12")</code> hace el camino inverso.</li>
+<li>(Reto) Escribe <code>IA_Conecta</code> con Minimax limitado a profundidad 4 y una evaluación que solo cuente fichas en la columna central. Juega contra ella con <code>PruebaConecta</code> modificado para leer columnas con <code>Scanner</code>, como <code>PruebaConsola</code>.</li>
+</ol></div>
+</section>

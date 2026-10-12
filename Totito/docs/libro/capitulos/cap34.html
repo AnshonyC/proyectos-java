@@ -1,0 +1,314 @@
+<section class="capitulo" id="cap34">
+<h1><span class="num">Capítulo 34</span>Del boceto al código: cómo leer un diseño</h1>
+<p class="entrada">Antes de escribir una sola línea de la interfaz neón vas a aprender a <b>mirar</b> un diseño como lo mira un programador: qué se repite, qué es más importante, qué medidas tiene y qué cosas no dice y habrá que decidir. De esa lectura sale la lista exacta de clases que construirás en la Parte VII.</p>
+
+<h2>Dónde estamos y adónde vamos</h2>
+<p>Al terminar la Parte V tienes el Totito <b>v0.1.0</b>: la lógica funciona (<code>Tablero</code>, <code>Jugador</code>, <code>IA_Minimax</code>) y <code>JuegoMain</code> abre una ventana con nueve botones grises en una rejilla. Se puede jugar, pero se ve como un formulario de oficina. El objetivo del libro es otro: un juego con aspecto de letrero de neón, tarjetas de cristal y botones que brillan, como en las cuatro imágenes de diseño que acompañan al proyecto.</p>
+<p>Entre «tengo una imagen bonita» y «tengo un programa que se ve así» hay un trabajo intermedio que casi nadie explica: <b>traducir</b>. Una imagen no trae instrucciones. No dice cuántos píxeles mide un botón, qué pasa cuando pasas el ratón por encima, qué fuente es ni qué hacer si el nombre del jugador es muy largo. Esta Parte VI (capítulos 34 a 37) es esa traducción:</p>
+<ul>
+<li><b>Capítulo 34</b> (este): leer el diseño, hacer el inventario de piezas y decidir lo que falta.</li>
+<li><b>Capítulo 35</b>: el color, de los números RGB al truco del neón.</li>
+<li><b>Capítulo 36</b>: la letra, los espacios y la alineación.</li>
+<li><b>Capítulo 37</b>: cómo dibuja Swing, para poder pintar todo eso a mano.</li>
+</ul>
+<p>Son capítulos de teoría, pero de teoría aplicada: cada idea apunta a la clase concreta del Totito donde se usa. No hay commit en esta parte; el código llega en la Parte VII, en la rama <code>interfaz-neon</code>.</p>
+
+<h2>Boceto, maqueta y prototipo: tres palabras que conviene distinguir</h2>
+<p>En el mundo del diseño de interfaces se usan tres palabras que a veces se confunden:</p>
+<table class="tabla">
+<tr><th>Palabra</th><th>Qué es</th><th>Ejemplo</th></tr>
+<tr><td><b>Boceto</b> (o <i>wireframe</i>)</td><td>Dibujo rápido, sin colores ni detalles, que solo dice qué va dónde.</td><td>Tres rectángulos en una servilleta con las palabras «Jugar», «Instrucciones», «Salir».</td></tr>
+<tr><td><b>Maqueta</b> (o <i>mockup</i>)</td><td>Imagen fija con el aspecto final: colores, letras, iconos. No se puede tocar.</td><td>Las cuatro imágenes de diseño del Totito.</td></tr>
+<tr><td><b>Prototipo</b></td><td>Algo que ya se puede tocar: botones que llevan de una pantalla a otra, aunque por dentro no haya lógica real.</td><td>Un archivo de Figma con enlaces entre pantallas, o una primera versión del programa.</td></tr>
+</table>
+<p>Lo que tienes son <b>maquetas</b>. Es la situación más común en la vida real: alguien (un diseñador, un cliente, tú mismo con una herramienta de dibujo) entrega imágenes y el programador las convierte en algo que funciona. La maqueta es la <i>meta</i>, no el plano de construcción: el plano lo haces tú.</p>
+
+<h2>Las cuatro pantallas del diseño</h2>
+<p>Mira cada imagen con calma antes de seguir leyendo. Todas miden 1254 × 1254 píxeles (son cuadradas) y comparten el mismo estilo.</p>
+
+<figure><img src="diseno/menu.jpg"><figcaption>Diseño 1 — Menú principal: encabezado, una tarjeta de cristal con tres botones grandes y el fondo decorado con X, O y puntitos.</figcaption></figure>
+<p><b>Menú principal.</b> Es la puerta de entrada. Tiene una sola tarea: que elijas entre jugar, leer las instrucciones o salir. Fíjate en que los tres botones tienen exactamente la misma forma (icono a la izquierda, una rayita vertical, el texto y una flechita «›» a la derecha) y solo cambian el color y el icono. Esa repetición es la primera pista de que serán <b>una sola clase</b>.</p>
+
+<figure><img src="diseno/instrucciones.jpg"><figcaption>Diseño 2 — Instrucciones («Cómo jugar»): título con icono y subrayado, tres pasos numerados, un tablero de ejemplo y el botón «Regresar».</figcaption></figure>
+<p><b>Instrucciones.</b> Explica las reglas en tres pasos. Los círculos numerados van en rosa, morado y azul: los mismos tres colores del menú, en el mismo orden. Abajo hay un tablero pequeño de ejemplo: es el mismo tablero que se usará para jugar, solo que más chico. Y el botón «Regresar» tiene otra forma: una <b>píldora</b> (rectángulo con los extremos completamente redondos) rellena con un degradado de rosa a morado.</p>
+
+<figure><img src="diseno/configuracion.jpg"><figcaption>Diseño 3 — Configuración: secciones JUGADORES, SÍMBOLOS y MODO DE JUEGO, cada una con su título entre líneas, y los botones «Comenzar partida» y «Volver».</figcaption></figure>
+<p><b>Configuración.</b> Es la pantalla más cargada. Se divide en tres secciones, y cada una empieza con un título en mayúsculas con las letras separadas y una línea a cada lado. Hay dos tarjetas de jugador (una rosa-rojiza y otra azul), dos cajas para elegir el símbolo, una opción de modo de juego y dos botones con formas distintas: una píldora rellena («Comenzar partida») y una píldora solo con borde («Volver»).</p>
+
+<figure><img src="diseno/victoria.jpg"><figcaption>Diseño 4 — Victoria: trofeo con destellos, «¡Ganó Jugador 2!», la frase «Excelente jugada», el tablero final con la raya ganadora, confeti y dos botones.</figcaption></figure>
+<p><b>Victoria.</b> Es la recompensa: lo más llamativo de todo el juego. El trofeo y el título son celestes porque ganó el jugador de la O (azul). La raya atraviesa las tres O ganadoras. Hay papelitos de confeti alrededor y dos botones píldora, uno rosa-morado y otro azul.</p>
+
+<h2>Leer un diseño en tres pasadas</h2>
+<p>Una imagen de interfaz tiene cientos de detalles. Si intentas verlos todos a la vez, te pierdes. Un método que funciona es mirarla tres veces, cada vez más cerca.</p>
+<h3>Primera pasada: de lejos</h3>
+<p>Aléjate de la pantalla o entrecierra los ojos hasta que todo se vuelva borroso. Lo que sigue destacando es lo que el diseñador quiso que vieras primero. En el menú, lo primero es el título «Juego del Totito» y después el botón rosa «Jugar». En la victoria, el trofeo y «¡Ganó Jugador 2!». Esa prueba revela la <b>jerarquía visual</b>, de la que hablamos enseguida.</p>
+<h3>Segunda pasada: por zonas</h3>
+<p>Divide la pantalla en bandas horizontales. Las cuatro pantallas tienen la misma estructura de tres zonas:</p>
+<ol>
+<li><b>Arriba</b>: el encabezado, idéntico en todas (logotipo, título, lema y botón de cerrar).</li>
+<li><b>Centro</b>: el contenido propio de cada pantalla, casi siempre dentro de una tarjeta de cristal.</li>
+<li><b>Abajo</b>: los botones de acción (en el menú están dentro de la tarjeta; en las demás, debajo de ella).</li>
+</ol>
+<p>Y detrás de todo, el <b>fondo</b>: un degradado oscuro con X y O gigantes y desvaídas y unas rejillas de puntos. Esta segunda pasada te da la <b>estructura</b>: ya sabes que habrá una clase «base» que pinte el fondo y ponga el encabezado, y que cada pantalla solo tendrá que llenar el centro.</p>
+<h3>Tercera pasada: de cerca</h3>
+<p>Ahora sí, amplía la imagen y fíjate en los detalles: qué tan redondas son las esquinas, cuánto brilla cada borde, si los textos son negrita, si hay degradados, si las líneas terminan en punta o redondeadas. Anota lo que veas. Estas notas se convierten en números del código: un radio de esquina de 30, un grosor de trazo de 2, una letra de 25 puntos.</p>
+
+<div class="caja consejo"><b>Haz una hoja de notas</b> Mientras miras el diseño, escribe en un archivo de texto (o en papel) una línea por cada cosa que notes: «botones del menú: esquinas redondeadas, borde con brillo, icono a la izquierda», «títulos de sección: mayúsculas separadas, líneas que se desvanecen». Esa lista es el embrión del inventario de la siguiente sección y te evita olvidar detalles cuando estés programando.</div>
+
+<h2>Jerarquía visual: qué se ve primero y por qué</h2>
+<p><b>Jerarquía visual</b> es el orden en que el ojo recorre una pantalla. No es casual: el diseñador lo controla con unas pocas herramientas.</p>
+<table class="tabla">
+<tr><th>Herramienta</th><th>Cómo funciona</th><th>Dónde se ve en el Totito</th></tr>
+<tr><td><b>Tamaño</b></td><td>Lo grande se ve antes que lo pequeño.</td><td>El título del encabezado (36 puntos) frente al lema (10,5 puntos).</td></tr>
+<tr><td><b>Brillo y color</b></td><td>Sobre un fondo oscuro, lo más claro y saturado atrae la mirada.</td><td>El botón «Jugar» rosa brillante frente al «Salir» morado más apagado.</td></tr>
+<tr><td><b>Posición</b></td><td>Leemos de arriba abajo y de izquierda a derecha; lo de arriba se lee primero.</td><td>«Jugar» está arriba porque es la acción principal.</td></tr>
+<tr><td><b>Espacio alrededor</b></td><td>Lo que tiene aire alrededor se percibe más importante.</td><td>La tarjeta del menú, sola en el centro con mucho espacio vacío.</td></tr>
+<tr><td><b>Peso y contraste</b></td><td>La negrita y el contraste fuerte pesan más que el texto fino y suave.</td><td>Los nombres de las opciones en blanco y negrita; sus descripciones en lavanda y normal.</td></tr>
+</table>
+<p>Aplicado pantalla por pantalla:</p>
+<table class="tabla">
+<tr><th>Pantalla</th><th>Lo primero que ves</th><th>Lo segundo</th><th>Lo último</th></tr>
+<tr><td>Menú</td><td>Título «Juego del Totito»</td><td>Botón «Jugar» (rosa, arriba)</td><td>Lema y adornos del fondo</td></tr>
+<tr><td>Instrucciones</td><td>«Cómo jugar»</td><td>Los tres números de colores</td><td>El tablero de ejemplo</td></tr>
+<tr><td>Configuración</td><td>Las dos tarjetas de jugador</td><td>La X y la O grandes</td><td>El botón «Volver», pequeño y sin relleno</td></tr>
+<tr><td>Victoria</td><td>Trofeo y «¡Ganó Jugador 2!»</td><td>La raya ganadora del tablero</td><td>Los botones</td></tr>
+</table>
+<p>Una consecuencia práctica: <b>la acción principal de cada pantalla es la más llamativa</b> y la secundaria es más discreta. En Configuración, «Comenzar partida» es una píldora rellena y brillante, y «Volver» es una píldora solo con borde, más pequeña. Por eso el código tendrá dos estilos de botón distintos (<code>PILDORA</code> y <code>CONTORNO</code>). Si los dos fueran iguales, el jugador dudaría cuál pulsar.</p>
+
+<h2>Agrupación: lo que va junto se ve junto</h2>
+<p>El cerebro agrupa los elementos según reglas bastante fijas, que los psicólogos de la escuela <i>Gestalt</i> describieron hace un siglo. Cuatro de ellas explican casi todo el diseño del Totito:</p>
+<ul>
+<li><b>Proximidad</b>: lo que está cerca parece del mismo grupo. En Configuración, el título «SÍMBOLOS» está pegado a las dos cajas de X y O, y separado de la sección anterior. Por eso entiendes sin pensar que ese título «manda» sobre esas cajas.</li>
+<li><b>Semejanza</b>: lo que se parece parece de la misma clase. Los tres botones del menú tienen la misma forma, así que entiendes que son opciones equivalentes.</li>
+<li><b>Región común</b>: lo que está dentro de un mismo recuadro forma un grupo. La tarjeta de cristal del menú encierra los tres botones y dice «estas son tus opciones».</li>
+<li><b>Alineación</b>: lo que está alineado parece ordenado y relacionado. Todo en el Totito está centrado en una columna vertical.</li>
+</ul>
+<p>Para el programador, la agrupación se traduce en <b>contenedores</b>: si varias cosas forman un grupo visual, casi siempre van dentro de un mismo panel. La tarjeta del menú será un panel (<code>Tarjeta</code>) que contiene tres botones. Las dos tarjetas de jugador irán en un panel «fila» que las pone una al lado de la otra. En el capítulo 37 verás que una pantalla de Swing es justamente eso: cajas dentro de cajas.</p>
+
+<h2>El inventario: cada pieza que se repite se vuelve una clase</h2>
+<p>Ahora viene el paso más importante del capítulo. Recorre las cuatro pantallas y apunta <b>cada tipo de elemento</b> y en qué pantallas aparece. El resultado es una tabla como esta (✓ = aparece):</p>
+<table class="tabla">
+<tr><th>Elemento</th><th>Menú</th><th>Instrucciones</th><th>Configuración</th><th>Victoria</th></tr>
+<tr><td>Fondo decorado (degradado, X y O gigantes, puntos)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>Encabezado (logo, título, lema, cerrar)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>Tarjeta de cristal con borde de neón</td><td>✓</td><td>✓</td><td>✓ (jugadores)</td><td>✓</td></tr>
+<tr><td>Botón de menú (icono | texto ›)</td><td>✓ ×3</td><td></td><td></td><td></td></tr>
+<tr><td>Botón píldora con degradado</td><td></td><td>✓</td><td>✓</td><td>✓ ×2</td></tr>
+<tr><td>Botón píldora solo con borde</td><td></td><td></td><td>✓</td><td></td></tr>
+<tr><td>Botón cuadrado con icono (cerrar)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>Título grande (con icono, subrayado o degradado)</td><td></td><td>✓</td><td></td><td>✓</td></tr>
+<tr><td>Título de sección entre líneas</td><td></td><td></td><td>✓ ×3</td><td>✓ («Excelente jugada»)</td></tr>
+<tr><td>X y O de neón</td><td>(fondo)</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>Tablero 3 × 3</td><td></td><td>✓ (pequeño)</td><td></td><td>✓</td></tr>
+<tr><td>Iconos de línea (play, libro, puerta, flecha, casa…)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>Campo de texto con borde de color</td><td></td><td></td><td>✓ ×2</td><td></td></tr>
+<tr><td>Botón de opción redondo (radio)</td><td></td><td></td><td>✓ ×3</td><td></td></tr>
+</table>
+<p>Esta tabla vale oro, porque cada fila es un candidato a <b>clase reutilizable</b>: la escribes una vez y la usas en todas partes. La siguiente tabla es el mapa que seguirá la Parte VII. Cada elemento del diseño, la clase que lo dibuja y el capítulo donde la construyes:</p>
+<table class="tabla">
+<tr><th>Elemento del diseño</th><th>Clase (y método)</th><th>Capítulo</th></tr>
+<tr><td>Colores y fuentes de todo el juego</td><td><code>Tema</code></td><td>40</td></tr>
+<tr><td>El truco del neón, la X y la O</td><td><code>Dibujo</code> (<code>trazoNeon</code>, <code>dibujarX</code>, <code>dibujarO</code>, <code>dibujarFicha</code>)</td><td>41</td></tr>
+<tr><td>Iconos de línea y logotipo</td><td><code>Iconos</code> (<code>JUGAR</code>, <code>LIBRO</code>, <code>SALIR</code>, <code>CASA</code>, <code>LOGO</code>…)</td><td>42</td></tr>
+<tr><td>Tarjeta de cristal</td><td><code>Tarjeta</code></td><td>43</td></tr>
+<tr><td>Botón de menú, píldora, contorno e icono</td><td><code>BotonNeon</code> (<code>menu</code>, <code>pildora</code>, <code>contorno</code>, <code>icono</code>)</td><td>44</td></tr>
+<tr><td>Encabezado</td><td><code>Encabezado</code></td><td>45</td></tr>
+<tr><td>Título grande y título de sección entre líneas</td><td><code>Rotulo</code> (<code>titulo</code>, <code>seccion</code>, <code>leyenda</code>)</td><td>46</td></tr>
+<tr><td>Campo de texto con borde de neón</td><td><code>CampoTexto</code></td><td>47</td></tr>
+<tr><td>Tablero 3 × 3 con fichas y raya ganadora</td><td><code>PanelTablero</code></td><td>48</td></tr>
+<tr><td>Tarjeta de jugador (avatar, título, campo)</td><td><code>TarjetaJugador</code> (hereda de <code>Tarjeta</code>)</td><td>49</td></tr>
+<tr><td>Cajas para elegir X u O</td><td><code>SelectorSimbolo</code></td><td>50</td></tr>
+<tr><td>Opción de modo de juego</td><td><code>OpcionModo</code></td><td>51</td></tr>
+<tr><td>Marcador de la partida (no está en el diseño)</td><td><code>PanelMarcador</code></td><td>52</td></tr>
+<tr><td>Paso numerado de las instrucciones</td><td><code>PasoInstruccion</code></td><td>53</td></tr>
+<tr><td>Trofeo con destellos (o X y O en el empate)</td><td><code>IconoResultado</code></td><td>54</td></tr>
+<tr><td>Fondo decorado + encabezado + columna de contenido</td><td><code>PantallaBase</code></td><td>55</td></tr>
+<tr><td>Las cinco pantallas</td><td><code>PantallaMenu</code>, <code>PantallaInstrucciones</code>, <code>PantallaConfiguracion</code>, <code>PantallaJuego</code>, <code>PantallaResultado</code> (con su confeti)</td><td>56–60</td></tr>
+<tr><td>Cambiar de pantalla</td><td><code>PanelPrincipal</code> y <code>TotitoApp</code></td><td>61</td></tr>
+</table>
+
+<h3>Por qué una clase por pieza y no copiar y pegar</h3>
+<p>Podrías dibujar cada pantalla «a mano», con todo su código de dibujo dentro. Funcionaría… hasta el primer cambio. Imagina que decides que el brillo de los bordes es demasiado fuerte. Si el halo está programado en quince sitios, tienes que encontrar los quince y cambiarlos igual; olvidarás alguno y la interfaz quedará dispareja. Si el halo vive en un solo método (<code>Dibujo.trazoNeon</code>), cambias un número y todo el juego se actualiza a la vez.</p>
+<p>Este principio tiene nombre: <b>DRY</b> (<i>Don't Repeat Yourself</i>, «no te repitas»), y lo viste junto con la responsabilidad única en el capítulo 27. En diseño de interfaces se suma un beneficio extra: la <b>consistencia</b>. Si todos los botones salen de la misma clase, es imposible que dos botones «iguales» se vean distintos por descuido.</p>
+<div class="caja concepto"><b>La regla práctica</b> Si un elemento aparece dos o más veces, hazlo componente. Si aparece una sola vez pero es complicado (como el selector de X y O), también: tenerlo en su propia clase hace que la pantalla que lo usa sea corta y fácil de leer.</div>
+
+<h3>Variantes de una misma pieza: cuándo una clase y cuándo varias</h3>
+<p>El inventario muestra cuatro tipos de botón: el ancho del menú, la píldora rellena, la píldora con borde y el cuadradito de cerrar. ¿Son cuatro clases o una? La pregunta que decide es: <b>¿qué comparten y qué cambia?</b></p>
+<ul>
+<li>Comparten: se pulsan con el ratón, avisan con un <code>ActionListener</code>, tienen borde de neón, brillan más al pasar el ratón, se oscurecen al pulsarlos y se ven apagados si están desactivados.</li>
+<li>Cambia: la forma (radio de las esquinas), el relleno (degradado, transparente) y cómo se reparten icono y texto.</li>
+</ul>
+<p>Comparten casi todo, así que el Totito usa <b>una sola clase</b>, <code>BotonNeon</code>, con un <code>enum Estilo</code> (<code>MENU</code>, <code>PILDORA</code>, <code>CONTORNO</code>, <code>ICONO</code>; los enum se vieron en el capítulo 26) y cuatro <b>métodos de fábrica</b> que crean cada variante con sus medidas (el patrón <i>Factory</i> del capítulo 27). En cambio, la tarjeta de jugador sí es una clase aparte (<code>TarjetaJugador</code>), porque además de verse distinta <b>contiene</b> un campo de texto y sabe convertirse en la tarjeta de la computadora: tiene comportamiento propio. Como sí comparte la caja de cristal, <b>hereda</b> de <code>Tarjeta</code> (capítulo 22).</p>
+
+<h2>De la imagen a cajas dentro de cajas</h2>
+<p>Un último ejercicio de lectura antes de pasar a lo que falta: descomponer una pantalla en <b>rectángulos anidados</b>. Toda interfaz de Swing (y de casi cualquier tecnología: páginas web, apps de Android) se construye así. Este es el menú visto como cajas:</p>
+<svg viewBox="0 0 640 400" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="640" height="400" fill="#1C1740"/>
+<rect x="6" y="6" width="628" height="388" fill="none" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="14" y="384" fill="#C8BCF6" font-family="sans-serif" font-size="13">PantallaMenu (hereda de PantallaBase): pinta el fondo</text>
+<rect x="20" y="18" width="600" height="56" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="320" y="51" fill="#FFFFFF" font-family="sans-serif" font-size="15" text-anchor="middle">Encabezado (arriba)</text>
+<rect x="566" y="28" width="40" height="36" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="586" y="51" fill="#FF3BD4" font-family="sans-serif" font-size="13" text-anchor="middle">×</text>
+<rect x="20" y="84" width="600" height="282" fill="none" stroke="#C8BCF6" stroke-width="1.5" stroke-dasharray="3 3"/>
+<text x="30" y="102" fill="#C8BCF6" font-family="sans-serif" font-size="12">contenido (columna)</text>
+<rect x="170" y="118" width="300" height="222" rx="16" fill="#2B2363" stroke="#A05CFF" stroke-width="2"/>
+<text x="320" y="136" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">Tarjeta</text>
+<rect x="196" y="146" width="248" height="50" rx="12" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="320" y="176" fill="#FFFFFF" font-family="sans-serif" font-size="14" text-anchor="middle">BotonNeon «Jugar»</text>
+<rect x="196" y="208" width="248" height="50" rx="12" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="320" y="238" fill="#FFFFFF" font-family="sans-serif" font-size="14" text-anchor="middle">BotonNeon «Instrucciones»</text>
+<rect x="196" y="270" width="248" height="50" rx="12" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="320" y="300" fill="#FFFFFF" font-family="sans-serif" font-size="14" text-anchor="middle">BotonNeon «Salir»</text>
+</svg>
+<p>Cada rectángulo será un objeto de Java. El más grande (la pantalla) contiene al encabezado y a una columna de contenido; la columna contiene a la tarjeta; la tarjeta contiene a los tres botones. En el capítulo 37 verás cómo Swing reparte el espacio entre esas cajas (los <i>layouts</i>) y en qué orden las pinta.</p>
+
+<h2>Lo que el diseño no dice: decisiones que tomas tú</h2>
+<p>Una maqueta muestra un instante congelado de cuatro pantallas. Un programa tiene que funcionar en <b>todos</b> los instantes. Al comparar el diseño con lo que el juego necesita aparecen huecos, y cada hueco es una decisión. Las del Totito fueron estas:</p>
+<h3>La pantalla de la partida no existe</h3>
+<p>Lo más sorprendente del diseño es que <b>no trae la pantalla donde se juega</b>. Hay menú, instrucciones, configuración y victoria, pero no la pantalla con el tablero vacío, los turnos y el marcador. Había que inventarla, y la regla fue: <b>componer con las piezas que ya existen, sin inventar estilos nuevos</b>. Así nació <code>PantallaJuego</code> (capítulo 59): el mismo fondo y encabezado de <code>PantallaBase</code>, un tablero grande (<code>PanelTablero</code> con casillas de 100 píxeles), un letrero de turno hecho con <code>Rotulo</code>, botones <code>CONTORNO</code> y <code>PILDORA</code>, y una sola pieza nueva, el marcador (<code>PanelMarcador</code>), que imita el aspecto de las tarjetas de jugador. El comentario del propio código lo dice: «El diseño no trae esta pantalla; se hizo con el mismo estilo».</p>
+<figure><img src="capturas/4-juego.png"><figcaption>La pantalla de la partida, que no estaba en el diseño: armada solo con piezas que ya existían, más el marcador.</figcaption></figure>
+<h3>El empate tampoco</h3>
+<p>El diseño muestra la victoria, pero una partida de totito bien jugada casi siempre termina en empate. ¿Otra pantalla nueva? No hizo falta: <code>PantallaResultado</code> sirve para los dos casos. En el empate cambia tres cosas: en lugar del trofeo dibuja una X y una O lado a lado (<code>IconoResultado</code>), quita el confeti (no hay nada que celebrar) y pinta el título en lavanda y morado, colores «neutrales» que no son ni el rosa de la X ni el azul de la O, porque no ganó nadie. La frase cambia a «Nadie cedió ni una casilla».</p>
+<figure><img src="capturas/6-empate.png"><figcaption>El empate: misma pantalla que la victoria, sin trofeo ni confeti y con colores neutros.</figcaption></figure>
+<h3>El modo contra la computadora</h3>
+<p>La sección MODO DE JUEGO del diseño tiene una sola opción: «2 jugadores». Pero el proyecto ya tenía una inteligencia artificial que juega perfecto (<code>IA_Minimax</code>, capítulo 31) y sería un desperdicio perderla. Se agregó una segunda <code>OpcionModo</code>, «Contra la IA», al lado de la primera y con el mismo aspecto. Cuando se elige, la tarjeta del Jugador 2 se convierte en la de la computadora (icono de chip y campo desactivado).</p>
+<h3>Los estados de cada control</h3>
+<p>Una imagen no se puede tocar, así que no muestra qué pasa al pasar el ratón por encima de un botón, al pulsarlo o cuando está desactivado. El código lo decide con una regla coherente para todo el juego:</p>
+<table class="tabla">
+<tr><th>Estado</th><th>Qué se ve</th><th>Dónde</th></tr>
+<tr><td>Normal</td><td>Como en el diseño.</td><td>Todos los controles</td></tr>
+<tr><td>Ratón encima (<i>hover</i>)</td><td>El halo brilla 1,5 veces más y el relleno es más intenso.</td><td><code>BotonNeon</code></td></tr>
+<tr><td>Pulsado</td><td>Una capa negra con poca opacidad oscurece el botón.</td><td><code>BotonNeon</code></td></tr>
+<tr><td>Desactivado</td><td>Todo el botón al 40 % de opacidad.</td><td><code>BotonNeon</code>, <code>CampoTexto</code></td></tr>
+<tr><td>Seleccionado / no seleccionado</td><td>El elegido brilla; el otro se ve apagado.</td><td><code>SelectorSimbolo</code>, <code>OpcionModo</code></td></tr>
+<tr><td>Casilla vacía bajo el ratón</td><td>Se aclara y muestra una ficha «fantasma» transparente.</td><td><code>PanelTablero</code></td></tr>
+<tr><td>Turno de cada jugador</td><td>Su lado del marcador brilla; el otro se apaga.</td><td><code>PanelMarcador</code></td></tr>
+</table>
+<h3>Textos que no caben</h3>
+<p>El diseño dice «Jugador 1» y «Jugador 2», que son cortos. Pero el usuario puede escribir «Maria Fernanda de los Ángeles». Decisiones: el campo de texto acepta como máximo 14 caracteres (<code>CampoTexto.MAXIMO</code>); el marcador recorta con «…» lo que no quepa (<code>Dibujo.recortar</code>); y los títulos grandes como «¡Ganó …!» achican su letra punto a punto hasta que caben (<code>Rotulo</code>). Pensar en el texto más largo posible es una de las pruebas más útiles al traducir un diseño.</p>
+<h3>Lo demás</h3>
+<ul>
+<li><b>La fuente</b>: el diseño usa una letra redondeada que Windows no trae. El capítulo 36 explica la lista de respaldo de <code>Tema</code>.</li>
+<li><b>El tamaño de la ventana</b>: las imágenes son cuadradas, pero la ventana mide 640 × 690 para caber en una pantalla de portátil común (capítulo 36).</li>
+<li><b>Una ayuda extra en Configuración</b>: debajo de las cajas de X y O se agregó la frase «Jugador 1 juega con X · Jugador 2 con O», porque en la maqueta no quedaba claro de quién era cada símbolo.</li>
+</ul>
+<div class="caja cuidado"><b>No inventes un estilo para cada hueco</b> La tentación al completar un diseño es agregar «algo bonito» nuevo: un botón verde aquí, una letra cursiva allá. Cada cosa nueva rompe un poco la consistencia. Antes de crear un elemento, pregúntate si alguna pieza del inventario ya resuelve el problema. Casi siempre la respuesta es sí.</div>
+
+<h2>Diseño frente a resultado</h2>
+<p>Así quedaron las pantallas del juego terminado. Ponlas junto a las del diseño y compara:</p>
+<figure><img src="capturas/1-menu.png"><figcaption>Resultado — Menú principal.</figcaption></figure>
+<figure><img src="capturas/2-instrucciones.png"><figcaption>Resultado — Instrucciones.</figcaption></figure>
+<figure><img src="capturas/3-configuracion.png"><figcaption>Resultado — Configuración, con la opción «Contra la IA» añadida.</figcaption></figure>
+<figure><img src="capturas/5-victoria.png"><figcaption>Resultado — Victoria, con el nombre real del ganador.</figcaption></figure>
+<p>Se parecen mucho, pero no son idénticas. Las diferencias más visibles y su razón:</p>
+<table class="tabla">
+<tr><th>Diferencia</th><th>Por qué</th></tr>
+<tr><td>La letra es menos redondeada.</td><td>Las capturas se tomaron en Linux, donde el Totito usa <i>Liberation Sans</i>. En Windows usará <i>Segoe UI</i>. La fuente del diseño no viene con el sistema (capítulo 36).</td></tr>
+<tr><td>Los botones del menú son algo más bajos y anchos.</td><td>Las medidas del diseño son el punto de partida; luego se ajustan mirando el resultado (lo verás en la siguiente sección).</td></tr>
+<tr><td>El brillo es más contenido.</td><td>El diseño es una ilustración donde el «neón» puede ser tan intenso como quiera; en el programa el halo se fabrica con capas transparentes (capítulo 35) y demasiado brillo vuelve borrosos los textos.</td></tr>
+<tr><td>El confeti está en otro sitio.</td><td>Se reparte con números al azar, pero siempre los mismos, y evita tapar el trofeo y el tablero.</td></tr>
+<tr><td>Hay elementos nuevos (IA, marcador, empate).</td><td>Son las decisiones de la sección anterior.</td></tr>
+</table>
+<p>La lección es importante: <b>el objetivo no es copiar píxel por píxel, sino conservar la intención</b>. Si alguien que vio el diseño reconoce el juego al primer vistazo (los mismos colores, la misma estructura, el mismo «ambiente»), la traducción fue buena. Hay otra decisión de fondo que vale la pena notar: el Totito <b>no usa ninguna imagen</b>. Todo, desde los iconos hasta la X y la O, se dibuja con figuras geométricas de Java (capítulo 37). Así se ve nítido a cualquier tamaño, no hay archivos que puedan perderse y el programa entero cabe en el código fuente.</p>
+
+<h2>Medir un diseño y pasarlo a píxeles</h2>
+<p>Para que el resultado se parezca al diseño necesitas números: dónde empieza cada caja y cuánto mide. Como el diseño es una imagen, esos números se <b>miden</b>.</p>
+<h3>Con qué medir</h3>
+<p>Basta con el <b>Paint</b> de Windows. Abre la imagen y mueve el ratón: abajo a la izquierda, en la barra de estado, Paint muestra la posición del puntero en píxeles (por ejemplo, <code>297, 376px</code>). Si haces una selección rectangular, también muestra su ancho y alto. Recuerda el sistema de coordenadas: el punto (0, 0) es la esquina <b>superior izquierda</b>, la X crece hacia la derecha y la Y crece <b>hacia abajo</b> (igual que en Java, como verás en el capítulo 37).</p>
+<p>Para medir una caja con borde de neón, mide el borde <b>nítido</b>, no el halo: el halo se desvanece poco a poco y no tiene un final claro.</p>
+<div class="caja consejo"><b>Otras herramientas</b> Cualquier editor de imágenes sirve: Paint.NET, GIMP o el selector de color de PowerToys (<code>winget install --id Microsoft.PowerToys -e</code>, y luego <b>Win + Mayús + C</b> sobre cualquier punto de la pantalla). Si un día trabajas con un diseñador que usa Figma, ahí las medidas ya vienen escritas al seleccionar cada elemento.</div>
+<h3>Las medidas del menú</h3>
+<p>Estas son las medidas del diseño del menú (imagen de 1254 × 1254), tomadas sobre los bordes nítidos:</p>
+<table class="tabla">
+<tr><th>Elemento</th><th>Desde</th><th>Hasta</th><th>Tamaño en el diseño</th></tr>
+<tr><td>Caja del encabezado (alto)</td><td>y = 19</td><td>y = 176</td><td>157 px</td></tr>
+<tr><td>Tarjeta (ancho)</td><td>x = 242</td><td>x = 1010</td><td>768 px</td></tr>
+<tr><td>Botón «Jugar» (ancho)</td><td>x = 297</td><td>x = 957</td><td>660 px</td></tr>
+<tr><td>Botón «Jugar» (alto)</td><td>y = 376</td><td>y = 550</td><td>174 px</td></tr>
+<tr><td>Hueco entre botones</td><td>y = 550</td><td>y = 589</td><td>39 px</td></tr>
+<tr><td>Borde de la tarjeta a borde del botón (lado)</td><td>x = 242</td><td>x = 297</td><td>55 px</td></tr>
+</table>
+<h3>La regla de tres: el factor de escala</h3>
+<p>La ventana del Totito mide 640 píxeles de ancho y la imagen 1254. Para pasar una medida de la imagen a la ventana se usa una <b>regla de tres</b>: si 1254 de la imagen son 640 de la ventana, cada píxel de la imagen equivale a 640 ÷ 1254 ≈ <b>0,51</b> píxeles de la ventana. Ese número es el <b>factor de escala</b>; multiplicas cada medida por él. Puedes hacerlo con <code>jshell</code> (capítulo 11):</p>
+<pre class="ps">jshell</pre>
+<pre class="salida">jshell&gt; double escala = 640.0 / 1254;
+escala ==&gt; 0.5103668261562998
+
+jshell&gt; 174 * escala
+$2 ==&gt; 88.80382775119617
+
+jshell&gt; 660 * escala
+$3 ==&gt; 336.84210526315786</pre>
+<p>Fíjate en el <code>640.0</code> con punto decimal: si escribieras <code>640 / 1254</code>, Java haría una división entera y el resultado sería <code>0</code> (lo viste en el capítulo 12). Para salir de jshell escribe <code>/exit</code>.</p>
+<p>Ahora la tabla completa: medida del diseño, la misma medida escalada, lo que usa el código y lo que se ve en la captura.</p>
+<table class="tabla">
+<tr><th>Elemento</th><th>Diseño</th><th>× 0,51</th><th>Código</th><th>Captura</th></tr>
+<tr><td>Caja del encabezado (alto)</td><td>157</td><td>80</td><td><code>Encabezado.ALTO = 96</code> menos 2 × 10 de margen = 76</td><td>76</td></tr>
+<tr><td>Tarjeta del menú (ancho)</td><td>768</td><td>392</td><td>440 del componente − 2 × 10 = 420</td><td>420</td></tr>
+<tr><td>Botón del menú (ancho × alto)</td><td>660 × 174</td><td>337 × 89</td><td><code>BotonNeon.menu</code>: 384 × 88, menos 2 × 9 = 366 × 70</td><td>366 × 70</td></tr>
+<tr><td>Hueco entre botones</td><td>39</td><td>20</td><td>14 + 9 + 9 = 32</td><td>32</td></tr>
+<tr><td>Borde de tarjeta a botón (lado)</td><td>55</td><td>28</td><td>28 − 10 + 9 = 27</td><td>27</td></tr>
+</table>
+<p>Hay tres cosas que aprender de esta tabla:</p>
+<ol>
+<li><b>El componente es más grande que lo que se ve.</b> Un <code>BotonNeon</code> del menú mide 384 × 88, pero la forma visible mide 366 × 70: hay 9 píxeles de margen en cada lado para que el halo no se corte. Por eso los números del código parecen «raros» al principio. El capítulo 36 explica cómo se calcula ese margen.</li>
+<li><b>La medida escalada es un punto de partida, no una ley.</b> El alto escalado del botón daba 89, pero en el código quedó en 70 visibles y, a cambio, los botones tienen más aire entre ellos (32 en lugar de 20): fue un ajuste hecho a ojo, comparando la captura con el diseño hasta que el conjunto se veía equilibrado. El margen lateral sí quedó casi exacto (27 frente a 28). Medir, programar, mirar la captura y ajustar: ese ciclo se repite hasta que se ve bien. La herramienta <code>VistaPrevia</code> del capítulo 56 sirve justamente para eso: genera imágenes de las pantallas sin abrir la ventana.</li>
+<li><b>No todo se escala igual.</b> La imagen es cuadrada y la ventana no (640 × 690). Si escalas por el ancho (0,51), el alto del diseño se convierte en 640 y sobran 50 píxeles verticales. Esos píxeles los absorbe el «relleno elástico» que centra el contenido en vertical (<code>relleno()</code> en <code>PantallaBase</code>; lo verás en el capítulo 37).</li>
+</ol>
+<h3>Medir proporciones en lugar de píxeles</h3>
+<p>Hay una segunda forma de pasar medidas: en lugar de píxeles, <b>fracciones</b> del tamaño total. En el diseño del menú, la X gigante del lado izquierdo tiene su centro aproximadamente en x = 120 e y = 585. Dividido por 1254: x ≈ 0,096 del ancho, y ≈ 0,47 del alto. <code>PantallaBase</code> dibuja esa X así:</p>
+<pre class="java">g2.draw(equis(ancho * 0.07, alto * 0.5, 100));</pre>
+<p>Es decir, «a un 7 % del ancho y a la mitad del alto», un poco más a la izquierda que en el diseño para que no choque con la tarjeta. La ventaja de las proporciones es que <b>se adaptan solas</b>: si mañana la ventana fuera más grande, la X seguiría en el mismo lugar relativo. Los iconos usan la misma idea a menor escala: cada punto se expresa como fracción del lado del icono (<code>x + t * 0.24</code>), y por eso el mismo icono sirve a cualquier tamaño (capítulo 42).</p>
+<table class="tabla">
+<tr><th>Usa píxeles fijos para…</th><th>Usa proporciones para…</th></tr>
+<tr><td>Controles con texto (botones, campos): la letra no crece con la ventana, así que el botón tampoco debe hacerlo.</td><td>Adornos del fondo, que deben repartirse por toda la ventana.</td></tr>
+<tr><td>Márgenes y separaciones entre controles.</td><td>Iconos y figuras que se dibujan a distintos tamaños.</td></tr>
+<tr><td>Grosores de línea.</td><td>Posiciones dentro de un componente cuyo tamaño puede cambiar (las casillas del tablero).</td></tr>
+</table>
+<h3>Medir colores</h3>
+<p>Los colores también se pueden medir: en Paint, la herramienta <b>Selector de color</b> (el cuentagotas) toma el color de un punto y en <b>Editar colores</b> verás sus valores de rojo, verde y azul. Dos precauciones: las imágenes JPG alteran un poco los colores al comprimirse, y el halo mezcla el color con el fondo. Mide en el centro de las zonas lisas o del trazo más brillante, toma varias muestras y luego <b>redondea a una paleta</b> pequeña y coherente. Cómo se construyó la paleta del Totito a partir de esas muestras es el tema del capítulo 35.</p>
+
+<h2>Del inventario al plan de construcción</h2>
+<p>Con el inventario hecho, el orden de trabajo sale casi solo: se construye <b>de abajo hacia arriba</b>, empezando por lo que no depende de nada y terminando por lo que usa todo lo demás.</p>
+<ol>
+<li><b>Los cimientos</b>: <code>Tema</code> (colores y fuentes) y <code>Dibujo</code> (el neón). No dependen de ninguna otra pieza de la interfaz.</li>
+<li><b>Los iconos</b>: <code>Iconos</code>, que usa <code>Tema</code> y <code>Dibujo</code>.</li>
+<li><b>Los componentes</b>: <code>Tarjeta</code>, <code>BotonNeon</code>, <code>Encabezado</code>, <code>Rotulo</code>, <code>CampoTexto</code>, <code>PanelTablero</code> y los demás.</li>
+<li><b>Las pantallas</b>: <code>PantallaBase</code> y las cinco pantallas, que solo <b>colocan</b> componentes.</li>
+<li><b>El conjunto</b>: <code>PanelPrincipal</code> y <code>TotitoApp</code>, que unen las pantallas.</li>
+</ol>
+<p>Es el mismo orden de los capítulos 38 a 61. Tiene una ventaja enorme: cuando llegues a escribir una pantalla, todas sus piezas ya existirán y estarán probadas, y la pantalla será corta. <code>PantallaMenu</code>, por ejemplo, tiene apenas 34 líneas.</p>
+<div class="caja hito"><b>Hito</b> Ya sabes leer el diseño del Totito: tienes la lista de piezas, sabes qué clase dibuja cada una, qué decisiones tomar donde el diseño calla y cómo pasar sus medidas a píxeles. Todo lo que construyas en la Parte VII viene de este capítulo.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Una <b>maqueta</b> es una imagen fija del aspecto final; el programador la traduce a código y decide todo lo que la imagen no dice.</li>
+<li>Lee un diseño en <b>tres pasadas</b>: de lejos (jerarquía), por zonas (estructura) y de cerca (detalles que serán números).</li>
+<li>La <b>jerarquía visual</b> se controla con tamaño, brillo, posición, espacio y peso; la acción principal de cada pantalla es la más llamativa.</li>
+<li>La <b>agrupación</b> (proximidad, semejanza, región común, alineación) se traduce en paneles que contienen a otros componentes.</li>
+<li>El <b>inventario</b> de elementos repetidos da la lista de clases reutilizables: cada pieza se programa una vez y se usa en todas partes (DRY y consistencia).</li>
+<li>Los huecos del diseño (pantalla de juego, empate, modo IA, estados, textos largos) se resuelven <b>componiendo con piezas existentes</b>, no inventando estilos.</li>
+<li>Las medidas se pasan con un <b>factor de escala</b> (640 ÷ 1254 ≈ 0,51) o como <b>proporciones</b>; después se ajustan mirando el resultado.</li>
+<li>El objetivo es conservar la <b>intención</b> del diseño, no copiarlo píxel por píxel.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Una página web a partir de un diseño en Figma</b>: haz el mismo inventario (encabezado, tarjeta de producto, botón primario y secundario, campo de formulario) y crea un componente por fila. En el mundo web esos componentes se llaman igual que aquí, y los colores y medidas compartidos se guardan en un archivo central de «variables de diseño», el equivalente de <code>Tema</code>.</li>
+<li><b>El sistema de inventario de una tienda</b> (capítulo 68): el diseño tendrá una lista de productos, un formulario y una pantalla de reportes. Busca lo que se repite (filas de tabla, botones de guardar y cancelar, tarjetas de resumen) antes de programar una sola pantalla.</li>
+<li><b>Una app de celular</b>: las maquetas casi nunca traen la pantalla de error, la de «sin conexión» o la lista vacía. Haz la lista de huecos al principio, como hicimos con el empate y la pantalla de juego, y resuélvelos con las piezas existentes.</li>
+<li><b>Fuera de la programación</b>: una presentación de diapositivas o un afiche se leen con las mismas reglas de jerarquía y agrupación. Entrecierra los ojos: si lo primero que ves no es lo más importante, cambia tamaño, brillo o espacio.</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Abre <code>diseno/configuracion.jpg</code> y haz la prueba de entrecerrar los ojos. Escribe en orden las cinco cosas que ves primero y, para cada una, qué herramienta de jerarquía (tamaño, brillo, posición, espacio, peso) la hace destacar.</li>
+<li>Con Paint, mide en <code>diseno/configuracion.jpg</code> el ancho y alto de la tarjeta del Jugador 1 (borde nítido). Multiplícalos por 0,51 y compáralos con <code>TarjetaJugador.ANCHO = 290</code> y <code>ALTO = 150</code>, recordando restar 2 × 10 de margen. ¿Cuánto se alejó el código del diseño? Pista: la diferencia en el alto tiene que ver con los 50 píxeles verticales que sobran al pasar de una imagen cuadrada a una ventana de 640 × 690.</li>
+<li>Haz el inventario de una aplicación que uses a diario (WhatsApp, la app de tu banco): elige tres pantallas, lista los elementos que se repiten y propón un nombre de clase para cada uno, como en la tabla «elemento → clase».</li>
+<li>El diseño no trae una pantalla de «Pausa». Descríbela solo con piezas del inventario: qué componentes usarías, en qué orden de arriba abajo y qué botón sería la acción principal. Pista: no debería hacer falta ninguna clase nueva.</li>
+<li>Calcula la proporción (fracción del ancho y del alto) del centro de la O gigante de la derecha en <code>diseno/menu.jpg</code> y compárala con la línea de <code>PantallaBase</code> que la dibuja: <code>new Ellipse2D.Double(ancho * 0.94 - 60, alto * 0.36 - 60, 120, 120)</code>. ¿Qué fracciones usó el código?</li>
+</ol>
+</div>
+</section>

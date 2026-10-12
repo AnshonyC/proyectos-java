@@ -1,0 +1,718 @@
+<section class="capitulo" id="cap37">
+<h1><span class="num">Capítulo 37</span>Cómo dibuja Swing</h1>
+<p class="entrada">Toda la interfaz neón del Totito está dibujada a mano: no hay imágenes ni botones estándar a la vista. Para poder hacerlo necesitas entender cómo organiza Swing los componentes, cómo reparte el espacio entre ellos, en qué hilo y en qué orden los pinta, y qué herramientas de dibujo ofrece <code>Graphics2D</code>. Al final compilarás un programa que dibuja un círculo de neón con el truco de capas.</p>
+
+<h2>Qué ya sabes y qué falta</h2>
+<p>En el capítulo 33 construiste <code>JuegoMain</code>: una ventana (<code>JFrame</code>) con una etiqueta, nueve botones en una rejilla y un botón de reinicio. Usaste componentes que Swing ya sabe dibujar: tú solo los creabas y los colocabas. Para el Totito v1.0 eso no alcanza: un <code>JButton</code> estándar no tiene halo de neón ni degradados. Hay que decirle a Swing «este componente lo dibujo yo». Para hacerlo bien, primero hay que entender la maquinaria que hay detrás.</p>
+<p>Un recordatorio de nombres: <b>AWT</b> (<i>Abstract Window Toolkit</i>, paquete <code>java.awt</code>) es la biblioteca gráfica original de Java; <b>Swing</b> (paquete <code>javax.swing</code>) se construyó encima de ella. Los componentes de Swing empiezan por <code>J</code> (<code>JFrame</code>, <code>JPanel</code>, <code>JButton</code>), pero muchas herramientas que usan siguen viviendo en AWT: <code>Color</code>, <code>Font</code>, <code>Graphics2D</code>, los <i>layouts</i>. Por eso el Totito importa de los dos paquetes.</p>
+
+<h2>Componentes y contenedores</h2>
+<p>En Swing, todo lo que ocupa un rectángulo en la ventana es un <b>componente</b>: un botón, una etiqueta, un campo de texto, un panel. Algunos componentes pueden <b>contener</b> a otros: se llaman <b>contenedores</b>. La jerarquía de clases lo refleja:</p>
+<ul>
+<li><code>Component</code> (AWT): cualquier cosa con posición, tamaño y capacidad de pintarse.</li>
+<li><code>Container</code> (AWT), que hereda de <code>Component</code>: además, puede tener hijos (<code>add</code>, <code>remove</code>, <code>getComponents</code>).</li>
+<li><code>JComponent</code> (Swing), que hereda de <code>Container</code>: la base de casi todos los componentes de Swing; agrega bordes, transparencia, información emergente (<i>tooltips</i>) y el método <code>paintComponent</code>.</li>
+<li><code>JPanel</code>, <code>JButton</code>, <code>JLabel</code>, <code>JTextField</code>…: heredan de <code>JComponent</code>.</li>
+</ul>
+<p>Como <code>JComponent</code> hereda de <code>Container</code>, técnicamente <b>cualquier</b> componente de Swing puede tener hijos. En la práctica, el que se usa para agrupar es <code>JPanel</code>, un rectángulo vacío pensado para contener. Por encima de todos está la <b>ventana</b>, un <code>JFrame</code>, que no es un <code>JComponent</code>: es una ventana del sistema operativo, con barra de título y botones de minimizar y cerrar.</p>
+
+<h3>El árbol de componentes</h3>
+<p>Al meter componentes dentro de otros se forma un <b>árbol</b>: la ventana es la raíz y cada contenedor es una rama con sus hijos. Este es el árbol del Totito cuando se ve el menú principal (es la descomposición en cajas del capítulo 34, ahora con sus clases):</p>
+<ul>
+<li><code>TotitoApp</code> (un <code>JFrame</code>: la ventana)
+<ul>
+<li>panel raíz y capas internas de la ventana (las crea Swing; no las tocas)
+<ul>
+<li><code>PanelPrincipal</code> (panel de contenido, con <code>CardLayout</code>)
+<ul>
+<li><code>PantallaMenu</code> (visible; <code>BorderLayout</code>)
+<ul>
+<li><code>Encabezado</code> (arriba, sin layout)
+<ul><li><code>BotonNeon</code> de cerrar</li></ul></li>
+<li><code>contenido</code> (un <code>JPanel</code> en el centro, con <code>BoxLayout</code> vertical)
+<ul>
+<li>relleno elástico</li>
+<li><code>Tarjeta</code> (con <code>BoxLayout</code> vertical)
+<ul>
+<li><code>BotonNeon</code> «Jugar»</li>
+<li>espacio fijo de 14</li>
+<li><code>BotonNeon</code> «Instrucciones»</li>
+<li>espacio fijo de 14</li>
+<li><code>BotonNeon</code> «Salir»</li>
+</ul></li>
+<li>relleno elástico</li>
+</ul></li>
+</ul></li>
+<li><code>PantallaInstrucciones</code> (oculta)</li>
+<li><code>PantallaConfiguracion</code> (oculta)</li>
+<li><code>PantallaJuego</code> (oculta)</li>
+<li><code>PantallaResultado</code> (oculta)</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<p>Este árbol importa porque <b>todo en Swing recorre el árbol</b>:</p>
+<ul>
+<li>El <b>reparto del espacio</b> baja de la raíz a las hojas: la ventana le da su tamaño a <code>PanelPrincipal</code>, este a la pantalla visible, la pantalla al encabezado y al contenido, y así hasta los botones.</li>
+<li>El <b>pintado</b> también baja: primero se pinta el padre y luego, encima, sus hijos. Por eso el fondo de <code>PantallaBase</code> queda detrás de todo y la tarjeta queda detrás de sus botones.</li>
+<li>Los <b>clics</b> llegan al componente más profundo que esté bajo el ratón: si pulsas «Jugar», el evento lo recibe el <code>BotonNeon</code>, no la tarjeta ni la pantalla.</li>
+</ul>
+
+<h2>Layouts: quién decide dónde va cada cosa</h2>
+<p>Un contenedor no coloca a sus hijos por sí mismo: delega en un <b>gestor de disposición</b>, en inglés <i>layout manager</i> o simplemente <b>layout</b>. Un layout es un objeto con una única misión: dado el tamaño del contenedor, decidir la posición y el tamaño de cada hijo. Cada vez que el contenedor cambia de tamaño (o se le agrega un hijo), el layout recalcula. Se asigna con <code>setLayout(…)</code> o en el constructor del panel: <code>new JPanel(new BorderLayout())</code>.</p>
+<p>Si no eliges ninguno, hay valores por defecto: un <code>JPanel</code> nuevo trae <code>FlowLayout</code>, y el panel de contenido de un <code>JFrame</code> trae <code>BorderLayout</code>. El Totito usa seis formas de colocar componentes:</p>
+<svg viewBox="0 0 780 250" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="780" height="250" fill="#1C1740"/>
+<g font-family="sans-serif" font-size="11" text-anchor="middle">
+<rect x="10" y="20" width="140" height="170" fill="none" stroke="#C8BCF6"/>
+<rect x="14" y="24" width="132" height="30" fill="#A05CFF" fill-opacity="0.5"/><text x="80" y="43" fill="#FFFFFF">NORTH</text>
+<rect x="14" y="58" width="28" height="94" fill="#2F84FF" fill-opacity="0.5"/><text x="28" y="109" fill="#FFFFFF">W</text>
+<rect x="46" y="58" width="68" height="94" fill="#FF3BD4" fill-opacity="0.5"/><text x="80" y="109" fill="#FFFFFF">CENTER</text>
+<rect x="118" y="58" width="28" height="94" fill="#2F84FF" fill-opacity="0.5"/><text x="132" y="109" fill="#FFFFFF">E</text>
+<rect x="14" y="156" width="132" height="30" fill="#A05CFF" fill-opacity="0.5"/><text x="80" y="175" fill="#FFFFFF">SOUTH</text>
+<text x="80" y="212" fill="#C8BCF6" font-size="13">BorderLayout</text>
+<rect x="165" y="20" width="140" height="170" fill="none" stroke="#C8BCF6"/>
+<rect x="171" y="30" width="44" height="26" rx="4" fill="#FF3BD4" fill-opacity="0.5"/>
+<rect x="219" y="30" width="60" height="26" rx="4" fill="#FF3BD4" fill-opacity="0.5"/>
+<rect x="171" y="60" width="70" height="26" rx="4" fill="#FF3BD4" fill-opacity="0.5"/>
+<rect x="245" y="60" width="34" height="26" rx="4" fill="#FF3BD4" fill-opacity="0.5"/>
+<text x="235" y="130" fill="#C8BCF6">en fila; si no cabe,</text>
+<text x="235" y="146" fill="#C8BCF6">salta a la siguiente</text>
+<text x="235" y="212" fill="#C8BCF6" font-size="13">FlowLayout</text>
+<rect x="320" y="20" width="140" height="170" fill="none" stroke="#C8BCF6"/>
+<rect x="326" y="26" width="40" height="50" fill="#2F84FF" fill-opacity="0.5"/><rect x="370" y="26" width="40" height="50" fill="#2F84FF" fill-opacity="0.5"/><rect x="414" y="26" width="40" height="50" fill="#2F84FF" fill-opacity="0.5"/>
+<rect x="326" y="80" width="40" height="50" fill="#2F84FF" fill-opacity="0.5"/><rect x="370" y="80" width="40" height="50" fill="#2F84FF" fill-opacity="0.5"/><rect x="414" y="80" width="40" height="50" fill="#2F84FF" fill-opacity="0.5"/>
+<rect x="326" y="134" width="40" height="50" fill="#2F84FF" fill-opacity="0.5"/><rect x="370" y="134" width="40" height="50" fill="#2F84FF" fill-opacity="0.5"/><rect x="414" y="134" width="40" height="50" fill="#2F84FF" fill-opacity="0.5"/>
+<text x="390" y="212" fill="#C8BCF6" font-size="13">GridLayout(3, 3)</text>
+<rect x="475" y="20" width="140" height="170" fill="none" stroke="#C8BCF6"/>
+<rect x="481" y="24" width="128" height="34" fill="none" stroke="#C8BCF6" stroke-dasharray="3 3"/><text x="545" y="45" fill="#C8BCF6">glue (elástico)</text>
+<rect x="500" y="62" width="90" height="28" rx="6" fill="#FF3BD4" fill-opacity="0.5"/>
+<rect x="500" y="92" width="90" height="10" fill="#C8BCF6" fill-opacity="0.3"/><text x="545" y="101" fill="#FFFFFF" font-size="9">rigid area</text>
+<rect x="500" y="104" width="90" height="28" rx="6" fill="#2F84FF" fill-opacity="0.5"/>
+<rect x="481" y="136" width="128" height="50" fill="none" stroke="#C8BCF6" stroke-dasharray="3 3"/><text x="545" y="165" fill="#C8BCF6">glue (elástico)</text>
+<text x="545" y="212" fill="#C8BCF6" font-size="13">BoxLayout (Y_AXIS)</text>
+<rect x="650" y="50" width="110" height="130" fill="#2B2363" stroke="#C8BCF6"/>
+<rect x="642" y="40" width="110" height="130" fill="#2B2363" stroke="#C8BCF6"/>
+<rect x="634" y="30" width="110" height="130" fill="#A05CFF" fill-opacity="0.6" stroke="#FFFFFF"/>
+<text x="689" y="90" fill="#FFFFFF">una carta</text>
+<text x="689" y="106" fill="#FFFFFF">visible;</text>
+<text x="689" y="122" fill="#FFFFFF">las demás</text>
+<text x="689" y="138" fill="#FFFFFF">detrás</text>
+<text x="700" y="212" fill="#C8BCF6" font-size="13">CardLayout</text>
+</g>
+</svg>
+
+<h3>BorderLayout: cinco zonas</h3>
+<p>Divide el contenedor en cinco regiones: <code>NORTH</code> (arriba), <code>SOUTH</code> (abajo), <code>WEST</code> (izquierda), <code>EAST</code> (derecha) y <code>CENTER</code>. Las reglas de reparto son las que le dan su personalidad:</p>
+<ul>
+<li>Arriba y abajo reciben <b>su alto preferido</b> y <b>todo el ancho</b>.</li>
+<li>Izquierda y derecha reciben <b>su ancho preferido</b> y el alto que quede.</li>
+<li>El centro recibe <b>todo lo que sobra</b>.</li>
+</ul>
+<p>Es ideal para «una barra fija arriba y el resto para el contenido», que es exactamente lo que hace <code>PantallaBase</code>:</p>
+<pre class="java">super(new BorderLayout());
+add(new Encabezado(navegacion::salir), BorderLayout.NORTH);
+...
+add(contenido, BorderLayout.CENTER);</pre>
+<p>Por eso <code>Encabezado</code> declara su tamaño preferido como <code>new Dimension(0, ALTO)</code>: el ancho (0) da igual porque <code>BorderLayout</code> lo estira a todo el ancho; solo importa el alto, 96. El <code>JuegoMain</code> del capítulo 33 también lo usaba: etiqueta arriba, tablero en el centro y botón abajo, con <code>new BorderLayout(0, 16)</code> (los números son la separación horizontal y vertical entre zonas).</p>
+
+<h3>FlowLayout: en fila, como palabras</h3>
+<p>Coloca los hijos uno tras otro de izquierda a derecha, cada uno con su tamaño preferido, y si no caben, salta a la siguiente fila, como las palabras de un párrafo. Es el layout por defecto de <code>JPanel</code>. Útil para barras de botones sencillas; el Totito no lo usa porque necesita más control.</p>
+
+<h3>GridLayout: una rejilla de celdas iguales</h3>
+<p>Divide el contenedor en filas y columnas de celdas <b>todas del mismo tamaño</b> y estira cada hijo para que llene su celda, ignorando su tamaño preferido. <code>JuegoMain</code> lo usaba para el tablero:</p>
+<pre class="java">JPanel panelTablero = new JPanel(new GridLayout(3, 3, 4, 4));</pre>
+<p>Tres filas, tres columnas y 4 píxeles de separación en cada dirección: perfecto para nueve botones iguales. En el Totito v1.0, el tablero lo dibuja un solo componente (<code>PanelTablero</code>, capítulo 48) que calcula las casillas él mismo, así que ya no hace falta.</p>
+
+<h3>BoxLayout: una fila o una columna</h3>
+<p>Coloca los hijos en una sola <b>columna</b> (<code>BoxLayout.Y_AXIS</code>) o en una sola <b>fila</b> (<code>BoxLayout.X_AXIS</code>). A diferencia de <code>GridLayout</code>, respeta el tamaño de cada hijo: le da su tamaño preferido y, si sobra espacio, puede estirarlo hasta su tamaño <b>máximo</b>. Es el layout principal del Totito: lo usan la columna de contenido de todas las pantallas, el interior de las tarjetas y las filas de <code>PantallaBase.fila</code>.</p>
+<pre class="java">contenido = new JPanel();
+contenido.setLayout(new BoxLayout(contenido, BoxLayout.Y_AXIS));</pre>
+<p>Fíjate en una rareza: al crear el <code>BoxLayout</code> hay que pasarle <b>el propio contenedor</b> (<code>contenido</code>) además del eje. Es una exigencia de esta clase; si pasas otro panel, Java lanza un error al dibujar («BoxLayout can't be shared»).</p>
+<p>Con <code>BoxLayout</code> se usan dos piezas invisibles que fabrica la clase <code>Box</code>:</p>
+<ul>
+<li><code>Box.createRigidArea(new Dimension(0, 14))</code>: un <b>espacio fijo</b> de 14 píxeles de alto (y 0 de ancho). Es una pieza rígida: no crece ni encoge. <code>PantallaBase.espacio(n)</code> lo usa.</li>
+<li><code>Box.createVerticalGlue()</code>: un <b>pegamento elástico</b> (<i>glue</i>) que no ocupa nada si no sobra espacio, pero que se estira para absorber todo el espacio sobrante. Si pones uno arriba y otro abajo, se reparten lo que sobra a partes iguales y el contenido queda centrado en vertical. <code>PantallaBase.relleno()</code> lo usa.</li>
+</ul>
+<p>Con estas dos piezas se resolvió en el capítulo 36 el ritmo vertical de todas las pantallas: la pantalla de configuración (llena) reparte solo 10 píxeles entre sus dos rellenos, y la del menú (casi vacía), 224.</p>
+
+<h3>CardLayout: un mazo de cartas</h3>
+<p>Apila todos los hijos uno encima de otro, como un mazo de cartas, y muestra <b>solo uno</b> a la vez. Cada carta se agrega con un nombre y se muestra llamando a <code>show</code> con ese nombre. Es como <code>PanelPrincipal</code> cambia de pantalla:</p>
+<pre class="java">private final CardLayout cartas = new CardLayout();
+...
+setLayout(cartas);
+add(new PantallaMenu(this), MENU);           // MENU es la constante "menu"
+add(new PantallaInstrucciones(this), INSTRUCCIONES);
+...
+cartas.show(this, MENU);</pre>
+<p>La ventaja frente a crear y destruir pantallas: todas existen desde el principio y conservan su estado. Si escribes tu nombre en la configuración, vas al menú y vuelves, el nombre sigue ahí.</p>
+
+<h3>Sin layout: posiciones a mano con <code>setBounds</code></h3>
+<p>Si llamas a <code>setLayout(null)</code> (o pasas <code>null</code> al constructor del panel), no hay layout: tú decides el rectángulo exacto de cada hijo con <code>setBounds(x, y, ancho, alto)</code>. Es lo más flexible y lo más frágil, porque si el contenedor cambia de tamaño nadie recalcula nada. La forma correcta de hacerlo es colocar los hijos dentro de <code>doLayout()</code>, el método que Swing llama cada vez que hay que reacomodar el contenedor. <code>Encabezado</code> lo hace así, porque solo tiene un hijo (el botón de cerrar) y lo quiere en un lugar muy concreto:</p>
+<pre class="java">super(null);    // sin layout: el unico hijo (el boton) se coloca en doLayout()
+...
+@Override
+public void doLayout() {
+    botonCerrar.setBounds(getWidth() - MARGEN - LADO_BOTON - 6, (getHeight() - LADO_BOTON) / 2,
+            LADO_BOTON, LADO_BOTON);
+}</pre>
+<p>Con una ventana de 640 de ancho y el encabezado de 96 de alto: x = 640 − 10 − 58 − 6 = 566 e y = (96 − 58) ÷ 2 = 19. El botón ocupa el cuadrado (566, 19, 58, 58): pegado a la derecha y centrado en vertical. <code>TarjetaJugador</code> hace lo mismo con su campo de texto. Usa este recurso cuando un componente tenga pocos hijos en posiciones muy precisas; para pantallas enteras, prefiere los layouts.</p>
+
+<h3>Pruébalo: la estructura de una pantalla en miniatura</h3>
+<p>Este programa reproduce, con piezas simples de Swing, la estructura de las pantallas del Totito: <code>BorderLayout</code> por fuera, un encabezado arriba, una columna con <code>BoxLayout</code> y rellenos elásticos en el centro, y una fila de botones con <code>FlowLayout</code> abajo. Créalo en tu carpeta de prácticas:</p>
+<pre class="ps">Set-Location $HOME\Proyectos\Practicas
+notepad DemoLayouts.java</pre>
+<pre class="java">import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+
+/** La estructura de una pantalla del Totito, con piezas simples de Swing. */
+public class DemoLayouts {
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -&gt; {
+            JFrame ventana = new JFrame("Layouts en miniatura");
+            ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            ventana.setContentPane(crearRaiz());
+            ventana.setSize(420, 460);
+            ventana.setLocationRelativeTo(null);
+            ventana.setVisible(true);
+        });
+    }
+
+    static JPanel crearRaiz() {
+        JPanel raiz = new JPanel(new BorderLayout());
+
+        JPanel encabezado = caja("Encabezado (NORTH)", new Color(0xA0, 0x5C, 0xFF), 0, 60);
+        raiz.add(encabezado, BorderLayout.NORTH);
+
+        JPanel contenido = new JPanel();
+        contenido.setLayout(new BoxLayout(contenido, BoxLayout.Y_AXIS));
+        contenido.add(Box.createVerticalGlue());
+        contenido.add(caja("Jugar", new Color(0xFF, 0x3B, 0xD4), 220, 50));
+        contenido.add(Box.createRigidArea(new Dimension(0, 14)));
+        contenido.add(caja("Instrucciones", new Color(0x2F, 0x84, 0xFF), 220, 50));
+        contenido.add(Box.createVerticalGlue());
+        raiz.add(contenido, BorderLayout.CENTER);
+
+        JPanel pie = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 8));
+        pie.add(new JButton("Reiniciar"));
+        pie.add(new JButton("Menú principal"));
+        raiz.add(pie, BorderLayout.SOUTH);
+        return raiz;
+    }
+
+    /** Un panel de color con un texto centrado y tamano fijo (preferido = minimo = maximo). */
+    private static JPanel caja(String texto, Color color, int ancho, int alto) {
+        JLabel etiqueta = new JLabel(texto, SwingConstants.CENTER);
+        etiqueta.setForeground(Color.WHITE);
+        JPanel caja = new JPanel(new BorderLayout());
+        caja.setBackground(color);
+        caja.add(etiqueta, BorderLayout.CENTER);
+        Dimension tamano = new Dimension(ancho, alto);
+        caja.setPreferredSize(tamano);
+        caja.setMinimumSize(tamano);
+        caja.setMaximumSize(tamano);
+        caja.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return caja;
+    }
+}</pre>
+<pre class="ps">java DemoLayouts.java</pre>
+<p>Verás una ventana con una franja morada arriba («Encabezado (NORTH)»), dos rectángulos de color (rosa «Jugar» y azul «Instrucciones») centrados en medio y dos botones grises abajo. Ahora experimenta, que es como de verdad se aprende esto:</p>
+<ol>
+<li><b>Estira la ventana</b> hacia abajo con el ratón: los dos rectángulos siguen centrados en vertical porque los dos <i>glue</i> absorben el espacio nuevo. La franja de arriba se estira a lo ancho (regla de <code>BorderLayout</code>) pero no a lo alto.</li>
+<li><b>Borra la primera línea</b> <code>contenido.add(Box.createVerticalGlue());</code>, guarda y vuelve a ejecutar: los rectángulos se pegan arriba, porque ahora solo hay pegamento abajo.</li>
+<li><b>Convierte en comentario</b> la línea <code>caja.setMaximumSize(tamano);</code> (escribe <code>//</code> delante): los rectángulos se estiran hasta llenar todo el centro. Esto explica la siguiente sección.</li>
+</ol>
+<p>Una nota sobre <code>crearRaiz</code>: no lleva <code>public</code> ni <code>private</code>, así que es visible para las clases de la misma carpeta (el acceso «de paquete» del capítulo 19). Aquí da igual; solo lo usa <code>main</code>.</p>
+
+<h2>Tamaño preferido, mínimo y máximo</h2>
+<p>Cada componente puede informar de tres tamaños, y cada layout los consulta a su manera:</p>
+<ul>
+<li><b>Preferido</b> (<code>getPreferredSize</code>): «el tamaño al que me veo bien».</li>
+<li><b>Mínimo</b> (<code>getMinimumSize</code>): «menos que esto, no».</li>
+<li><b>Máximo</b> (<code>getMaximumSize</code>): «más que esto, no».</li>
+</ul>
+<table class="tabla">
+<tr><th>Layout</th><th>Qué tamaño respeta</th></tr>
+<tr><td><code>FlowLayout</code></td><td>Solo el preferido.</td></tr>
+<tr><td><code>BorderLayout</code></td><td>El alto preferido arriba y abajo, el ancho preferido a los lados; estira la otra medida. El centro recibe lo que sobre.</td></tr>
+<tr><td><code>GridLayout</code></td><td>Ninguno: todas las celdas iguales.</td></tr>
+<tr><td><code>BoxLayout</code></td><td>Empieza por el preferido y puede estirar hasta el máximo (o encoger hasta el mínimo).</td></tr>
+<tr><td><code>CardLayout</code></td><td>Todas las cartas ocupan el contenedor entero.</td></tr>
+</table>
+<p>Ahora entiendes el experimento 3. Un <code>JPanel</code> (o un <code>JComponent</code> dibujado a mano) tiene por defecto un tamaño máximo <b>enorme</b> (32 767 × 32 767 píxeles). En un <code>BoxLayout</code>, eso significa «estírame todo lo que quieras», y el layout lo hace. Los componentes dibujados a mano del Totito tendrían el mismo problema: una tarjeta de jugador o un rótulo se estirarían a lo ancho de toda la ventana. Para evitarlo existe este método de <code>Dibujo</code> (capítulo 41):</p>
+<pre class="java">public static void fijarTamano(JComponent componente, int ancho, int alto) {
+    Dimension tamano = new Dimension(ancho, alto);
+    componente.setPreferredSize(tamano);
+    componente.setMinimumSize(tamano);
+    componente.setMaximumSize(tamano);
+}</pre>
+<p>Con los tres tamaños iguales, el componente es <b>rígido</b>: ningún layout lo estira ni lo encoge. Lo usan <code>BotonNeon</code>, <code>Rotulo</code>, <code>PanelTablero</code>, <code>TarjetaJugador</code>, <code>OpcionModo</code> y casi todos los demás. Y <code>PantallaBase.fila</code> hace lo mismo con sus filas: <code>fila.setMaximumSize(fila.getPreferredSize())</code>.</p>
+<div class="caja cuidado"><b>Un componente dibujado a mano no sabe cuánto mide</b> Un <code>JButton</code> calcula su tamaño preferido a partir de su texto y su fuente. Pero si creas un <code>JComponent</code> y le sobrescribes <code>paintComponent</code>, Swing no tiene manera de adivinar qué vas a dibujar: su tamaño preferido es 0 × 0. Si lo metes en un <code>FlowLayout</code>, medirá cero píxeles y no verás nada, sin ningún error. Siempre que dibujes a mano, declara el tamaño.</div>
+<p>Por último, <code>pack()</code>, el método de la ventana que viste en el capítulo 33, también usa los tamaños preferidos: ajusta la ventana para que su contenido mida exactamente su tamaño preferido. Por eso a <code>PanelPrincipal</code> le basta con <code>setPreferredSize(new Dimension(ANCHO, ALTO))</code> para que la ventana quede de 640 × 690 por dentro.</p>
+
+<h2>El hilo de eventos (EDT)</h2>
+<p>Un <b>hilo</b> (en inglés, <i>thread</i>) es una línea de ejecución: una secuencia de instrucciones que el procesador va ejecutando una tras otra. Un programa puede tener varios hilos trabajando a la vez. Cuando ejecutas un programa, Java crea un hilo llamado <i>main</i> que ejecuta tu método <code>main</code>.</p>
+<p>Swing tiene una regla estricta: <b>todo lo que toca la interfaz debe hacerse desde un único hilo</b>, el <b>hilo de despacho de eventos</b> (<i>Event Dispatch Thread</i>, <b>EDT</b>). Ese hilo funciona como un cajero con una fila de clientes: hay una <b>cola de eventos</b> (clics, teclas, peticiones de repintado, temporizadores) y el EDT los atiende <b>de uno en uno</b>, en orden.</p>
+<svg viewBox="0 0 640 130" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="640" height="130" fill="#1C1740"/>
+<g font-family="sans-serif" font-size="12" text-anchor="middle">
+<rect x="20" y="40" width="100" height="40" rx="8" fill="#FF3BD4" fill-opacity="0.4" stroke="#FF3BD4"/><text x="70" y="65" fill="#FFFFFF">clic en Jugar</text>
+<rect x="130" y="40" width="100" height="40" rx="8" fill="#2F84FF" fill-opacity="0.4" stroke="#2F84FF"/><text x="180" y="65" fill="#FFFFFF">repintar</text>
+<rect x="240" y="40" width="100" height="40" rx="8" fill="#A05CFF" fill-opacity="0.4" stroke="#A05CFF"/><text x="290" y="65" fill="#FFFFFF">temporizador</text>
+<rect x="350" y="40" width="100" height="40" rx="8" fill="#40C8FF" fill-opacity="0.4" stroke="#40C8FF"/><text x="400" y="65" fill="#FFFFFF">tecla</text>
+<path d="M 460 60 L 510 60" stroke="#C8BCF6" stroke-width="2"/><path d="M 502 54 L 512 60 L 502 66" fill="none" stroke="#C8BCF6" stroke-width="2"/>
+<circle cx="560" cy="60" r="38" fill="#2B2363" stroke="#FFFFFF"/><text x="560" y="64" fill="#FFFFFF" font-size="14">EDT</text>
+<text x="235" y="108" fill="#C8BCF6">cola de eventos: se atienden de uno en uno, en orden</text>
+</g>
+</svg>
+<p>¿Por qué un solo hilo? Porque si dos hilos modificaran el mismo botón a la vez (uno cambiando su texto y otro pintándolo), el resultado sería impredecible. Con un solo hilo, nunca pasa.</p>
+<h3>invokeLater: pedirle algo al EDT</h3>
+<p>Tu método <code>main</code> <b>no</b> corre en el EDT, sino en el hilo <i>main</i>. Por eso el Totito no crea la ventana directamente en <code>main</code>, sino que le pide al EDT que lo haga:</p>
+<pre class="java">public static void main(String[] args) {
+    // Texto suavizado tambien en Linux.
+    System.setProperty("awt.useSystemAAFontSettings", "on");
+    SwingUtilities.invokeLater(() -&gt; new TotitoApp().setVisible(true));
+}</pre>
+<p><code>SwingUtilities.invokeLater</code> recibe un <code>Runnable</code> (una tarea; aquí escrita como lambda, capítulo 25) y la pone <b>al final de la cola de eventos</b>. El EDT la ejecutará en su turno. «Later» significa «más tarde»: <code>main</code> no espera, sigue (y termina), y el programa continúa vivo mientras haya una ventana abierta. La primera línea configura una propiedad del sistema antes de crear cualquier componente: activa el suavizado de texto del sistema operativo, que en algunos Linux viene apagado.</p>
+<h3>No bloquees el EDT</h3>
+<p>La consecuencia más importante de la fila única: <b>mientras el EDT está ocupado con un evento, no atiende ningún otro</b>, tampoco las peticiones de repintado. Si en el código de un botón escribes <code>Thread.sleep(1000)</code> («duerme un segundo»), la ventana entera se congela un segundo: no se repinta, no responde a clics, ni siquiera se puede mover.</p>
+<p>El Totito necesita dos pausas: 450 milisegundos antes de que juegue la IA (para que se note el cambio de turno) y 1200 antes de pasar a la pantalla de resultado (para que se vea la raya ganadora). No usa <code>sleep</code>, sino un <b>temporizador de Swing</b>, <code>javax.swing.Timer</code>, que no bloquea nada: deja un evento programado en la cola y, cuando pasa el tiempo, el EDT ejecuta la acción en su turno. Lo verás en <code>PantallaJuego</code> (capítulo 59):</p>
+<pre class="java">pendiente = new Timer(ms, e -&gt; {
+    pendiente = null;
+    accion.run();
+});
+pendiente.setRepeats(false);   // una sola vez, no cada "ms" milisegundos
+pendiente.start();</pre>
+<p>¿Y el cálculo de la IA? Minimax recorre todas las partidas posibles, pero en un tablero de 3 × 3 tarda una fracción de segundo, así que puede ejecutarse en el EDT sin que se note. Si un día haces algo pesado de verdad (descargar un archivo, analizar miles de datos), Swing tiene <code>SwingWorker</code>, una clase que hace el trabajo en otro hilo y luego entrega el resultado al EDT.</p>
+
+<h2>El ciclo de pintado</h2>
+<h3>Nunca llamas a paintComponent</h3>
+<p>Esta es la idea que más cuesta al principio: <b>tú no decides cuándo se pinta un componente; lo decide Swing</b>. Swing pinta cuando la ventana aparece por primera vez, cuando vuelve a verse después de estar tapada, cuando cambia de tamaño… y cuando tú se lo pides. Para pedírselo existe un único método: <code>repaint()</code>.</p>
+<p><code>repaint()</code> no pinta nada en el momento: deja anotado «este componente necesita repintarse» y pone un evento en la cola del EDT. Si llamas a <code>repaint()</code> diez veces seguidas, Swing junta las peticiones y pinta <b>una sola vez</b>. Es muy eficiente, y por eso el patrón del Totito es siempre el mismo: <b>cambiar el estado y llamar a <code>repaint()</code></b>.</p>
+<pre class="java">public void setTexto(String texto) {     // en Rotulo
+    this.texto = texto;
+    repaint();
+}</pre>
+<p>Cuando le toca, el EDT llama al método <code>paint(g)</code> del componente, que hace tres cosas en este orden:</p>
+<ol>
+<li><code>paintComponent(g)</code>: pinta el contenido del propio componente (su fondo, sus dibujos). <b>Es el que sobrescribes.</b></li>
+<li><code>paintBorder(g)</code>: pinta el borde asignado con <code>setBorder</code>, si tiene (los bordes vacíos del Totito no pintan nada).</li>
+<li><code>paintChildren(g)</code>: pinta los hijos, cada uno con su propio <code>paint</code>, y así recursivamente por el árbol.</li>
+</ol>
+<p>El orden explica algo que ya viste: la <code>Tarjeta</code> pinta su cristal en <code>paintComponent</code>, y después, encima, se pintan sus hijos (los botones). Y el confeti de la pantalla de victoria, que se pinta en el gancho <code>pintarDecoracion</code> dentro del <code>paintComponent</code> de la tarjeta, queda <b>debajo</b> del trofeo y el tablero, nunca encima. Es el patrón <i>Template Method</i> del capítulo 27: <code>Tarjeta.paintComponent</code> fija los pasos y deja un hueco para que las subclases agreguen el suyo.</p>
+<div class="caja concepto"><b>Por qué sobrescribir paintComponent y no paint</b> <code>paint</code> es el que organiza los tres pasos. Si lo sobrescribes, tendrías que acordarte de pintar tú el borde y los hijos. <code>paintComponent</code> es el «hueco» pensado para que pongas tu dibujo; el resto lo sigue haciendo Swing.</div>
+<h3>¿Llamar o no a super.paintComponent?</h3>
+<p>En un <code>paintComponent</code> sobrescrito, <code>super.paintComponent(g)</code> ejecuta el pintado de la clase padre (capítulo 23). Depende de lo que haga ese padre:</p>
+<ul>
+<li>En un <code>JPanel</code> opaco, pinta el fondo con el color de <code>setBackground</code>. Si no lo llamas y no pintas tú todo el fondo, quedan restos de lo que había antes (manchas y «fantasmas»).</li>
+<li>En <code>TarjetaJugador</code>, el padre es <code>Tarjeta</code>: <code>super.paintComponent(g)</code> dibuja la caja de cristal, y luego la tarjeta de jugador añade encima el avatar, el título y la palabra «Nombre». Herencia aprovechada.</li>
+<li>En <code>BotonNeon</code> <b>no</b> se llama: el padre es <code>JButton</code>, y su pintado dibujaría el botón estándar gris del sistema. Además, en el constructor se apaga todo lo que <code>JButton</code> pinta por su cuenta: <code>setContentAreaFilled(false)</code> (sin relleno), <code>setBorderPainted(false)</code> (sin borde) y <code>setFocusPainted(false)</code> (sin el rectángulo punteado del foco).</li>
+</ul>
+
+<h2>Opaco o transparente</h2>
+<p>Cada componente declara si es <b>opaco</b> con <code>setOpaque(true)</code> o <code>setOpaque(false)</code>. No es una cuestión de aspecto, sino un <b>contrato</b> con Swing:</p>
+<ul>
+<li><b>Opaco</b> (<code>true</code>): «prometo pintar todos los píxeles de mi rectángulo». Swing se ahorra pintar lo que hay detrás, porque total, quedará tapado.</li>
+<li><b>Transparente</b> (<code>false</code>): «puede que deje huecos». Antes de pintarlo, Swing pinta los padres que hay detrás para que se vean a través.</li>
+</ul>
+<p>En el Totito, <b>el único componente que pinta un fondo completo es <code>PantallaBase</code></b> (el degradado con los adornos). Todo lo demás es transparente: tarjetas, botones, rótulos, el encabezado, y también los paneles auxiliares que solo agrupan, como <code>contenido</code> y las filas:</p>
+<pre class="java">contenido = new JPanel();
+contenido.setOpaque(false);</pre>
+<p>Si olvidaras esa línea, el <code>JPanel</code> (opaco por defecto) pintaría su fondo gris estándar encima del degradado y verías un gran rectángulo gris en mitad de la pantalla. Es el error número uno al hacer interfaces personalizadas en Swing.</p>
+<div class="caja cuidado"><b>No mientas en el contrato</b> Si marcas un componente como opaco y luego no pintas todo su rectángulo (por ejemplo, porque dibujas una forma redondeada), en las esquinas aparecerá basura: restos de pintados anteriores. Si tu forma no es un rectángulo completo, el componente debe ser transparente.</div>
+
+<h2>Graphics2D: el pincel</h2>
+<p>El parámetro que recibe <code>paintComponent</code> es un objeto <code>Graphics</code>: el «pincel» con el que se dibuja en la zona del componente. Por razones históricas el parámetro se declara como <code>Graphics</code> (la versión antigua y limitada), pero en Swing el objeto real es siempre un <code>Graphics2D</code>, mucho más potente: figuras con decimales, trazos configurables, degradados, transparencia, transformaciones. Por eso lo primero que se hace es convertirlo (un <i>cast</i>, capítulo 12):</p>
+<pre class="java">Graphics2D g2 = (Graphics2D) g.create();</pre>
+<p>Un <code>Graphics2D</code> guarda un <b>estado</b>: el color o pintura actual, el trazo (grosor y forma de las líneas), la fuente, la transparencia, la transformación y los «consejos de calidad». Cada dibujo usa el estado que haya en ese momento. Dibujar es, por tanto, una secuencia de «configura el estado → dibuja → configura → dibuja».</p>
+
+<h3>El sistema de coordenadas</h3>
+<p>Como en las imágenes del capítulo 34, el origen (0, 0) está en la esquina <b>superior izquierda</b> del componente, la X crece hacia la derecha y la Y crece <b>hacia abajo</b>. Es lo contrario de la escuela, donde la Y crecía hacia arriba, así que cuesta un poco acostumbrarse. Las unidades son píxeles, pero se admiten decimales (una línea en x = 10,5 se dibuja con antialiasing entre dos píxeles).</p>
+<svg viewBox="0 0 600 220" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="600" height="220" fill="#1C1740"/>
+<g font-family="sans-serif" font-size="13">
+<rect x="60" y="30" width="300" height="160" fill="#2B2363" stroke="#C8BCF6"/>
+<path d="M 60 30 L 400 30" stroke="#FF3BD4" stroke-width="2"/><path d="M 392 24 L 402 30 L 392 36" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="410" y="35" fill="#FF3BD4">x</text>
+<path d="M 60 30 L 60 210" stroke="#2F84FF" stroke-width="2"/><path d="M 54 202 L 60 212 L 66 202" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="44" y="210" fill="#2F84FF">y</text>
+<text x="42" y="24" fill="#FFFFFF">(0, 0)</text>
+<circle cx="260" cy="130" r="4" fill="#FFFFFF"/>
+<text x="268" y="126" fill="#FFFFFF">(200, 100)</text>
+<path d="M 60 130 L 256 130" stroke="#FFFFFF" stroke-dasharray="3 3"/>
+<path d="M 260 30 L 260 126" stroke="#FFFFFF" stroke-dasharray="3 3"/>
+<text x="450" y="90" fill="#C8BCF6">200 a la derecha</text>
+<text x="450" y="110" fill="#C8BCF6">100 hacia abajo</text>
+<text x="210" y="205" fill="#C8BCF6" text-anchor="middle">getWidth() × getHeight()</text>
+</g>
+</svg>
+<p>Cada componente tiene <b>su propio</b> sistema de coordenadas: dentro de <code>paintComponent</code>, (0, 0) es la esquina de <b>ese</b> componente, no de la ventana. Swing hace el desplazamiento por ti. Gracias a eso, un <code>BotonNeon</code> se dibuja igual esté donde esté: su forma siempre va de (9, 9) a (ancho − 9, alto − 9). Para saber cuánto mide el componente en el momento de pintar, usa <code>getWidth()</code> y <code>getHeight()</code>.</p>
+
+<h3>Figuras</h3>
+<p>Java2D representa las figuras como objetos del paquete <code>java.awt.geom</code>. Todas implementan la interfaz <code>Shape</code> (figura), así que cualquier método que reciba un <code>Shape</code> (como <code>trazoNeon</code>) acepta cualquiera de ellas. La terminación <code>.Double</code> indica que las coordenadas son de tipo <code>double</code>.</p>
+<table class="tabla">
+<tr><th>Clase</th><th>Se crea con</th><th>En el Totito</th></tr>
+<tr><td><code>Rectangle2D.Double</code></td><td>(x, y, ancho, alto) de la esquina superior izquierda</td><td>El cuerpo de la casa del icono «Menú principal»</td></tr>
+<tr><td><code>RoundRectangle2D.Double</code></td><td>(x, y, ancho, alto, arcoAncho, arcoAlto)</td><td>Tarjetas, botones, casillas, el papelito del confeti</td></tr>
+<tr><td><code>Ellipse2D.Double</code></td><td>(x, y, ancho, alto) del rectángulo que la encierra</td><td>La O, los puntitos del fondo, la cabeza del avatar</td></tr>
+<tr><td><code>Line2D.Double</code></td><td>(x1, y1, x2, y2)</td><td>Rejilla del tablero, raya ganadora, divisor de los botones del menú</td></tr>
+<tr><td><code>Path2D.Double</code></td><td>Vacío, y luego se traza con <code>moveTo</code>, <code>lineTo</code>, <code>quadTo</code>, <code>closePath</code></td><td>La X, casi todos los iconos, la estrella del trofeo</td></tr>
+<tr><td><code>Arc2D.Double</code></td><td>(x, y, ancho, alto, ánguloInicio, extensión, tipo)</td><td>Las flechas circulares de «Reiniciar»</td></tr>
+<tr><td><code>Area</code></td><td>A partir de otra figura; se combina con <code>add</code>, <code>subtract</code>, <code>intersect</code></td><td>La casa con su puerta, el pie del trofeo, el cuerpo del avatar</td></tr>
+</table>
+<p>Algunos detalles que causan errores si no los conoces:</p>
+<ul>
+<li><b>Los arcos de <code>RoundRectangle2D</code> son diámetros</b>, no radios: un arco de 30 redondea cada esquina con un círculo de 30 de diámetro (radio 15).</li>
+<li><b>Una elipse se define por su caja</b>, no por su centro. Para un círculo de diámetro <code>tam</code> centrado en (cx, cy) hay que restar la mitad: <code>new Ellipse2D.Double(cx - tam / 2, cy - tam / 2, tam, tam)</code>. Es lo que hace <code>Dibujo.dibujarO</code>.</li>
+<li><b>Path2D es un lápiz</b>: <code>moveTo(x, y)</code> levanta el lápiz y lo pone en un punto sin dibujar; <code>lineTo(x, y)</code> traza una recta desde donde está hasta el punto; <code>quadTo(cx, cy, x, y)</code> traza una curva hacia (x, y) «atraída» por el punto de control (cx, cy); <code>closePath()</code> cierra la figura volviendo al último <code>moveTo</code>. Un solo <code>Path2D</code> puede tener varios trazos separados: la X son dos <code>moveTo</code> + <code>lineTo</code>, uno por cada palito.</li>
+<li><b>Los ángulos de <code>Arc2D</code> van en grados y en sentido antihorario</b>, empezando en las 3 del reloj (0°), aunque la Y vaya hacia abajo. 90° es arriba. El icono de reiniciar dibuja dos arcos de 120°, uno desde 30° y otro desde 210°; el tipo <code>Arc2D.OPEN</code> deja el arco abierto (sin unir sus extremos).</li>
+</ul>
+<pre class="java">// La X de neon de Dibujo.dibujarX: dos trazos en un mismo Path2D.
+Path2D equis = new Path2D.Double();
+equis.moveTo(cx - r, cy - r);   // esquina de arriba a la izquierda
+equis.lineTo(cx + r, cy + r);   // ... hasta abajo a la derecha
+equis.moveTo(cx + r, cy - r);   // levantar el lapiz: arriba a la derecha
+equis.lineTo(cx - r, cy + r);   // ... hasta abajo a la izquierda</pre>
+<h3>Area: sumar, restar y cruzar figuras</h3>
+<p><code>Area</code> permite construir figuras complicadas combinando otras simples, como con tijeras y pegamento:</p>
+<svg viewBox="0 0 600 160" width="100%" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<mask id="c37-resta"><rect x="220" y="20" width="160" height="110" fill="#FFFFFF"/><circle cx="330" cy="75" r="38" fill="#000000"/></mask>
+<clipPath id="c37-cruce"><circle cx="530" cy="75" r="38"/></clipPath>
+</defs>
+<rect x="0" y="0" width="600" height="160" fill="#1C1740"/>
+<rect x="30" y="40" width="80" height="70" fill="#A05CFF"/><circle cx="130" cy="75" r="38" fill="#A05CFF"/>
+<rect x="230" y="40" width="80" height="70" fill="#A05CFF" mask="url(#c37-resta)"/>
+<circle cx="330" cy="75" r="38" fill="none" stroke="#C8BCF6" stroke-dasharray="3 3"/>
+<rect x="430" y="40" width="80" height="70" fill="none" stroke="#C8BCF6" stroke-dasharray="3 3"/>
+<circle cx="530" cy="75" r="38" fill="none" stroke="#C8BCF6" stroke-dasharray="3 3"/>
+<rect x="430" y="40" width="80" height="70" fill="#A05CFF" clip-path="url(#c37-cruce)"/>
+<g font-family="sans-serif" font-size="13" fill="#C8BCF6" text-anchor="middle">
+<text x="100" y="145">add (unir)</text>
+<text x="300" y="145">subtract (restar)</text>
+<text x="500" y="145">intersect (lo común)</text>
+</g>
+</svg>
+<pre class="java">// La casa del icono CASA: un rectangulo al que se le recorta la puerta.
+Area cuerpo = new Area(new Rectangle2D.Double(x + t * 0.2, y + t * 0.44, t * 0.6, t * 0.46));
+cuerpo.subtract(new Area(new RoundRectangle2D.Double(
+        x + t * 0.41, y + t * 0.6, t * 0.18, t * 0.32, t * 0.05, t * 0.05)));
+g.fill(cuerpo);</pre>
+<p>El hueco de la puerta es un hueco <b>de verdad</b>: a través de él se ve lo que haya detrás (el relleno del botón), cosa que no pasaría si pintaras la puerta encima con el color del fondo.</p>
+
+<h3>Dibujar el contorno o rellenar</h3>
+<p>Con una figura puedes hacer dos cosas: <code>g2.draw(figura)</code> traza su <b>contorno</b> con el trazo actual, y <code>g2.fill(figura)</code> <b>rellena</b> su interior con la pintura actual. La <code>Tarjeta</code> hace las dos: primero <code>fill</code> con <code>SUPERFICIE</code> (el cristal) y luego el contorno de neón con <code>trazoNeon</code>, que por dentro usa <code>draw</code>.</p>
+
+<h3>Trazos: grosor, puntas y uniones</h3>
+<p>El aspecto de las líneas lo define un <b>trazo</b> (<code>Stroke</code>); el más usado es <code>BasicStroke</code>, que se crea con tres datos: el grosor, la forma de las <b>puntas</b> (los extremos de una línea abierta) y la forma de las <b>uniones</b> (las esquinas donde se juntan dos segmentos).</p>
+<svg viewBox="0 0 760 190" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="760" height="190" fill="#1C1740"/>
+<g fill="none">
+<path d="M 40 40 L 140 40" stroke="#FF3BD4" stroke-width="18" stroke-linecap="butt"/>
+<path d="M 40 80 L 140 80" stroke="#FF3BD4" stroke-width="18" stroke-linecap="round"/>
+<path d="M 40 120 L 140 120" stroke="#FF3BD4" stroke-width="18" stroke-linecap="square"/>
+<path d="M 40 30 L 40 130 M 140 30 L 140 130" stroke="#FFFFFF" stroke-width="1" stroke-dasharray="3 3"/>
+<path d="M 430 130 L 470 50 L 510 130" stroke="#2F84FF" stroke-width="18" stroke-linejoin="miter"/>
+<path d="M 540 130 L 580 50 L 620 130" stroke="#2F84FF" stroke-width="18" stroke-linejoin="round"/>
+<path d="M 650 130 L 690 50 L 730 130" stroke="#2F84FF" stroke-width="18" stroke-linejoin="bevel"/>
+</g>
+<g font-family="sans-serif" font-size="12" fill="#C8BCF6">
+<text x="160" y="44">CAP_BUTT (corta en seco)</text>
+<text x="160" y="84">CAP_ROUND (media luna)</text>
+<text x="160" y="124">CAP_SQUARE (medio cuadrado)</text>
+<text x="470" y="160" text-anchor="middle">JOIN_MITER</text>
+<text x="580" y="160" text-anchor="middle">JOIN_ROUND</text>
+<text x="690" y="160" text-anchor="middle">JOIN_BEVEL</text>
+<text x="20" y="170">Puntas: las líneas punteadas marcan dónde termina la línea</text>
+</g>
+</svg>
+<p>El Totito usa siempre puntas y uniones <b>redondas</b>, porque un tubo de neón no tiene esquinas afiladas. Por eso existe el atajo <code>Dibujo.redondo</code>:</p>
+<pre class="java">public static BasicStroke redondo(float grosor) {
+    return new BasicStroke(grosor, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+}</pre>
+<p>Recuerda (capítulo 36) que el trazo se dibuja <b>centrado</b> sobre la línea de la figura: un trazo de grosor 10 sobresale 5 píxeles hacia cada lado. Y que con <code>CAP_ROUND</code> o <code>CAP_SQUARE</code> la línea se alarga media anchura más allá de sus extremos.</p>
+
+<h3>Pintura: color o degradado</h3>
+<p>Para elegir con qué se pinta hay dos métodos: <code>setColor(Color)</code> y <code>setPaint(Paint)</code>. Un <code>Color</code> es un tipo particular de <code>Paint</code> (pintura lisa); los degradados <code>GradientPaint</code> y <code>RadialGradientPaint</code> del capítulo 35 son otros. Todo lo que dibujes después (contornos, rellenos y también texto) usa la pintura actual. Por eso la palabra «Totito» del encabezado sale con degradado de rosa a cian: antes de escribirla se fija un <code>GradientPaint</code> como pintura.</p>
+
+<h3>Antialiasing: bordes suaves</h3>
+<p>La pantalla es una cuadrícula de píxeles cuadrados. Una línea diagonal o una curva no encaja en la cuadrícula: si cada píxel solo puede estar «encendido» o «apagado», el borde sale escalonado, como una escalera (en inglés, <i>aliasing</i> o «dientes de sierra»). El <b>antialiasing</b> (suavizado) calcula qué <b>fracción</b> de cada píxel cubre la figura y lo pinta con esa proporción de color, mezclado con el fondo. El ojo percibe un borde suave.</p>
+<svg viewBox="0 0 600 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="600" height="150" fill="#1C1740"/>
+<g fill="#FFFFFF">
+<rect x="40" y="100" width="20" height="20"/><rect x="60" y="100" width="20" height="20"/>
+<rect x="80" y="80" width="20" height="20"/><rect x="100" y="80" width="20" height="20"/>
+<rect x="120" y="60" width="20" height="20"/><rect x="140" y="60" width="20" height="20"/>
+<rect x="160" y="40" width="20" height="20"/><rect x="180" y="40" width="20" height="20"/>
+<rect x="200" y="20" width="20" height="20"/><rect x="220" y="20" width="20" height="20"/>
+</g>
+<g fill="#FFFFFF">
+<rect x="340" y="100" width="20" height="20" fill-opacity="0.9"/><rect x="360" y="100" width="20" height="20" fill-opacity="0.5"/><rect x="360" y="80" width="20" height="20" fill-opacity="0.3"/>
+<rect x="380" y="80" width="20" height="20" fill-opacity="0.9"/><rect x="400" y="80" width="20" height="20" fill-opacity="0.5"/><rect x="400" y="60" width="20" height="20" fill-opacity="0.3"/>
+<rect x="420" y="60" width="20" height="20" fill-opacity="0.9"/><rect x="440" y="60" width="20" height="20" fill-opacity="0.5"/><rect x="440" y="40" width="20" height="20" fill-opacity="0.3"/>
+<rect x="460" y="40" width="20" height="20" fill-opacity="0.9"/><rect x="480" y="40" width="20" height="20" fill-opacity="0.5"/><rect x="480" y="20" width="20" height="20" fill-opacity="0.3"/>
+<rect x="500" y="20" width="20" height="20" fill-opacity="0.9"/><rect x="520" y="20" width="20" height="20" fill-opacity="0.5"/>
+</g>
+<g font-family="sans-serif" font-size="13" fill="#C8BCF6" text-anchor="middle">
+<text x="140" y="142">Sin antialiasing: escalones</text>
+<text x="440" y="142">Con antialiasing: píxeles a medias</text>
+</g>
+</svg>
+<p>(Ampliado: cada cuadrado es un píxel.) Java2D trae el suavizado <b>apagado</b> por defecto, porque cuesta algo más de cálculo. Para el neón es imprescindible: sin él, los halos de seis capas finas se verían como anillos escalonados. Se activa con <b>consejos de dibujo</b> (<code>RenderingHints</code>), que es lo que hace <code>Dibujo.preparar</code> al principio de cada <code>paintComponent</code> del Totito:</p>
+<pre class="java">g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);</pre>
+<table class="tabla">
+<tr><th>Consejo</th><th>Qué pide</th></tr>
+<tr><td><code>KEY_ANTIALIASING</code></td><td>Suavizar los bordes de las figuras.</td></tr>
+<tr><td><code>KEY_TEXT_ANTIALIASING</code></td><td>Suavizar el texto (va aparte).</td></tr>
+<tr><td><code>KEY_RENDERING</code></td><td>Preferir calidad a velocidad en general.</td></tr>
+<tr><td><code>KEY_STROKE_CONTROL</code> = <code>PURE</code></td><td>Dibujar la geometría exacta, sin «ajustar» las líneas al píxel más cercano. Importante para que las capas del halo queden perfectamente concéntricas.</td></tr>
+<tr><td><code>KEY_FRACTIONALMETRICS</code></td><td>Medir y colocar las letras con decimales: anchos de texto más exactos y centrados más precisos.</td></tr>
+</table>
+<p>Se llaman «consejos» porque el sistema puede ignorarlos si no los soporta, aunque en la práctica Java los respeta.</p>
+
+<h3>Transparencia de todo lo que viene: AlphaComposite</h3>
+<p>En el capítulo 35 viste el alfa de un color. A veces se quiere algo distinto: que <b>todo</b> lo que se dibuje a continuación sea semitransparente, sean figuras de un color, de otro o degradados. Para eso se cambia la regla de composición del pincel:</p>
+<pre class="java">// BotonNeon desactivado: todo el boton al 40 %.
+g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));</pre>
+<p><code>SRC_OVER</code> significa «lo nuevo se pinta encima de lo que hay» (la regla normal) y <code>0.4f</code> multiplica la opacidad de todo lo que siga por 0,4. Así, un botón entero (relleno, halo, icono y texto) se apaga con una sola línea. <code>PanelTablero</code> usa la misma idea con 0,28 para la ficha «fantasma» y luego vuelve a la normalidad con <code>g2.setComposite(AlphaComposite.SrcOver)</code> (opacidad completa) para que lo siguiente que dibuje no salga transparente.</p>
+
+<h3>Transformaciones: mover, girar y escalar el papel</h3>
+<p>Una <b>transformación</b> cambia el sistema de coordenadas del pincel. En lugar de calcular dónde caen las esquinas de una figura girada (con senos y cosenos), mueves y giras «el papel» y dibujas la figura normal:</p>
+<ul>
+<li><code>g2.translate(x, y)</code>: mueve el origen al punto (x, y). Después, dibujar en (0, 0) es dibujar en (x, y).</li>
+<li><code>g2.rotate(angulo)</code>: gira el papel alrededor del origen actual. El ángulo va en <b>radianes</b> (una vuelta completa son 2π ≈ 6,28; usa <code>Math.toRadians(grados)</code> para convertir). Con la Y hacia abajo, un ángulo positivo gira en el sentido de las agujas del reloj.</li>
+<li><code>g2.scale(sx, sy)</code>: agranda o achica (2 = el doble, 0,5 = la mitad).</li>
+</ul>
+<p>El orden importa: no es lo mismo «mover y luego girar» que «girar y luego mover». El confeti de la pantalla de victoria es el ejemplo perfecto:</p>
+<pre class="java">AffineTransform previo = g2.getTransform();   // guardar el papel como estaba
+g2.translate(x, y);                            // llevar el origen al sitio del papelito
+g2.rotate(angulo);                             // girar el papel alrededor de ese punto
+RoundRectangle2D papel = new RoundRectangle2D.Double(-3.5, -7, 7, 14, 3, 3);
+...
+g2.fill(papel);
+g2.setTransform(previo);                       // devolver el papel a su sitio</pre>
+<p>Fíjate en el papelito: va de (−3,5, −7) a (3,5, 7), es decir, está <b>centrado en el origen</b>. Como el origen se movió al punto (x, y) y el giro es alrededor del origen, cada papelito gira sobre su propio centro. Si lo hubieras dibujado en (0, 0, 7, 14), giraría alrededor de su esquina y saldría desplazado. Y la última línea es crucial: sin restaurar la transformación, el siguiente papelito se movería y giraría <b>a partir del anterior</b>, y acabarían todos fuera de la tarjeta.</p>
+<svg viewBox="0 0 600 160" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="600" height="160" fill="#1C1740"/>
+<g font-family="sans-serif" font-size="12" fill="#C8BCF6">
+<path d="M 30 20 L 170 20 M 30 20 L 30 140" stroke="#C8BCF6" stroke-width="1.5"/>
+<text x="36" y="36">origen</text>
+<path d="M 220 20 L 360 20 M 220 20 L 220 140" stroke="#C8BCF6" stroke-width="1" stroke-opacity="0.4"/>
+<path d="M 270 80 L 350 80 M 270 80 L 270 140" stroke="#FF3BD4" stroke-width="1.5"/>
+<circle cx="270" cy="80" r="3" fill="#FF3BD4"/>
+<text x="276" y="74" fill="#FF3BD4">translate(x, y)</text>
+<path d="M 410 20 L 550 20 M 410 20 L 410 140" stroke="#C8BCF6" stroke-width="1" stroke-opacity="0.4"/>
+<g transform="translate(470 80) rotate(35)">
+<path d="M 0 0 L 70 0 M 0 0 L 0 55" stroke="#2F84FF" stroke-width="1.5"/>
+<rect x="-3.5" y="-7" width="7" height="14" rx="1.5" fill="#FF3BD4"/>
+</g>
+<text x="480" y="152" fill="#2F84FF" text-anchor="middle">+ rotate: gira sobre su centro</text>
+</g>
+</svg>
+
+<h3>Texto</h3>
+<p>El texto se dibuja con <code>g2.drawString(texto, x, y)</code> usando la fuente (<code>setFont</code>) y la pintura actuales. Lo esencial ya lo viste en el capítulo 36: la <code>y</code> es la <b>línea base</b>, no la parte de arriba; para centrar se usan las medidas de <code>FontMetrics</code> (<code>stringWidth</code>, <code>getAscent</code>, <code>getDescent</code>). El texto de neón de <code>Dibujo.textoNeon</code> usa el mismo truco de capas que los trazos, adaptado: dibuja el texto 32 veces, desplazado 1, 2, 3 y 4 píxeles en ocho direcciones y casi transparente, y después una vez más encima con su relleno. Se explica en el capítulo 41.</p>
+
+<h3>Por qué copiar el Graphics: create y dispose</h3>
+<p>El objeto <code>g</code> que recibe <code>paintComponent</code> <b>no es solo tuyo</b>. Después de tu <code>paintComponent</code>, Swing usa ese mismo objeto para pintar el borde y para preparar el pintado de los hijos. Si cambias su estado y no lo restauras, el cambio «se filtra»:</p>
+<ul>
+<li>Un <code>AlphaComposite</code> al 40 % olvidado haría que se pintara transparente lo que viniera después.</li>
+<li>Un <code>translate</code> olvidado desplazaría el borde y los hijos.</li>
+<li>Un trazo grueso olvidado engordaría las líneas de otro dibujo.</li>
+</ul>
+<p>Hay dos formas de protegerse, y el Totito usa las dos:</p>
+<ol>
+<li><b>Trabajar en una copia.</b> <code>g.create()</code> devuelve un pincel <b>nuevo</b> con el mismo estado que el original; lo que le cambies no afecta a <code>g</code>. Al terminar, se llama a <code>dispose()</code> sobre la copia para liberar los recursos del sistema que usa. Es lo que hace <code>Dibujo.preparar</code> (copia + consejos de calidad) y por eso todos los <code>paintComponent</code> del Totito terminan con <code>g2.dispose()</code>.</li>
+<li><b>Guardar y restaurar.</b> Un método auxiliar que recibe el pincel de otro no debería tirarlo ni cambiarlo sin avisar. <code>Dibujo.trazoNeon</code> guarda el trazo y la pintura al empezar (<code>getStroke</code>, <code>getPaint</code>) y los repone al final; el confeti guarda y repone la transformación.</li>
+</ol>
+<div class="caja cuidado"><b>dispose solo sobre lo que tú creaste</b> Llama a <code>dispose()</code> sobre la copia que obtuviste con <code>create()</code>, nunca sobre el <code>g</code> que te pasó Swing: ese no es tuyo y Swing todavía lo necesita para pintar el borde y los hijos.</div>
+
+<h2>Un programa completo: el círculo de neón</h2>
+<p>Ahora junta todo en un programa pequeño: una ventana que dibuja dos círculos azules, uno con un trazo normal y otro con el truco de capas del neón, para comparar. Es una versión mínima de lo que hacen <code>Tema</code> y <code>Dibujo</code>, toda en un solo archivo. Créalo en tu carpeta de prácticas:</p>
+<pre class="ps">Set-Location $HOME\Proyectos\Practicas
+notepad NeonDemo.java</pre>
+<pre class="java">import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+
+/** Dos circulos: uno con trazo normal y otro con el truco de capas del neon. */
+public class NeonDemo extends JPanel {
+
+    private static final Color FONDO = new Color(0x1C, 0x17, 0x40);
+    private static final Color AZUL = new Color(0x2F, 0x84, 0xFF);
+
+    public NeonDemo() {
+        setPreferredSize(new Dimension(560, 320));
+        setBackground(FONDO);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+
+        double tam = 160;
+        double y = 50;
+        Shape simple = new Ellipse2D.Double(60, y, tam, tam);
+        Shape neon = new Ellipse2D.Double(340, y, tam, tam);
+
+        g2.setColor(AZUL);
+        g2.setStroke(redondo(10f));
+        g2.draw(simple);
+
+        trazoNeon(g2, neon, AZUL, 10f);
+
+        g2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
+        g2.setColor(Color.WHITE);
+        centrar(g2, "Trazo normal", 60 + tam / 2, 270);
+        centrar(g2, "Con halo de neón", 340 + tam / 2, 270);
+        g2.dispose();
+    }
+
+    /** La misma figura trazada varias veces: ancha y transparente, luego fina y opaca. */
+    private static void trazoNeon(Graphics2D g2, Shape figura, Color color, float grosor) {
+        for (int i = 6; i &gt;= 1; i--) {
+            int alfa = 6 + (6 - i) * 5;
+            g2.setColor(conAlfa(color, alfa));
+            g2.setStroke(redondo(grosor + i * 2.4f));
+            g2.draw(figura);
+        }
+        g2.setColor(color);
+        g2.setStroke(redondo(grosor));
+        g2.draw(figura);
+        g2.setColor(conAlfa(aclarar(color, 0.6f), 200));
+        g2.setStroke(redondo(grosor * 0.35f));
+        g2.draw(figura);
+    }
+
+    private static BasicStroke redondo(float grosor) {
+        return new BasicStroke(grosor, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
+    }
+
+    private static Color conAlfa(Color c, int alfa) {
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), alfa);
+    }
+
+    private static Color aclarar(Color c, float f) {
+        return new Color(Math.round(c.getRed() + (255 - c.getRed()) * f),
+                Math.round(c.getGreen() + (255 - c.getGreen()) * f),
+                Math.round(c.getBlue() + (255 - c.getBlue()) * f));
+    }
+
+    /** Escribe el texto centrado en horizontal sobre cx, con la linea base en y. */
+    private static void centrar(Graphics2D g2, String texto, double cx, float y) {
+        FontMetrics fm = g2.getFontMetrics();
+        g2.drawString(texto, (float) (cx - fm.stringWidth(texto) / 2.0), y);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -&gt; {
+            JFrame ventana = new JFrame("Neón con capas");
+            ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            ventana.setContentPane(new NeonDemo());
+            ventana.pack();
+            ventana.setLocationRelativeTo(null);
+            ventana.setVisible(true);
+        });
+    }
+}</pre>
+<pre class="ps">java NeonDemo.java</pre>
+<p>Se abre una ventana de fondo violeta oscuro con dos anillos azules del mismo tamaño. El de la izquierda es un trazo plano; el de la derecha tiene un resplandor azulado alrededor y una línea clara en el centro: parece un tubo encendido. Debajo de cada uno, su rótulo en blanco.</p>
+<h3>Cómo funciona, parte por parte</h3>
+<ul>
+<li><b>La clase</b>: <code>NeonDemo extends JPanel</code>. Es un panel que se dibuja a sí mismo; la ventana solo lo contiene (igual que el Totito separa <code>PanelPrincipal</code> de <code>TotitoApp</code>).</li>
+<li><b>Las constantes</b>: dos colores de la paleta del capítulo 35, escritos en hexadecimal.</li>
+<li><b>El constructor</b> declara el tamaño preferido (560 × 320, porque un componente dibujado a mano no sabe cuánto mide) y el color de fondo.</li>
+<li><b><code>paintComponent</code></b>:
+<ul>
+<li><code>super.paintComponent(g)</code> pinta el fondo: el panel es opaco (por defecto) y cumple su contrato pintando todo su rectángulo con <code>FONDO</code>.</li>
+<li><code>g.create()</code> hace la copia del pincel, y tres consejos activan el suavizado y la geometría exacta.</li>
+<li>Se crean las dos figuras: círculos de 160 de diámetro definidos por su caja (esquinas en x = 60 y x = 340, y = 50).</li>
+<li>El círculo simple: color, trazo redondo de 10 y <code>draw</code>.</li>
+<li>El de neón: una llamada a <code>trazoNeon</code>.</li>
+<li>Los rótulos: fuente lógica <code>SansSerif</code> (para no depender de nada instalado), color blanco y el método <code>centrar</code>. La línea base está en y = 270, por debajo de los círculos (que terminan en 50 + 160 = 210, más el grosor).</li>
+<li><code>g2.dispose()</code> libera la copia.</li>
+</ul></li>
+<li><b><code>trazoNeon</code></b> es el corazón: el bucle <code>for</code> va de i = 6 a i = 1 (de la capa más ancha a la más fina). En cada vuelta calcula el alfa (6, 11, 16, 21, 26, 31: la tabla del capítulo 35), fija el color con ese alfa y un trazo de grosor 10 + i × 2,4, y dibuja. Luego el tubo (grosor 10, color opaco) y el centro (grosor 3,5, color aclarado al 60 % con alfa 200).</li>
+<li><b><code>redondo</code>, <code>conAlfa</code> y <code>aclarar</code></b> son copias simplificadas de los métodos de <code>Dibujo</code> y <code>Tema</code>.</li>
+<li><b><code>main</code></b> crea la ventana en el EDT con <code>invokeLater</code>, pone el panel como contenido, la ajusta con <code>pack()</code> al tamaño preferido, la centra y la muestra.</li>
+</ul>
+<h3>Experimenta</h3>
+<ol>
+<li>Cambia <code>AZUL</code> por el rosa (<code>0xFF, 0x3B, 0xD4</code>) y vuelve a ejecutar.</li>
+<li>Comenta la línea del <code>KEY_ANTIALIASING</code> (con <code>//</code> delante): verás los círculos dentados y el halo convertido en anillos escalonados.</li>
+<li>Prueba con 12 capas: el bucle <code>for (int i = 12; i &gt;= 1; i--)</code>, el alfa <code>3 + (12 - i) * 2</code> y el grosor <code>grosor + i * 1.2f</code>. El halo mide lo mismo, pero con más capas y más finas el paso de color a fondo es más suave (y el dibujo, algo más lento).</li>
+<li>Agrega <code>setOpaque(false);</code> en el constructor: el panel deja de pintar su fondo (aunque <code>super.paintComponent</code> se siga llamando, solo rellena si el componente es opaco) y detrás se verá el fondo predeterminado de la ventana, normalmente gris claro. Es la otra cara del contrato de opacidad.</li>
+</ol>
+<h3>Errores típicos</h3>
+<table class="tabla">
+<tr><th>Síntoma</th><th>Causa probable</th></tr>
+<tr><td>No se dibuja nada y no hay error.</td><td>El método está mal escrito (<code>paintcomponent</code>, <code>paintComponent(Graphics2D g)</code>): no sobrescribe nada y Swing nunca lo llama. Con <code>@Override</code> encima, el compilador te avisa (capítulo 23).</td></tr>
+<tr><td>La ventana sale diminuta.</td><td>Falta <code>setPreferredSize</code>: el panel no tiene hijos ni tamaño declarado y <code>pack()</code> ajusta la ventana a casi nada.</td></tr>
+<tr><td>Restos de dibujos anteriores al mover o redimensionar.</td><td>Componente opaco que no pinta todo su fondo (falta <code>super.paintComponent(g)</code>).</td></tr>
+<tr><td>Un rectángulo gris tapa el fondo personalizado.</td><td>Un <code>JPanel</code> intermedio opaco: falta <code>setOpaque(false)</code>.</td></tr>
+<tr><td>La ventana se congela un rato.</td><td>Algo lento o un <code>Thread.sleep</code> en el EDT; usa <code>javax.swing.Timer</code>.</td></tr>
+<tr><td><code>error: cannot find symbol</code> con <code>Ellipse2D</code> u otra clase.</td><td>Falta su <code>import</code> (las figuras están en <code>java.awt.geom</code>).</td></tr>
+</table>
+<div class="caja hito"><b>Hito</b> Has dibujado tu primer neón con Java2D. Todo lo que hace la interfaz del Totito (tarjetas, botones, fichas, iconos) es una combinación de lo que acabas de usar: figuras, trazos redondos, colores con alfa, degradados y capas. La Parte VII lo construye pieza a pieza, empezando por <code>Tema</code> en el capítulo 40 y <code>Dibujo</code> en el 41.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Una interfaz de Swing es un <b>árbol</b> de componentes: contenedores (como <code>JPanel</code>) con hijos; el espacio, el pintado y los clics recorren ese árbol.</li>
+<li>Los <b>layouts</b> reparten el espacio: <code>BorderLayout</code> (cinco zonas), <code>FlowLayout</code> (en fila), <code>GridLayout</code> (celdas iguales), <code>BoxLayout</code> (fila o columna, con <i>rigid areas</i> y <i>glue</i>), <code>CardLayout</code> (una carta visible) o ninguno, con <code>setBounds</code> en <code>doLayout</code>.</li>
+<li>Los layouts consultan los tamaños <b>preferido, mínimo y máximo</b>; <code>Dibujo.fijarTamano</code> los iguala para que nada se estire.</li>
+<li>Todo lo de la interfaz ocurre en el <b>EDT</b>: se entra con <code>invokeLater</code>, no se bloquea nunca y las pausas se hacen con <code>javax.swing.Timer</code>.</li>
+<li>Se pide pintar con <code>repaint()</code>; Swing llama a <code>paintComponent</code>, <code>paintBorder</code> y <code>paintChildren</code>, en ese orden.</li>
+<li><b>Opaco</b> es un contrato («pinto todo mi rectángulo»); en el Totito todo es transparente salvo el fondo de <code>PantallaBase</code>.</li>
+<li><code>Graphics2D</code>: origen arriba a la izquierda y Y hacia abajo; figuras (<code>RoundRectangle2D</code>, <code>Ellipse2D</code>, <code>Path2D</code>, <code>Arc2D</code>, <code>Area</code>…), trazos <code>BasicStroke</code>, pinturas, antialiasing, <code>AlphaComposite</code> y transformaciones.</li>
+<li>Se dibuja sobre una <b>copia</b> del pincel (<code>create</code>/<code>dispose</code>) o se restaura su estado, para que los cambios no se filtren.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Un gráfico de barras para la tienda</b> (capítulo 68): un <code>JComponent</code> con <code>paintComponent</code> que recorre los datos y dibuja un <code>RoundRectangle2D</code> por barra, con <code>drawString</code> y la línea base centrada para las etiquetas. Ningún componente estándar de Swing hace gráficos; esto sí.</li>
+<li><b>Un juego de tablero más grande</b> (Conecta 4, Buscaminas): <code>PanelTablero</code> calcula la casilla bajo el ratón dividiendo la posición entre el tamaño de casilla; con un <code>javax.swing.Timer</code> que llame a <code>repaint()</code> cada 16 milisegundos tienes animaciones (una ficha que cae) sin congelar la ventana.</li>
+<li><b>Cualquier aplicación de escritorio</b> con varias pantallas: <code>CardLayout</code> para navegar entre ellas conservando su estado, <code>BorderLayout</code> + <code>BoxLayout</code> para la estructura de cada una.</li>
+<li><b>Otras tecnologías</b>: el «lienzo» de las páginas web (<code>canvas</code>), Android y casi todas las bibliotecas gráficas usan las mismas ideas: origen arriba a la izquierda, figuras, trazos con puntas y uniones, guardar y restaurar el estado del pincel, y transformaciones. Lo que aprendiste aquí se traslada casi palabra por palabra.</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Dibuja (en papel) el árbol de componentes de la pantalla de configuración, como el del menú de este capítulo. Pista: mira el constructor de <code>PantallaConfiguracion</code> y recuerda que cada <code>fila(…)</code> es un <code>JPanel</code> con <code>BoxLayout</code> horizontal.</li>
+<li>En <code>DemoLayouts</code>, añade un tercer rectángulo «Salir» (morado) con otro espacio fijo de 14 y mete los tres en un <code>JPanel</code> intermedio con <code>BoxLayout</code> vertical, como la <code>Tarjeta</code> del menú. Recuerda la alineación centrada y el tamaño máximo del panel intermedio.</li>
+<li>Modifica <code>NeonDemo</code> para que el círculo de neón sea una X: sustituye la elipse por un <code>Path2D</code> con dos <code>moveTo</code> y dos <code>lineTo</code>, como en <code>Dibujo.dibujarX</code>, y píntala en rosa.</li>
+<li>Añade a <code>NeonDemo</code> un campo <code>float intensidad = 1f</code> y un <code>javax.swing.Timer</code> de 50 milisegundos que la haga oscilar entre 0,4 y 1,5 y llame a <code>repaint()</code>; multiplica los alfas del halo por la intensidad (sin pasar de 255). Tendrás un neón que «respira». Pista: crea el temporizador en el constructor y arráncalo con <code>start()</code>.</li>
+<li>Dibuja un papelito de confeti girado 30° en el centro de la ventana usando <code>translate</code> y <code>rotate</code>, y luego otro sin restaurar la transformación. Explica dónde aparece el segundo y por qué.</li>
+</ol>
+</div>
+</section>

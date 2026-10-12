@@ -1,0 +1,682 @@
+<section class="capitulo" id="cap09">
+<h1><span class="num">Capítulo 9</span>El trabajo diario con Git</h1>
+<p class="entrada">Aquí aprendes el ritmo con el que vas a trabajar todo el libro (y toda tu vida de programador): mirar, comparar, preparar, guardar y subir. Después practicarás ramas, fusiones y un conflicto de verdad, y aprenderás a deshacer casi cualquier error sin perder trabajo. Lo harás en un laboratorio aparte, donde romper cosas no cuesta nada.</p>
+
+<h2>Un laboratorio para practicar sin miedo</h2>
+<p>El historial del Totito debe seguir el plan del capítulo 8, así que no lo vamos a llenar de experimentos. En su lugar, crea un repositorio de práctica, <b>fuera</b> de la carpeta del Totito (nunca un repositorio dentro de otro):</p>
+<pre class="ps">cd $HOME\Proyectos
+New-Item -ItemType Directory practica-git
+cd practica-git
+git init
+notepad Tema.java</pre>
+<p>El Bloc de notas pregunta si quieres crear el archivo nuevo: responde <b>Sí</b>. Pega este contenido, guarda con Ctrl+S y cierra. Es una versión recortada de la clase <code>Tema</code> que escribirás en el capítulo 40; por ahora no necesitas entender el Java, solo fíjate en que cada línea <code>ROSA</code>, <code>AZUL</code>, <code>MORADO</code> define un color con tres números hexadecimales (rojo, verde, azul), que verás en el capítulo 35.</p>
+<pre class="java">import java.awt.Color;
+
+public final class Tema {
+
+    /** Color de la X (en todo el juego la X es rosa). */
+    public static final Color ROSA = new Color(0xFF, 0x3B, 0xD4);
+    /** Color de la O (en todo el juego la O es azul). */
+    public static final Color AZUL = new Color(0x2F, 0x84, 0xFF);
+    public static final Color MORADO = new Color(0xA0, 0x5C, 0xFF);
+
+    private Tema() {
+    }
+}</pre>
+<p>Y la primera foto del laboratorio:</p>
+<pre class="ps">git add Tema.java
+git commit -m "Tema: colores basicos"</pre>
+<pre class="salida">[main (root-commit) 64f842d] Tema: colores basicos
+ 1 file changed, 13 insertions(+)
+ create mode 100644 Tema.java</pre>
+<p>Todo lo que sigue en este capítulo lo haces en <code>practica-git</code>. Las salidas que verás son reales; solo tus hashes serán distintos.</p>
+
+<h2>El ciclo diario</h2>
+<p>Trabajar con Git es repetir un ciclo corto, muchas veces al día:</p>
+<ol>
+<li><b>Traer</b> lo último (<code>git pull</code>), si trabajas con GitHub o con otras personas.</li>
+<li><b>Editar</b>: escribes código en NetBeans, compilas, pruebas.</li>
+<li><b>Mirar</b> qué cambió: <code>git status</code>.</li>
+<li><b>Comparar</b> línea por línea: <code>git diff</code>.</li>
+<li><b>Preparar</b> lo que va junto: <code>git add</code>.</li>
+<li><b>Guardar</b> con un buen mensaje: <code>git commit</code>.</li>
+<li><b>Subir</b>: <code>git push</code>.</li>
+</ol>
+<p>Hagamos una vuelta completa. Abre <code>Tema.java</code> con <code>notepad Tema.java</code> y, debajo de la línea de <code>MORADO</code>, agrega esta (con sus cuatro espacios al principio):</p>
+<pre class="java">    public static final Color LAVANDA = new Color(0xC8, 0xBC, 0xF6);</pre>
+<p>Guarda y cierra. Ahora, el paso 3:</p>
+<pre class="ps">git status</pre>
+<pre class="salida">On branch main
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   Tema.java
+
+no changes added to commit (use "git add" and/or "git commit -a")</pre>
+<p>«Cambios que no están preparados para el commit: <i>modified</i>, Tema.java». Git te ofrece dos caminos: <code>git add</code> para prepararlo, o <code>git restore</code> para descartar el cambio (lo verás en «Deshacer»).</p>
+
+<h3>git status -s: la versión corta</h3>
+<pre class="ps">git status -s</pre>
+<pre class="salida"> M Tema.java</pre>
+<p>Una línea por archivo, con dos columnas de letras delante: la <b>izquierda</b> es el estado en la bandeja (área de preparación) y la <b>derecha</b>, en la mesa (directorio de trabajo).</p>
+<table class="tabla">
+<tr><th>Código</th><th>Significado</th></tr>
+<tr><td><code>??</code></td><td>Archivo sin seguimiento (nuevo, nunca agregado)</td></tr>
+<tr><td><code>&#160;M</code> (espacio y M)</td><td>Modificado en la mesa, no preparado</td></tr>
+<tr><td><code>M&#160;</code> (M y espacio)</td><td>Modificado y preparado: entrará en el commit</td></tr>
+<tr><td><code>MM</code></td><td>Preparado, y después lo volviste a cambiar: el segundo cambio no está en la bandeja</td></tr>
+<tr><td><code>A&#160;</code></td><td>Archivo nuevo, preparado (<i>added</i>)</td></tr>
+<tr><td><code>D&#160;</code> / <code>&#160;D</code></td><td>Borrado (<i>deleted</i>), preparado / sin preparar</td></tr>
+<tr><td><code>UU</code></td><td>En conflicto (<i>unmerged</i>), lo verás más abajo</td></tr>
+</table>
+
+<h3>git diff: qué cambió exactamente</h3>
+<pre class="ps">git diff</pre>
+<pre class="salida">diff --git a/Tema.java b/Tema.java
+index 7e01ffe..d1b89cc 100644
+--- a/Tema.java
++++ b/Tema.java
+@@ -7,6 +7,7 @@ public final class Tema {
+     /** Color de la O (en todo el juego la O es azul). */
+     public static final Color AZUL = new Color(0x2F, 0x84, 0xFF);
+     public static final Color MORADO = new Color(0xA0, 0x5C, 0xFF);
++    public static final Color LAVANDA = new Color(0xC8, 0xBC, 0xF6);
+
+     private Tema() {
+     }</pre>
+<p>Un <i>diff</i> (de <i>difference</i>) es la lista de diferencias entre dos versiones de un archivo. Al principio asusta, pero se lee fácil:</p>
+<ul>
+<li><code>diff --git a/Tema.java b/Tema.java</code>: compara la versión «a» (la de antes, la guardada) con la «b» (la de ahora).</li>
+<li><code>index 7e01ffe..d1b89cc 100644</code>: identificadores internos de las dos versiones del contenido. Puedes ignorar esta línea.</li>
+<li><code>--- a/Tema.java</code> y <code>+++ b/Tema.java</code>: las líneas que empiecen con <code>-</code> son de la versión vieja; las que empiecen con <code>+</code>, de la nueva.</li>
+<li><code>@@ -7,6 +7,7 @@</code>: la cabecera del trozo (en inglés, <i>hunk</i>). Quiere decir: «en la versión vieja, desde la línea 7, se muestran 6 líneas; en la nueva, desde la 7, se muestran 7». Después de los <code>@@</code> Git pone, como pista, la línea más cercana que parece el inicio de una función o clase: <code>public final class Tema {</code>.</li>
+<li>Las líneas que empiezan con un <b>espacio</b> son <b>contexto</b>: no cambiaron; Git las muestra (tres antes y tres después) para que sepas dónde está el cambio.</li>
+<li>La línea con <code>+</code> es la que <b>agregaste</b>. En la terminal de Windows sale en verde; las de <code>-</code> (borradas) salen en rojo.</li>
+</ul>
+<p>Una línea <b>modificada</b> aparece como una borrada y una agregada. Por ejemplo, si cambiaras el rosa, verías:</p>
+<pre class="salida">-    public static final Color ROSA = new Color(0xFF, 0x3B, 0xD4);
++    public static final Color ROSA = new Color(0xFF, 0x6E, 0xE0);</pre>
+<p>Si el diff es largo, Git usa el paginador: avanza con la barra espaciadora y sal con <code>q</code>.</p>
+
+<div class="caja consejo"><b>Lee tu diff antes de cada commit</b> Es la mejor costumbre que puedes tener con Git. En el diff descubres el <code>System.out.println("prueba")</code> que olvidaste quitar, el archivo que cambiaste sin querer, o la línea que borraste por error. Diez segundos de lectura te ahorran commits de «arreglo lo que rompí».</div>
+
+<h3>git add y git diff --staged</h3>
+<pre class="ps">git add Tema.java
+git diff
+git diff --staged</pre>
+<p>Después del <code>git add</code>, <code>git diff</code> no muestra <b>nada</b>. No es que el cambio desapareciera: <code>git diff</code> compara la <b>mesa con la bandeja</b>, y ahora son iguales. Para ver lo que está en la bandeja comparado con el último commit (es decir, lo que vas a guardar), se usa <code>git diff --staged</code>, que muestra el mismo diff de antes. Resumen:</p>
+<table class="tabla">
+<tr><th>Comando</th><th>Compara</th><th>Pregunta que responde</th></tr>
+<tr><td><code>git diff</code></td><td>Mesa ↔ bandeja</td><td>¿Qué cambié que todavía no preparé?</td></tr>
+<tr><td><code>git diff --staged</code></td><td>Bandeja ↔ último commit</td><td>¿Qué va a entrar en el próximo commit?</td></tr>
+<tr><td><code>git diff HEAD</code></td><td>Mesa ↔ último commit</td><td>¿Qué cambié en total desde la última foto?</td></tr>
+<tr><td><code>git diff 64f842d 8607176</code></td><td>Un commit ↔ otro</td><td>¿Qué cambió entre esas dos fotos?</td></tr>
+</table>
+
+<h3>git commit y git push</h3>
+<pre class="ps">git commit -m "Tema: agregar el color lavanda"</pre>
+<pre class="salida">[main 8607176] Tema: agregar el color lavanda
+ 1 file changed, 1 insertion(+)</pre>
+<p>En el laboratorio no hay remoto, así que el ciclo termina aquí. En el Totito, el último paso es <code>git push</code>, que envía los commits nuevos a GitHub:</p>
+<pre class="salida">Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 412 bytes | 412.00 KiB/s, done.
+Total 3 (delta 1), reused 0 (delta 0), pack-reused 0
+To https://github.com/ana-lopez/totito.git
+   b49d01a..097adbd  main -&gt; main</pre>
+<p>La última línea es la importante: «en GitHub, la rama <code>main</code> pasó del commit <code>b49d01a</code> al <code>097adbd</code>». </p>
+
+<div class="caja cuidado"><b>git commit -a no incluye archivos nuevos</b> Verás el atajo <code>git commit -am "mensaje"</code>: la <code>-a</code> (<i>all</i>) prepara automáticamente todos los archivos <b>modificados</b> antes del commit. Es cómodo, pero ignora los archivos <b>nuevos</b> (sin seguimiento): si creaste <code>src\Jugador.java</code> y haces <code>git commit -am</code>, el archivo no entra. Y además mete todo lo modificado, quieras o no. Úsalo solo cuando hayas revisado <code>git status</code> y sepas que todo lo modificado va junto.</div>
+
+<h2>Commits pequeños y atómicos</h2>
+<p>Un commit <b>atómico</b> es el que contiene <b>un solo cambio lógico, completo</b>: ni medio cambio, ni tres cambios mezclados. «Atómico» viene de átomo en su sentido antiguo: lo que no se puede dividir.</p>
+<p>Imagina que una tarde en el Totito haces tres cosas: corriges un error en la detección de empate de <code>Tablero.java</code>, pruebas un color nuevo en <code>Tema.java</code> y mejoras el <code>README.md</code>. Tienes dos opciones:</p>
+<table class="tabla">
+<tr><th>Un commit gigante</th><th>Tres commits atómicos</th></tr>
+<tr><td><code>Cambios del martes</code> (3 archivos)</td><td><code>Tablero: corregir la deteccion de empate</code><br/><code>Tema: rosa mas intenso para la X</code><br/><code>README: explicar como ejecutar el juego</code></td></tr>
+</table>
+<p>Ahora supón que una semana después el rosa nuevo no te gusta. Con tres commits, deshaces <b>solo</b> el del color (con <code>git revert</code>, más abajo) y el arreglo del empate sigue ahí. Con el commit gigante, deshacerlo se lleva también el arreglo. Por eso:</p>
+<ul>
+<li><b>Se pueden deshacer por separado.</b></li>
+<li><b>Se entienden de un vistazo</b>: el mensaje describe todo lo que hay dentro.</li>
+<li><b>Se revisan fácil</b>: en un pull request (capítulo 10), un diff de 15 líneas se revisa con atención; uno de 800, no.</li>
+<li><b>Encuentras errores más rápido</b>: si el juego se rompió, sabes en qué commit pequeño pasó.</li>
+</ul>
+<p>Para separar el trabajo de la tarde en tres commits, agrega los archivos de uno en uno:</p>
+<pre class="ps">git add src/Tablero.java
+git commit -m "Tablero: corregir la deteccion de empate"
+git add src/Tema.java
+git commit -m "Tema: rosa mas intenso para la X"
+git add README.md
+git commit -m "README: explicar como ejecutar el juego"</pre>
+<p>¿Y si en un mismo archivo hay dos cambios que deberían ir en commits distintos? Existe <code>git add -p</code> (<i>patch</i>), que te muestra cada trozo del diff y te pregunta si lo agregas o no (<code>y</code> sí, <code>n</code> no, <code>q</code> salir, <code>?</code> ayuda). Es una herramienta avanzada muy útil; pruébala en el laboratorio cuando te sientas cómodo.</p>
+
+<div class="caja consejo"><b>Señales de que tu commit es demasiado grande</b> El mensaje necesita la palabra «y» («Agregar sonidos <i>y</i> corregir el marcador <i>y</i>…»); no puedes resumirlo en 50 caracteres; tocas más de tres o cuatro archivos sin relación; o han pasado horas desde el último commit. La regla práctica del libro: <b>cada vez que algo funciona, commit</b>.</div>
+
+<h2>Buenos mensajes de commit</h2>
+<p>El mensaje es la nota debajo de la foto. Lo vas a leer tú dentro de meses, o un compañero que no estuvo ahí. Las convenciones más extendidas son estas:</p>
+<ol>
+<li><b>Una primera línea corta, de 50 caracteres o menos</b>, que resuma el cambio. Es lo que muestran <code>git log --oneline</code> y GitHub en sus listas; si es más larga, se corta con «…».</li>
+<li><b>En forma de orden o infinitivo</b>: en inglés se usa el imperativo (<i>Add lavender color</i>, «agrega el color lavanda»); en español lo más común es el infinitivo («Agregar el color lavanda») o el imperativo («Agrega el color lavanda»). Elige uno y sé constante. Una prueba útil: la frase debe completar «Si aplicas este commit, va a…»: «…<i>agregar el color lavanda</i>». No «Agregué», no «Agregando».</li>
+<li><b>Empieza con mayúscula y sin punto final.</b></li>
+<li><b>Opcional: el componente delante</b>, seguido de dos puntos: <code>Tablero:</code>, <code>Tema:</code>, <code>README:</code>. El libro lo usa en casi todos sus commits; así sabes de un vistazo qué parte del juego tocó.</li>
+<li><b>Si hace falta explicar más, un cuerpo</b>: una línea en blanco después del título y luego un párrafo que diga <b>por qué</b> hiciste el cambio (el «qué» ya lo dice el diff). Las líneas del cuerpo, de unos 72 caracteres como máximo.</li>
+</ol>
+<table class="tabla">
+<tr><th>Mal</th><th>Por qué</th><th>Mejor</th></tr>
+<tr><td><code>cambios</code></td><td>No dice nada: todos los commits son cambios</td><td><code>Tema: agregar el color lavanda</code></td></tr>
+<tr><td><code>arreglos</code></td><td>¿Qué se arregló? ¿Dónde?</td><td><code>Tablero: corregir la deteccion de empate</code></td></tr>
+<tr><td><code>asdf</code> / <code>.</code> / <code>wip</code></td><td>Mensaje de prisa: dentro de un mes no sabrás qué es</td><td><code>PanelTablero: dibujar la linea ganadora</code></td></tr>
+<tr><td><code>Tablero.java</code></td><td>Solo el archivo: ¿qué le pasó?</td><td><code>Tablero: estado y reglas del juego</code></td></tr>
+<tr><td><code>Arreglé el bug del empate, cambié colores y agregué sonidos</code></td><td>Tres cambios en uno; pasado; demasiado largo</td><td>Tres commits, cada uno con su línea</td></tr>
+<tr><td><code>AHORA SI FUNCIONA!!!</code></td><td>Emoción, no información</td><td><code>BotonNeon: repintar al soltar el mouse</code></td></tr>
+<tr><td><code>Se modifico el archivo de la paleta de colores para que el rosa de la X se vea mas intenso en pantallas oscuras</code></td><td>Una sola línea de 110 caracteres</td><td>Título <code>Tema: rosa mas intenso para la X</code> y la explicación en el cuerpo</td></tr>
+</table>
+
+<h3>Un mensaje con cuerpo, desde PowerShell</h3>
+<p>Cada <code>-m</code> que pongas se convierte en un párrafo: el primero es el título y los siguientes, el cuerpo. Git pone la línea en blanco entre ellos.</p>
+<pre class="ps">git commit -m "Partida: no permitir jugar despues de ganar" -m "Un clic rapido despues de la victoria todavia marcaba una ficha y sumaba al marcador. Ahora jugar() revisa el estado y no hace nada si la partida ya termino."</pre>
+<p>Si prefieres escribirlo con calma, haz <code>git commit</code> sin <code>-m</code>: Git abre el editor que configuraste en el capítulo 7. Escribe el título en la primera línea, deja una en blanco, escribe el cuerpo, guarda y cierra. Las líneas que empiezan con <code>#</code> son instrucciones de Git y no se guardan. Si cierras el editor sin escribir nada, Git cancela el commit (<i>Aborting commit due to empty commit message</i>): es una forma segura de arrepentirte.</p>
+
+<h2>Mirar el historial</h2>
+<pre class="ps">git log --oneline
+git log --oneline --graph --all
+git show 8607176
+git log -p Tema.java
+git log --oneline --author="Ana"</pre>
+<ul>
+<li><code>git log --oneline</code>: una línea por commit, lo más reciente arriba.</li>
+<li><code>--graph --all</code>: dibuja las ramas con caracteres (<code>*</code>, <code>|</code>, <code>/</code>, <code>\</code>) e incluye <b>todas</b> las ramas, no solo la actual. Es el comando que más usarás para entender «dónde estoy».</li>
+<li><code>git show 8607176</code>: el mensaje y el diff completo de ese commit. Sirve también <code>git show HEAD</code> (el último) o <code>git show HEAD~1</code> (el anterior: la <code>~1</code> significa «un paso atrás»; <code>HEAD~2</code>, dos pasos).</li>
+<li><code>git log -p Tema.java</code>: todos los commits que tocaron ese archivo, cada uno con su diff (<code>-p</code> de <i>patch</i>). Ideal para responder «¿cuándo y por qué cambió este color?».</li>
+<li><code>--author="Ana"</code>: solo los commits de quien coincida con ese nombre.</li>
+</ul>
+
+<h2>Ramas: trabajar en una idea sin tocar las demás</h2>
+<p>Como viste en el capítulo 6, una rama es una etiqueta que apunta a un commit y avanza sola con cada commit nuevo. Los comandos básicos:</p>
+<pre class="ps">git branch
+git switch -c instrucciones
+git branch</pre>
+<pre class="salida">* main
+Switched to a new branch 'instrucciones'
+* instrucciones
+  main</pre>
+<ul>
+<li><code>git branch</code> sin nada más lista las ramas. El asterisco marca dónde está HEAD (la rama actual).</li>
+<li><code>git switch -c instrucciones</code>: <code>switch</code> significa «cambiar», y <code>-c</code> (<i>create</i>) significa «créala primero». La rama nueva nace apuntando al mismo commit donde estabas, y HEAD se mueve a ella. Responde «Cambiado a una rama nueva 'instrucciones'».</li>
+</ul>
+<p>Ahora haz un commit en esta rama: crea un <code>README.md</code> con <code>notepad README.md</code>, escribe dentro una línea como «# Laboratorio de Git» y otra que explique para qué sirve, guarda, cierra, y:</p>
+<pre class="ps">git add README.md
+git commit -m "README: explicar el laboratorio"
+Get-ChildItem
+git switch main
+Get-ChildItem</pre>
+<p>Mira lo que pasa con <code>Get-ChildItem</code>: en la rama <code>instrucciones</code> ves <code>README.md</code> y <code>Tema.java</code>; al cambiar a <code>main</code>, <b><code>README.md</code> desaparece de la carpeta</b>. No se borró: existe solo en el commit de la rama <code>instrucciones</code>, y <code>main</code> todavía no lo tiene. Así de real es el cambio de rama: Git reescribe tu carpeta para que coincida con el commit de la rama elegida. Si tienes el proyecto abierto en NetBeans, verás los archivos aparecer y desaparecer.</p>
+<pre class="ps">git log --oneline --graph --all</pre>
+<pre class="salida">* 3fe3d3e (instrucciones) README: explicar el laboratorio
+* 8607176 (HEAD -&gt; main) Tema: agregar el color lavanda
+* 64f842d Tema: colores basicos</pre>
+
+<div class="caja cuidado"><b>Cambiar de rama con cambios sin guardar</b> Si tienes archivos modificados y cambias de rama, Git hace una de dos cosas: si esos cambios no chocan con la otra rama, <b>se los lleva contigo</b> (siguen en tu mesa, sin commit); si chocan, se niega con <i>error: Your local changes to the following files would be overwritten by checkout</i> («tus cambios locales se sobrescribirían») y no cambia nada. En ambos casos lo más limpio es hacer commit o guardar los cambios con <code>git stash</code> (más abajo) antes de cambiar de rama.</div>
+
+<h3>Nombres de ramas</h3>
+<p>Usa minúsculas, palabras separadas por guiones, y un nombre que diga qué se hace ahí: <code>interfaz-neon</code>, <code>sonidos</code>, <code>arreglo-empate</code>, <code>dificultad-ia</code>. Sin espacios, sin tildes, sin ñ. Muchos equipos usan prefijos: <code>feature/sonidos</code> (función nueva), <code>fix/empate</code> (arreglo), <code>docs/readme</code> (documentación).</p>
+
+<h2>Fusionar ramas: merge</h2>
+<p>Para traer el trabajo de una rama a otra, te colocas en la rama que <b>recibe</b> y le pides que fusione la otra: «estando en <code>main</code>, fusiona <code>instrucciones</code>».</p>
+<h3>Fusión rápida (fast-forward)</h3>
+<pre class="ps">git switch main
+git merge instrucciones</pre>
+<pre class="salida">Updating 8607176..3fe3d3e
+Fast-forward
+ README.md | 3 +++
+ 1 file changed, 3 insertions(+)
+ create mode 100644 README.md</pre>
+<p><i>Fast-forward</i> significa «avance rápido», como en un reproductor de música. Desde que creaste <code>instrucciones</code>, <code>main</code> no tuvo commits nuevos: la historia es una línea recta. Git no necesita juntar nada; solo <b>mueve la etiqueta <code>main</code></b> hacia adelante hasta el commit de <code>instrucciones</code>. No se crea ningún commit nuevo.</p>
+
+<svg viewBox="0 0 640 210" width="100%" role="img" aria-label="Fusión fast-forward: main avanza hasta el commit de la otra rama">
+<defs>
+<marker id="flecha9a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#C8BCF6"/></marker>
+</defs>
+<rect x="0" y="0" width="640" height="210" rx="14" fill="#1C1740"/>
+<text x="160" y="28" fill="#FFFFFF" font-size="14" text-anchor="middle" font-family="sans-serif">Antes</text>
+<text x="480" y="28" fill="#FFFFFF" font-size="14" text-anchor="middle" font-family="sans-serif">Después de git merge</text>
+<line x1="320" y1="15" x2="320" y2="195" stroke="#A05CFF" stroke-width="1" stroke-dasharray="4 4"/>
+<circle cx="50" cy="110" r="18" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<circle cx="140" cy="110" r="18" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<circle cx="230" cy="110" r="18" fill="none" stroke="#FF3BD4" stroke-width="3"/>
+<line x1="122" y1="110" x2="72" y2="110" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha9a)"/>
+<line x1="212" y1="110" x2="162" y2="110" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha9a)"/>
+<text x="140" y="160" fill="#2F84FF" font-size="13" text-anchor="middle" font-family="monospace">main</text>
+<text x="230" y="160" fill="#FF3BD4" font-size="13" text-anchor="middle" font-family="monospace">instrucciones</text>
+<circle cx="370" cy="110" r="18" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<circle cx="460" cy="110" r="18" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<circle cx="550" cy="110" r="18" fill="none" stroke="#FF3BD4" stroke-width="3"/>
+<line x1="442" y1="110" x2="392" y2="110" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha9a)"/>
+<line x1="532" y1="110" x2="482" y2="110" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha9a)"/>
+<text x="550" y="160" fill="#2F84FF" font-size="13" text-anchor="middle" font-family="monospace">main</text>
+<text x="550" y="180" fill="#FF3BD4" font-size="13" text-anchor="middle" font-family="monospace">instrucciones</text>
+<text x="480" y="65" fill="#C8BCF6" font-size="12" text-anchor="middle" font-family="sans-serif">la etiqueta main solo avanza</text>
+</svg>
+
+<p>Cuando una rama ya está fusionada y no la necesitas, bórrala; el trabajo no se pierde, porque sus commits ya forman parte de <code>main</code>:</p>
+<pre class="ps">git branch -d instrucciones</pre>
+<pre class="salida">Deleted branch instrucciones (was 3fe3d3e).</pre>
+<p>La <code>-d</code> (<i>delete</i>) es prudente: si la rama tiene commits que no están fusionados en ninguna parte, se niega (<i>error: the branch 'x' is not fully merged</i>) y te dice que uses <code>-D</code> (mayúscula) si de verdad quieres tirarlos. Piénsalo dos veces antes de usar <code>-D</code>.</p>
+
+<h3>Fusión de tres vías (con commit de fusión)</h3>
+<p>Ahora el caso en que <b>las dos ramas avanzaron</b>. Crea una rama, agrega un color, vuelve a <code>main</code> y cambia otra cosa:</p>
+<pre class="ps">git switch -c cian
+notepad Tema.java</pre>
+<p>Debajo de la línea de <code>AZUL</code> agrega <code>    public static final Color CIAN = new Color(0x40, 0xC8, 0xFF);</code>, guarda, cierra, y:</p>
+<pre class="ps">git commit -am "Tema: agregar el color cian"
+git switch main
+notepad README.md</pre>
+<p>Agrega al final del README una línea «Cada rama es una idea distinta.», guarda, cierra, y:</p>
+<pre class="ps">git commit -am "README: agregar una nota sobre ramas"
+git log --oneline --graph --all</pre>
+<pre class="salida">* 44fdbf9 (cian) Tema: agregar el color cian
+| * 54bb71a (HEAD -&gt; main) README: agregar una nota sobre ramas
+|/
+* 3fe3d3e README: explicar el laboratorio
+* 8607176 Tema: agregar el color lavanda
+* 64f842d Tema: colores basicos</pre>
+<p>El dibujo muestra la bifurcación: desde <code>3fe3d3e</code>, cada rama tiene un commit propio. Ya no hay línea recta, así que <code>main</code> no puede «avanzar» hasta <code>cian</code> sin perder su propio commit. Git tiene que <b>combinar</b> las dos historias:</p>
+<pre class="ps">git merge cian --no-edit</pre>
+<pre class="salida">Merge made by the 'ort' strategy.
+ Tema.java | 1 +
+ 1 file changed, 1 insertion(+)</pre>
+<p>«Fusión hecha con la estrategia 'ort'» (<i>ort</i> es el nombre del algoritmo de fusión que usa Git por defecto; no tienes que elegirlo). Git miró tres versiones —por eso se llama «de tres vías»—: el <b>ancestro común</b> (<code>3fe3d3e</code>, donde las ramas se separaron), la punta de <code>main</code> y la punta de <code>cian</code>. Lo que cambió en cada lado respecto al ancestro, lo juntó. Como los cambios estaban en archivos distintos, no hubo nada que decidir.</p>
+<p>El resultado es un <b>commit de fusión</b> (<i>merge commit</i>), un commit especial con <b>dos padres</b>. La opción <code>--no-edit</code> acepta el mensaje automático, <code>Merge branch 'cian'</code>; sin ella, Git abriría tu editor para que lo cambies si quieres.</p>
+<pre class="salida">*   620c464 (HEAD -&gt; main) Merge branch 'cian'
+|\
+| * 44fdbf9 (cian) Tema: agregar el color cian
+* | 54bb71a README: agregar una nota sobre ramas
+|/
+* 3fe3d3e README: explicar el laboratorio</pre>
+
+<svg viewBox="0 0 640 200" width="100%" role="img" aria-label="Fusión de tres vías: un commit con dos padres">
+<defs>
+<marker id="flecha9b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#C8BCF6"/></marker>
+</defs>
+<rect x="0" y="0" width="640" height="200" rx="14" fill="#1C1740"/>
+<circle cx="80" cy="100" r="20" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<text x="80" y="150" fill="#C8BCF6" font-size="12" text-anchor="middle" font-family="sans-serif">ancestro común</text>
+<circle cx="250" cy="55" r="20" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<text x="250" y="30" fill="#2F84FF" font-size="12" text-anchor="middle" font-family="sans-serif">commit de main</text>
+<circle cx="250" cy="145" r="20" fill="none" stroke="#FF3BD4" stroke-width="3"/>
+<text x="250" y="185" fill="#FF3BD4" font-size="12" text-anchor="middle" font-family="sans-serif">commit de cian</text>
+<circle cx="430" cy="100" r="24" fill="none" stroke="#A05CFF" stroke-width="4"/>
+<text x="430" y="105" fill="#FFFFFF" font-size="11" text-anchor="middle" font-family="sans-serif">merge</text>
+<line x1="230" y1="62" x2="102" y2="94" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha9b)"/>
+<line x1="230" y1="138" x2="102" y2="106" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha9b)"/>
+<line x1="408" y1="92" x2="272" y2="60" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha9b)"/>
+<line x1="408" y1="108" x2="272" y2="140" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha9b)"/>
+<rect x="490" y="84" width="70" height="32" rx="6" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="525" y="105" fill="#2F84FF" font-size="13" text-anchor="middle" font-family="monospace">main</text>
+<line x1="488" y1="100" x2="458" y2="100" stroke="#2F84FF" stroke-width="2" marker-end="url(#flecha9b)"/>
+<text x="430" y="150" fill="#C8BCF6" font-size="12" text-anchor="middle" font-family="sans-serif">dos padres</text>
+</svg>
+
+<p>Borra la rama ya fusionada con <code>git branch -d cian</code>. En el capítulo 61 harás exactamente esta clase de fusión, pero a través de un pull request en GitHub (capítulo 10): GitHub crea un commit de fusión con un mensaje como <code>Merge pull request #1 from ana-lopez/interfaz-neon</code>.</p>
+
+<h2>Un conflicto de verdad, paso a paso</h2>
+<p>Git fusiona solo cuando los cambios están en lugares distintos. Pero si las dos ramas cambiaron <b>las mismas líneas</b> de forma diferente, Git no puede saber cuál es la buena, y te lo pregunta. Eso es un <b>conflicto</b>. No es un error ni algo que hiciste mal: es una pregunta. Vamos a provocar uno.</p>
+<p>La historia: tú quieres el rosa de la X <b>más claro</b>, y tu compañera lo quiere <b>más intenso</b>. Cada quien lo cambia en su rama.</p>
+
+<h3>1. Preparar el choque</h3>
+<pre class="ps">git switch -c rosa-clara
+notepad Tema.java</pre>
+<p>En la línea de <code>ROSA</code> cambia <code>0xFF, 0x3B, 0xD4</code> por <code>0xFF, 0x6E, 0xE0</code>. Guarda, cierra, y mira el diff antes del commit (fíjate en el par <code>-</code>/<code>+</code> de una línea modificada):</p>
+<pre class="ps">git diff
+git commit -am "Tema: rosa mas claro para la X"
+git switch main
+notepad Tema.java</pre>
+<p>Ahora, en <code>main</code>, cambia la <b>misma</b> línea, pero a <code>0xFF, 0x1F, 0xB8</code>. Guarda, cierra:</p>
+<pre class="ps">git commit -am "Tema: rosa mas intenso para la X"
+git log --oneline --graph --all -4</pre>
+<pre class="salida">* 2d454c7 (HEAD -&gt; main) Tema: rosa mas intenso para la X
+| * 755882a (rosa-clara) Tema: rosa mas claro para la X
+|/
+*   620c464 Merge branch 'cian'</pre>
+
+<h3>2. Intentar la fusión</h3>
+<pre class="ps">git merge rosa-clara</pre>
+<pre class="salida">Auto-merging Tema.java
+CONFLICT (content): Merge conflict in Tema.java
+Automatic merge failed; fix conflicts and then commit the result.</pre>
+<p>«Fusionando automáticamente Tema.java. CONFLICTO (de contenido) en Tema.java. La fusión automática falló; arregla los conflictos y luego haz commit del resultado». Git se detuvo a medio camino y te espera. Respira: nada se perdió. Pregunta cómo está todo:</p>
+<pre class="ps">git status</pre>
+<pre class="salida">On branch main
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+  (use "git merge --abort" to abort the merge)
+
+Unmerged paths:
+  (use "git add &lt;file&gt;..." to mark resolution)
+	both modified:   Tema.java
+
+no changes added to commit (use "git add" and/or "git commit -a")</pre>
+<ul>
+<li><i>You have unmerged paths</i>: «tienes archivos sin fusionar».</li>
+<li>Las dos salidas: arreglar y hacer <code>git commit</code>, o <b>abortar</b> con <code>git merge --abort</code>, que deja todo exactamente como estaba antes del <code>git merge</code>. Es tu botón de pánico.</li>
+<li><i>both modified: Tema.java</i>: «modificado por ambos». Este es el archivo en conflicto. La pista dice que, al resolverlo, uses <code>git add</code> para marcarlo como resuelto.</li>
+</ul>
+
+<h3>3. Leer el archivo en conflicto</h3>
+<p>Abre <code>Tema.java</code> (<code>notepad Tema.java</code>, o en NetBeans). Git escribió dentro las dos versiones, separadas por unas marcas:</p>
+<pre class="java">    /** Color de la X (en todo el juego la X es rosa). */
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+    public static final Color ROSA = new Color(0xFF, 0x1F, 0xB8);
+=======
+    public static final Color ROSA = new Color(0xFF, 0x6E, 0xE0);
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; rosa-clara
+    /** Color de la O (en todo el juego la O es azul). */</pre>
+<table class="tabla">
+<tr><th>Marca</th><th>Significado</th></tr>
+<tr><td><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code></td><td>Empieza la versión de <b>donde estás</b> (HEAD, o sea <code>main</code>): el rosa intenso.</td></tr>
+<tr><td><code>=======</code></td><td>Separador entre las dos versiones.</td></tr>
+<tr><td><code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; rosa-clara</code></td><td>Termina la versión de <b>la rama que estás fusionando</b>: el rosa claro.</td></tr>
+</table>
+<p>Todo lo que está fuera de las marcas (el comentario de arriba, la línea de <code>AZUL</code>) no tuvo conflicto y está bien. Tu trabajo es <b>dejar el archivo como debe quedar</b> y <b>borrar las tres marcas</b>. Tienes tres opciones:</p>
+<ul>
+<li>Quedarte con la versión de <code>main</code> (borra desde <code>=======</code> hasta <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; rosa-clara</code>, y la línea <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code>).</li>
+<li>Quedarte con la de <code>rosa-clara</code> (lo contrario).</li>
+<li>Escribir algo nuevo que combine las dos ideas. Aquí, después de hablarlo con tu compañera, deciden un rosa intermedio:</li>
+</ul>
+<pre class="java">    /** Color de la X (en todo el juego la X es rosa). */
+    public static final Color ROSA = new Color(0xFF, 0x45, 0xD8);
+    /** Color de la O (en todo el juego la O es azul). */</pre>
+<p>Guarda el archivo. Antes de seguir, comprueba que no quedó ninguna marca. En PowerShell, <code>Select-String</code> busca texto dentro de archivos (es como el «buscar» del Bloc de notas, pero desde la terminal):</p>
+<pre class="ps">Select-String -Path Tema.java -Pattern '&lt;&lt;&lt;&lt;&lt;&lt;&lt;|&gt;&gt;&gt;&gt;&gt;&gt;&gt;|^=======$'</pre>
+<p>Si no imprime nada, está limpio. (El patrón va entre comillas simples para que PowerShell no interprete ningún símbolo; busca cualquiera de las tres marcas, y la barra vertical <code>|</code> significa «o»).</p>
+
+<div class="caja cuidado"><b>Las marcas olvidadas rompen la compilación</b> Si dejas una marca en un archivo Java, el compilador se queja de inmediato, con errores que parecen absurdos:
+<pre class="salida">Tema.java:6: error: illegal start of type
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+^</pre>
+«Inicio de tipo ilegal» en una línea que empieza con <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>: es una marca de conflicto que sobrevivió. Por eso, después de resolver un conflicto en el Totito, <b>siempre compila y prueba</b> (en NetBeans, <i>Clean and Build</i>) antes del commit.</div>
+
+<h3>4. Marcar como resuelto y terminar la fusión</h3>
+<pre class="ps">git add Tema.java
+git status</pre>
+<pre class="salida">On branch main
+All conflicts fixed but you are still merging.
+  (use "git commit" to conclude merge)
+
+Changes to be committed:
+	modified:   Tema.java</pre>
+<p>«Todos los conflictos arreglados, pero sigues en medio de la fusión. Usa git commit para concluirla». Aquí <code>git add</code> no significa «archivo nuevo», sino «ya decidí cómo queda este archivo». Si intentas hacer el commit antes del <code>git add</code>, Git se niega: <i>Committing is not possible because you have unmerged files</i>.</p>
+<pre class="ps">git commit --no-edit
+git log --oneline --graph -4</pre>
+<pre class="salida">[main a72bccc] Merge branch 'rosa-clara'
+*   a72bccc (HEAD -&gt; main) Merge branch 'rosa-clara'
+|\
+| * 755882a (rosa-clara) Tema: rosa mas claro para la X
+* | 2d454c7 Tema: rosa mas intenso para la X
+|/</pre>
+<p>Listo: el commit de fusión guarda tu decisión. Borra la rama con <code>git branch -d rosa-clara</code>. Has resuelto tu primer conflicto.</p>
+
+<h3>Resolver el conflicto desde NetBeans</h3>
+<p>Si abres en NetBeans una carpeta con conflictos (con <i>File → Open Project</i> en el Totito, o <i>File → Open File</i> en el laboratorio), el archivo en conflicto aparece con su nombre en <b>rojo</b>. Tienes dos caminos:</p>
+<ul>
+<li><b>A mano</b>, igual que en el Bloc de notas: abres el archivo, ves las marcas, editas, borras las marcas, guardas. Luego <code>git add</code> y <code>git commit</code> en PowerShell (o desde el menú <i>Team</i>).</li>
+<li><b>Con la herramienta de fusión</b>: clic derecho sobre el archivo → <i>Git → Resolve Conflicts…</i> (también está en el menú <i>Team</i>). Se abre una ventana con las dos versiones arriba, una a cada lado, y el <b>resultado</b> abajo. Encima de cada versión hay botones para aceptar ese lado (<i>Accept</i>), aceptar y pasar al siguiente conflicto (<i>Accept &amp; Next</i>) o aceptar ambos (<i>Accept Both</i>); también puedes escribir directamente en el panel del resultado. Al terminar pulsas <i>OK</i> y NetBeans guarda el archivo y lo marca como resuelto (el equivalente de <code>git add</code>). Después haces el commit. Los nombres exactos de los botones pueden variar un poco entre versiones de NetBeans.</li>
+</ul>
+
+<h3>Cómo tener menos conflictos</h3>
+<ul>
+<li><b>Trae los cambios a menudo</b> (<code>git pull</code> al empezar el día) y fusiona las ramas pronto: las ramas que viven semanas acumulan diferencias.</li>
+<li><b>Commits pequeños</b>: si hay conflicto, es pequeño y fácil de entender.</li>
+<li><b>No reformatees archivos enteros</b> (por ejemplo, con el «Format» de NetBeans sobre todo el archivo) en el mismo commit que un cambio real: cambias cientos de líneas sin querer, y cualquiera que haya tocado ese archivo tendrá conflicto.</li>
+<li><b>Ponte de acuerdo</b>: si dos personas van a tocar <code>Tema.java</code> a la vez, que lo sepan. Centralizar los colores en una sola clase (como hace el Totito) ayuda: el conflicto queda en un lugar obvio.</li>
+</ul>
+
+<h2>Deshacer cosas</h2>
+<p>Git casi nunca pierde nada que haya llegado a un commit, y tiene una herramienta para cada clase de arrepentimiento. Primero, el mapa:</p>
+<table class="tabla">
+<tr><th>Situación</th><th>Comando</th><th>¿Peligroso?</th></tr>
+<tr><td>Cambié un archivo y quiero volver a como estaba en el último commit</td><td><code>git restore archivo</code></td><td>Pierdes ese cambio sin commit</td></tr>
+<tr><td>Hice <code>git add</code> de algo que no quería en este commit</td><td><code>git restore --staged archivo</code></td><td>No: el cambio sigue en tu mesa</td></tr>
+<tr><td>El último commit tiene un error en el mensaje o le faltó un archivo, y <b>no lo he subido</b></td><td><code>git commit --amend</code></td><td>No, si no se subió</td></tr>
+<tr><td>Un commit (subido o no) introdujo algo malo y quiero anularlo</td><td><code>git revert hash</code></td><td>No: crea un commit nuevo</td></tr>
+<tr><td>Quiero quitar commits locales del historial</td><td><code>git reset</code></td><td><b>Sí</b>, con <code>--hard</code></td></tr>
+<tr><td>Tengo que cambiar de tarea sin hacer commit de lo que llevo</td><td><code>git stash</code></td><td>No</td></tr>
+<tr><td>Hice un desastre y quiero ver dónde estaba antes</td><td><code>git reflog</code></td><td>No: solo mira</td></tr>
+</table>
+
+<h3>git restore: descartar cambios de la mesa</h3>
+<p>Abre <code>Tema.java</code>, cambia el morado por cualquier cosa, guarda, y:</p>
+<pre class="ps">git status -s
+git restore Tema.java
+git status -s</pre>
+<pre class="salida"> M Tema.java</pre>
+<p>Después del <code>restore</code>, <code>git status -s</code> ya no muestra nada: el archivo volvió a ser exactamente el del último commit. Es el «deshacer todo lo que hice desde la última foto» para ese archivo. Úsalo cuando un experimento salió mal.</p>
+<div class="caja cuidado"><b>restore no tiene vuelta atrás</b> Los cambios que descartas con <code>git restore</code> nunca estuvieron en un commit, así que Git no los guardó en ninguna parte: desaparecen. NetBeans tiene su propio historial local (<i>clic derecho → History</i>) que a veces te salva, pero no cuentes con ello. Antes de un <code>restore</code>, mira el <code>git diff</code> para estar seguro de lo que vas a perder.</div>
+
+<h3>git restore --staged: sacar de la bandeja</h3>
+<p>Imagina que creaste un <code>notas.txt</code> con apuntes personales, cambiaste el README, y por costumbre hiciste <code>git add .</code>:</p>
+<pre class="ps">git add .
+git status -s
+git restore --staged notas.txt
+git status -s</pre>
+<pre class="salida">M  README.md
+A  notas.txt
+M  README.md
+?? notas.txt</pre>
+<p><code>notas.txt</code> pasó de <code>A</code> (agregado a la bandeja) a <code>??</code> (sin seguimiento). El archivo sigue en tu carpeta, intacto; solo salió de la bandeja. Ahora el commit llevará solo el README. (Si nunca quieres que <code>notas.txt</code> entre, agrégalo al <code>.gitignore</code>).</p>
+
+<h3>git commit --amend: corregir el último commit</h3>
+<pre class="ps">git commit -m "README: agregar la autroa"
+git commit --amend -m "README: agregar la autora"
+git log --oneline -2</pre>
+<pre class="salida">[main 74d3a8e] README: agregar la autora
+ Date: Mon Oct 12 14:44:06 2026 -0600
+ 1 file changed, 2 insertions(+)
+74d3a8e README: agregar la autora
+a72bccc Merge branch 'rosa-clara'</pre>
+<p><i>Amend</i> significa «enmendar». Reemplaza el último commit por uno nuevo que tiene el contenido de la bandeja y el mensaje que le des. El commit con «autroa» ya no aparece en <code>git log</code>. También sirve cuando olvidaste un archivo (por ejemplo, en el Totito):</p>
+<pre class="ps">git add src/Jugador.java
+git commit --amend --no-edit</pre>
+<p><code>--no-edit</code> conserva el mismo mensaje. El commit «se rehace» incluyendo el archivo olvidado.</p>
+<div class="caja cuidado"><b>Solo si no lo subiste</b> Recuerda el capítulo 6: un commit es inmutable. <code>--amend</code> no lo modifica; crea uno <b>nuevo</b>, con otro hash, y abandona el viejo. Si el viejo ya estaba en GitHub, tu historial y el de GitHub ya no coinciden, <code>git push</code> será rechazado, y si alguien ya lo había descargado, le causarás problemas. Regla: <b><code>--amend</code> solo para commits que no hiciste <code>push</code></b>. Para los subidos, usa <code>git revert</code>.</div>
+
+<h3>git revert: anular un commit con otro commit</h3>
+<pre class="ps">git revert --no-edit HEAD
+git log --oneline -3</pre>
+<pre class="salida">[main 9690e2c] Revert "README: agregar la autora"
+ Date: Mon Oct 12 14:44:11 2026 -0600
+ 1 file changed, 2 deletions(-)
+9690e2c Revert "README: agregar la autora"
+74d3a8e README: agregar la autora
+a72bccc Merge branch 'rosa-clara'</pre>
+<p><code>git revert</code> crea un commit <b>nuevo</b> que hace exactamente lo contrario del commit indicado: si aquel agregó dos líneas, este las quita. El commit original <b>sigue en el historial</b>, y el nuevo deja constancia de que se deshizo (su mensaje, si lo miras con <code>git show</code>, dice <i>This reverts commit 74d3a8e…</i>). Como no se borra ni se reescribe nada, es la forma <b>segura</b> de deshacer algo que ya está en GitHub. En lugar de <code>HEAD</code> puedes poner el hash de cualquier commit anterior: <code>git revert 2d454c7</code>. (Sin <code>--no-edit</code>, Git abre el editor para que ajustes el mensaje).</p>
+
+<h3>git reset: mover la rama hacia atrás (con mucho cuidado)</h3>
+<p><code>git reset</code> mueve la etiqueta de la rama actual a otro commit, como si los commits posteriores no se hubieran hecho. Tiene tres modos, que deciden qué pasa con los cambios de esos commits:</p>
+<table class="tabla">
+<tr><th>Modo</th><th>La rama</th><th>La bandeja</th><th>Tu carpeta</th><th>Úsalo para</th></tr>
+<tr><td><code>--soft</code></td><td>Retrocede</td><td>Conserva los cambios (preparados)</td><td>Intacta</td><td>Rehacer el último commit, por ejemplo juntando dos en uno</td></tr>
+<tr><td><code>--mixed</code> (por defecto)</td><td>Retrocede</td><td>Se vacía (cambios sin preparar)</td><td>Intacta</td><td>Deshacer el commit pero conservar el trabajo para reorganizarlo</td></tr>
+<tr><td><code>--hard</code></td><td>Retrocede</td><td>Se vacía</td><td><b>Se sobrescribe</b>: los cambios se pierden</td><td>Tirar de verdad todo lo hecho desde ese commit</td></tr>
+</table>
+<p>Pruébalo en el laboratorio. Haz un commit cualquiera (cambia el lavanda a <code>0xD0, 0xC0, 0xFF</code> y <code>git commit -am "Tema: lavanda mas brillante"</code>) y luego:</p>
+<pre class="ps">git reset --soft HEAD~1
+git status -s</pre>
+<pre class="salida">M  Tema.java</pre>
+<p>El commit desapareció del historial, pero su cambio está en la bandeja, listo para otro commit. <code>HEAD~1</code> significa «el commit anterior al actual».</p>
+<pre class="ps">git reset HEAD
+git status -s</pre>
+<pre class="salida">Unstaged changes after reset:
+M	Tema.java
+ M Tema.java</pre>
+<p>Con el modo por defecto (<code>--mixed</code>), el cambio sale de la bandeja pero sigue en tu archivo.</p>
+<pre class="ps">git reset --hard HEAD</pre>
+<pre class="salida">HEAD is now at 9690e2c Revert "README: agregar la autora"</pre>
+<p>Y con <code>--hard</code>, el archivo vuelve a ser el del commit y el cambio se pierde.</p>
+
+<div class="caja cuidado"><b>GRAN ADVERTENCIA sobre git reset --hard</b>
+<ul>
+<li><code>git reset --hard</code> <b>borra sin preguntar</b> todo cambio sin commit de los archivos seguidos. No hay papelera de reciclaje.</li>
+<li><b>Nunca</b> hagas <code>reset</code> hacia atrás de commits que ya subiste a GitHub. Tu rama y la de GitHub dejarán de coincidir; el siguiente <code>git push</code> será rechazado, y la única forma de «ganar» sería forzar el envío (<code>git push --force</code>), que <b>borra el trabajo de GitHub</b>, incluido el de tus compañeros. Para lo subido, usa <code>git revert</code>.</li>
+<li>Antes de un <code>--hard</code>, haz <code>git status</code> y <code>git diff</code>. Si dudas, haz primero <code>git stash</code>: es gratis y reversible.</li>
+<li>Si a pesar de todo te equivocaste, lee la siguiente sección <b>de inmediato</b>.</li>
+</ul></div>
+
+<h3>git reflog: la red de seguridad</h3>
+<p>Git anota en un diario local cada vez que HEAD se mueve: cada commit, cada cambio de rama, cada reset. Ese diario es el <b>reflog</b> (<i>reference log</i>):</p>
+<pre class="ps">git reflog -6</pre>
+<pre class="salida">9690e2c HEAD@{0}: reset: moving to HEAD
+9690e2c HEAD@{1}: reset: moving to HEAD
+9690e2c HEAD@{2}: reset: moving to HEAD~1
+a5c3937 HEAD@{3}: commit: Tema: lavanda mas brillante
+9690e2c HEAD@{4}: revert: Revert "README: agregar la autora"
+74d3a8e HEAD@{5}: commit (amend): README: agregar la autora</pre>
+<p>Ahí está el commit «lavanda mas brillante» (<code>a5c3937</code>), que habías «borrado» con el reset. Los commits abandonados siguen guardados en <code>.git</code> durante semanas (por defecto, al menos 30 días). Para recuperarlo, vuelve a apuntar la rama a él:</p>
+<pre class="ps">git reset --hard a5c3937</pre>
+<pre class="salida">HEAD is now at a5c3937 Tema: lavanda mas brillante</pre>
+<p>Recuperado. (También podrías crear una rama en ese punto, <code>git branch rescate a5c3937</code>, sin tocar la actual). Lo que el reflog <b>no</b> puede recuperar son los cambios que nunca llegaron a un commit: otra razón para hacer commits a menudo.</p>
+<div class="caja consejo"><b>Las llaves en PowerShell</b> Si quieres escribir algo como <code>HEAD@{3}</code> en un comando, ponlo entre comillas simples: <code>git show 'HEAD@{3}'</code>. En PowerShell, <code>@{</code> tiene un significado especial (crea una tabla de datos) y sin comillas el comando falla de formas raras. Lo mismo con <code>'stash@{0}'</code>, que verás enseguida.</div>
+
+<h2>git stash: guardar en un cajón lo que llevas a medias</h2>
+<p>Estás probando un rosa dorado en <code>Tema.java</code>, a medias, y te avisan de que hay que arreglar algo urgente en <code>main</code>. No quieres hacer commit de un experimento a medias, pero tampoco perderlo. <code>git stash</code> («esconder») guarda tus cambios en un cajón y te deja la mesa limpia:</p>
+<pre class="ps">git status -s
+git stash push -m "probando rosa dorado"
+git status -s
+git stash list</pre>
+<pre class="salida"> M Tema.java
+Saved working directory and index state On main: probando rosa dorado
+stash@{0}: On main: probando rosa dorado</pre>
+<p>Tu carpeta volvió al último commit (el segundo <code>git status -s</code> no muestra nada). Ahora puedes cambiar de rama, arreglar lo urgente, hacer commit, volver… y cuando quieras recuperar el experimento:</p>
+<pre class="ps">git stash pop</pre>
+<p><code>pop</code> («sacar») aplica los cambios guardados y los quita del cajón (<i>Dropped refs/stash@{0}</i>). Otros comandos del cajón:</p>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>git stash list</code></td><td>Lista el cajón; el más reciente es <code>stash@{0}</code></td></tr>
+<tr><td><code>git stash apply</code></td><td>Como <code>pop</code>, pero deja una copia en el cajón</td></tr>
+<tr><td><code>git stash drop 'stash@{0}'</code></td><td>Tira esa entrada del cajón (con las comillas, por PowerShell)</td></tr>
+<tr><td><code>git stash push -u -m "..."</code></td><td>Incluye también archivos <b>nuevos</b> sin seguimiento; sin <code>-u</code>, el stash los deja en la mesa</td></tr>
+<tr><td><code>git stash show -p</code></td><td>Muestra el diff de lo guardado</td></tr>
+</table>
+<p>El stash es para pausas cortas. Si un experimento va a durar días, mejor una rama con commits.</p>
+
+<h2>Etiquetas: marcar versiones</h2>
+<p>Una <b>etiqueta</b> (<i>tag</i>) es un nombre fijo para un commit importante. A diferencia de una rama, <b>no se mueve</b> nunca: <code>v0.1.0</code> será siempre «la primera ventana jugable», aunque sigas haciendo commits. En el capítulo 33 pondrás tu primera etiqueta en el Totito; así se hace:</p>
+<pre class="ps">git tag -a v0.1.0 -m "Primera version jugable"
+git tag
+git log --oneline --decorate -2</pre>
+<pre class="salida">v0.1.0
+a5c3937 (HEAD -&gt; main, tag: v0.1.0) Tema: lavanda mas brillante
+9690e2c Revert "README: agregar la autora"</pre>
+<ul>
+<li><code>-a</code> (<i>annotated</i>): crea una etiqueta <b>anotada</b>, que guarda quién la puso, cuándo y un mensaje (<code>-m</code>). Hay también etiquetas «ligeras» (<code>git tag v0.1.0</code>, sin <code>-a</code>), que son solo un nombre; para versiones usa siempre las anotadas.</li>
+<li><code>v0.1.0</code>: el nombre. La <code>v</code> de «versión» y tres números: <b>mayor.menor.parche</b>. Es el sistema <b>SemVer</b> (versionado semántico), que se explica a fondo en el capítulo 67.</li>
+<li><code>git tag</code> sin más lista las etiquetas; <code>git show v0.1.0</code> muestra la etiqueta (autor, fecha, mensaje) y el commit al que apunta.</li>
+</ul>
+<p>Si olvidaste etiquetar en su momento, puedes etiquetar un commit anterior dando su hash: <code>git tag -a v0.1.0 9b2f904 -m "Primera version jugable"</code>. Y si te equivocaste, <code>git tag -d v0.1.0</code> la borra (solo en tu PC).</p>
+<div class="caja concepto"><b>Las etiquetas no se suben solas</b> <code>git push</code> sube commits, pero <b>no etiquetas</b>. Para enviarlas a GitHub, una por una o todas:
+<pre class="ps">git push origin v0.1.0
+git push --tags</pre>
+En GitHub aparecerán en la sección <i>Tags</i> del repositorio, y a partir de ellas se crean los <i>Releases</i> (capítulos 10 y 67).</div>
+
+<h2>Trabajar con GitHub: push, fetch y pull</h2>
+<p>En el Totito tienes el remoto <code>origin</code>. <code>git status</code> te dice siempre cómo está tu rama respecto a la de GitHub:</p>
+<table class="tabla">
+<tr><th>Mensaje de <code>git status</code></th><th>Significa</th><th>Qué hacer</th></tr>
+<tr><td><i>Your branch is up to date with 'origin/main'.</i></td><td>Igual que GitHub (según lo último que Git sabe)</td><td>Nada</td></tr>
+<tr><td><i>Your branch is ahead of 'origin/main' by 2 commits.</i></td><td>Tienes 2 commits que GitHub no tiene</td><td><code>git push</code></td></tr>
+<tr><td><i>Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.</i></td><td>GitHub tiene 1 commit que tú no</td><td><code>git pull</code></td></tr>
+<tr><td><i>Your branch and 'origin/main' have diverged…</i></td><td>Los dos tienen commits que el otro no tiene</td><td><code>git pull</code> (fusiona) y luego <code>git push</code></td></tr>
+</table>
+<p>Ojo con «según lo último que Git sabe»: <code>git status</code> no consulta internet. Para actualizar lo que tu PC sabe de GitHub sin tocar tus archivos, usa <code>git fetch</code> («ir a buscar»). <code>git pull</code> es <code>git fetch</code> + <code>git merge</code>: trae y fusiona de una vez.</p>
+<pre class="salida">From https://github.com/ana-lopez/totito
+   76c3110..15bcb16  main       -&gt; origin/main
+Updating 76c3110..15bcb16
+Fast-forward
+ README.md | 2 ++
+ 1 file changed, 2 insertions(+)</pre>
+<p>Esa es la salida de un <code>git pull</code> típico: la primera parte es el <code>fetch</code> (<code>origin/main</code> avanzó) y la segunda la fusión, aquí una fusión rápida.</p>
+<h3>Cuando GitHub rechaza tu push</h3>
+<p>Si en GitHub hay commits que tú no tienes (porque editaste algo en la página, o lo subiste desde otra computadora, o un compañero), tu <code>push</code> será rechazado:</p>
+<pre class="salida">To https://github.com/ana-lopez/totito.git
+ ! [rejected]        main -&gt; main (fetch first)
+error: failed to push some refs to 'https://github.com/ana-lopez/totito.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally. This is usually caused by another repository pushing to
+hint: the same ref. If you want to integrate the remote changes, use
+hint: 'git pull' before pushing again.</pre>
+<p>«Rechazado: el remoto contiene trabajo que tú no tienes localmente. Si quieres integrarlo, usa git pull antes de volver a hacer push». Git te protege de borrar el trabajo de otros. La solución es justo esa: <code>git pull</code> (que, gracias a <code>pull.rebase false</code> del capítulo 7, hará una fusión; si hay conflictos, se resuelven como ya sabes), y luego <code>git push</code>. Si el <code>pull</code> abre el editor para el mensaje de fusión, guarda y cierra, o usa <code>git pull --no-edit</code>.</p>
+<div class="caja consejo"><b>La rutina sana</b> Al empezar a trabajar: <code>git pull</code>. Al terminar cada tarea: <code>git push</code>. Así tu PC y GitHub nunca se alejan mucho, y si tu computadora falla, solo pierdes lo de hoy.</div>
+
+<h2>.gitignore a fondo, y qué hacer si ya subiste algo que no debías</h2>
+<p>El <code>.gitignore</code> que creaste en el capítulo 5 es una lista de <b>patrones</b>, uno por línea:</p>
+<table class="tabla">
+<tr><th>Patrón</th><th>Ignora</th></tr>
+<tr><td><code>target/</code></td><td>La carpeta <code>target</code> y todo su contenido, esté donde esté (la barra final indica «carpeta»)</td></tr>
+<tr><td><code>*.class</code></td><td>Cualquier archivo que termine en <code>.class</code> (el <code>*</code> significa «cualquier texto»)</td></tr>
+<tr><td><code>nbproject/private/</code></td><td>Solo esa subcarpeta de NetBeans, con tus ajustes personales</td></tr>
+<tr><td><code>Thumbs.db</code></td><td>Un archivo con ese nombre exacto (miniaturas que crea Windows)</td></tr>
+<tr><td><code>/notas.txt</code></td><td>Con barra al inicio: solo el <code>notas.txt</code> de la carpeta raíz del proyecto</td></tr>
+<tr><td><code>!importante.class</code></td><td>Con <code>!</code>: una excepción, «este sí, aunque otra regla lo ignore»</td></tr>
+<tr><td><code># comentario</code></td><td>Nada: las líneas con <code>#</code> son notas</td></tr>
+</table>
+<p>Para saber qué regla ignora un archivo: <code>git check-ignore -v ruta</code>.</p>
+<h3>El .gitignore no actúa sobre lo que ya está guardado</h3>
+<p>Esto sorprende a todos alguna vez: si un archivo <b>ya está en un commit</b>, agregarlo después al <code>.gitignore</code> no hace nada; Git lo sigue vigilando. Pruébalo en el laboratorio: crea <code>notas-privadas.txt</code>, haz commit «por error», y luego:</p>
+<pre class="ps">Add-Content .gitignore "notas-privadas.txt"
+git rm --cached notas-privadas.txt
+git status -s</pre>
+<pre class="salida">rm 'notas-privadas.txt'
+D  notas-privadas.txt
+?? .gitignore</pre>
+<ul>
+<li><code>Add-Content</code> agrega una línea al final del <code>.gitignore</code> (si no existe, lo crea).</li>
+<li><code>git rm --cached archivo</code>: «quítalo del repositorio, pero <b>déjalo en mi carpeta</b>». Sin <code>--cached</code>, <code>git rm</code> lo borraría también del disco. Para una carpeta entera, agrega <code>-r</code> (recursivo): <code>git rm -r --cached target</code>.</li>
+<li>El status muestra <code>D</code> (borrado del repositorio, preparado) y el <code>.gitignore</code> nuevo.</li>
+</ul>
+<pre class="ps">git add .gitignore
+git commit -m "Dejar de versionar las notas privadas"</pre>
+<pre class="salida">[main f24690f] Dejar de versionar las notas privadas
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+ create mode 100644 .gitignore
+ delete mode 100644 notas-privadas.txt</pre>
+<p>Desde ahora Git ignora el archivo, que sigue en tu carpeta. Pero atención: <b>sigue existiendo en el historial</b>. Cualquiera con acceso al repositorio puede verlo en el commit anterior con <code>git show HEAD~1:notas-privadas.txt</code>. Para un archivo pesado o molesto, esto basta. Para una <b>contraseña o un token</b>, no: el capítulo 10 explica qué hacer (resumen: considera el secreto robado y cámbialo de inmediato).</p>
+
+<h2>Git desde NetBeans</h2>
+<p>En el libro usamos PowerShell para que entiendas cada paso, pero NetBeans tiene Git integrado y te ayuda a <b>ver</b> el estado mientras programas. Cuando abres el Totito, NetBeans detecta solo que es un repositorio:</p>
+<ul>
+<li><b>Colores en la ventana de proyectos</b>: verde para archivos nuevos, azul para modificados, rojo para conflictos, gris para ignorados.</li>
+<li><b>Marcas en el margen del editor</b>: junto a los números de línea aparecen franjas de color en las líneas agregadas, cambiadas o borradas desde el último commit. Al hacer clic en una franja ves la versión anterior de esa línea.</li>
+<li><b>Menú <i>Team</i></b>: <i>Commit…</i>, <i>Show Changes</i> (el equivalente a <code>git status</code>), <i>Diff</i>, <i>Show History</i> (el <code>git log</code> de un archivo), ramas, fusiones, <i>Remote → Push/Pull</i> y <i>Resolve Conflicts…</i>.</li>
+</ul>
+<p>Usa lo que te resulte más cómodo; lo importante es que sepas qué hace cada botón por dentro, y eso ya lo sabes. La chuleta completa de comandos está en el Apéndice B.</p>
+
+<h2>Resumen</h2>
+<ul>
+<li>El ciclo diario es <code>pull</code> → editar → <code>status</code> → <code>diff</code> → <code>add</code> → <code>commit</code> → <code>push</code>; leer el diff antes de cada commit evita errores.</li>
+<li>Los commits deben ser pequeños y atómicos, con una primera línea de 50 caracteres o menos, en infinitivo o imperativo, y un cuerpo que explique el porqué cuando haga falta.</li>
+<li><code>git switch -c</code> crea ramas y cambia a ellas; cambiar de rama reescribe tu carpeta. <code>git merge</code> fusiona: fast-forward si la historia es recta; de tres vías, con commit de fusión, si ambas ramas avanzaron.</li>
+<li>Un conflicto es una pregunta: edita el archivo, borra las marcas <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> <code>=======</code> <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>, compila, <code>git add</code> y <code>git commit</code>; <code>git merge --abort</code> es el botón de pánico.</li>
+<li>Deshacer: <code>restore</code> (mesa), <code>restore --staged</code> (bandeja), <code>commit --amend</code> (último commit no subido), <code>revert</code> (commit subido, de forma segura), <code>reset</code> (con mucho cuidado, nunca sobre lo subido) y <code>reflog</code> para rescatar.</li>
+<li><code>git stash</code> guarda trabajo a medias; <code>git tag -a v0.1.0 -m</code> marca versiones y <code>git push --tags</code> las sube.</li>
+<li>El <code>.gitignore</code> no afecta a lo ya guardado: usa <code>git rm --cached</code>, y recuerda que el historial conserva lo que se subió.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> Estas costumbres son las mismas en cualquier equipo de desarrollo:
+<ul>
+<li><b>En un trabajo de grupo de la universidad</b>: cada integrante trabaja en su rama (<code>login</code>, <code>reportes</code>, <code>base-de-datos</code>), con commits pequeños, y se fusionan a <code>main</code> cuando funcionan. Los conflictos se resuelven hablando, como el del rosa.</li>
+<li><b>Cuando un cliente reporta un error en producción</b>: <code>git stash</code> lo que estabas haciendo, <code>git switch main</code>, rama <code>arreglo-x</code>, commit, fusión, etiqueta <code>v1.0.1</code>, y de vuelta a tu trabajo con <code>git stash pop</code>.</li>
+<li><b>Cuando algo dejó de funcionar y no sabes por qué</b>: <code>git log -p archivo</code> y <code>git diff hash1 hash2</code> te muestran qué cambió; <code>git revert</code> deshace el commit culpable sin tocar lo demás.</li>
+<li><b>En archivos de configuración de un servidor o de tus scripts</b>: un repositorio con buenos mensajes te dice, meses después, por qué se cambió cada ajuste.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b><ol>
+<li>En el laboratorio, agrega dos colores nuevos a <code>Tema.java</code> (por ejemplo <code>FRESA</code> y <code>CIAN</code> si no lo tienes) y cambia el README, todo de una vez. Luego guárdalo en <b>tres</b> commits atómicos con buenos mensajes, usando <code>git add</code> archivo por archivo. Pista: para separar los dos colores del mismo archivo, prueba <code>git add -p Tema.java</code>.</li>
+<li>Reescribe estos mensajes de commit malos para que cumplan las reglas del capítulo: «cambios en el tablero», «Arreglé los botones y el color del fondo», «version final», «Se agregó la clase que maneja el marcador de victorias de cada jugador y de los empates».</li>
+<li>Provoca otro conflicto: crea dos ramas que cambien el color <code>AZUL</code> de formas distintas, fusiona una en <code>main</code> (fast-forward) y luego la otra. Resuélvelo quedándote con la versión de la segunda rama. Después repite el ejercicio, pero esta vez sal del conflicto con <code>git merge --abort</code> y comprueba con <code>git status</code> que todo quedó como antes.</li>
+<li>Haz un commit, deshazlo con <code>git reset --hard HEAD~1</code> y recupéralo usando <code>git reflog</code>. Escribe en una frase por qué esto no habría funcionado con cambios que nunca llegaron a un commit.</li>
+<li>(Reto) Crea en GitHub un repositorio privado para el laboratorio (<code>gh repo create practica-git --private --source . --remote origin --push</code>), sube también la etiqueta <code>v0.1.0</code> con <code>git push --tags</code>, edita el README directamente en la página de GitHub (ícono del lápiz → <i>Commit changes</i>) y, sin hacer <code>pull</code>, haz un commit local y un <code>git push</code>. Lee el rechazo, resuélvelo con <code>git pull</code> y vuelve a subir. Pista: <code>git log --oneline --graph</code> te mostrará el commit de fusión resultante.</li>
+</ol></div>
+</section>

@@ -1,0 +1,98 @@
+<section class="capitulo" id="apC">
+<h1><span class="num">Apéndice C</span>Atajos de NetBeans</h1>
+<p class="entrada">Los atajos de teclado de NetBeans que más tiempo ahorran, agrupados por tarea. Con una docena de ellos en los dedos programarás el doble de rápido.</p>
+<p>Son los del mapa de teclas por defecto de NetBeans en Windows. Si alguno no responde, revisa <i>Tools → Options → Keymap</i> (allí se ven y se cambian todos) o consulta <i>Help → Keyboard Shortcuts Card</i>, la tarjeta oficial de atajos. Si usas un portátil, puede que las teclas F1–F12 necesiten la tecla <i>Fn</i>.</p>
+
+<h2>Escribir código</h2>
+<table class="tabla">
+<tr><th>Atajo</th><th>Qué hace</th><th>Ejemplo en el Totito</th></tr>
+<tr><td>Ctrl+Espacio</td><td>Autocompletar: propone nombres de clases, métodos y variables.</td><td>Escribe <code>Tema.</code> y pulsa Ctrl+Espacio: aparecen <code>ROSA</code>, <code>AZUL</code>, <code>fuente(…)</code>…</td></tr>
+<tr><td>Ctrl+P</td><td>Muestra qué parámetros espera el método donde está el cursor.</td><td>Dentro de <code>BotonNeon.pildora(</code>, recuerda el orden: texto, icono, desde, hasta, ancho, alto.</td></tr>
+<tr><td>Ctrl+Shift+Espacio</td><td>Muestra la documentación (Javadoc) de lo que hay bajo el cursor.</td><td>Sobre <code>trazoNeon</code> verás su comentario <code>/** … */</code>.</td></tr>
+<tr><td>Alt+Enter</td><td>Muestra las sugerencias de la bombilla: crear el método que falta, agregar el <code>import</code>, atrapar la excepción…</td><td>Sobre una línea subrayada en rojo.</td></tr>
+<tr><td>Ctrl+Shift+I</td><td>Arregla los <code>import</code>: agrega los que faltan y quita los que sobran.</td><td>Tras pegar código que usa <code>Color</code> o <code>JPanel</code>.</td></tr>
+<tr><td>Alt+Insert</td><td>Generar código: constructor, <i>getters</i> y <i>setters</i>, <code>toString</code>, métodos a sobrescribir.</td><td>En <code>Jugador</code>, genera los dos <i>getters</i> de un golpe.</td></tr>
+<tr><td>Alt+Shift+F</td><td>Formatea: arregla sangrías y espacios de todo el archivo (o de lo seleccionado).</td><td>Después de pegar un bloque desordenado.</td></tr>
+<tr><td>Ctrl+/</td><td>Comenta o descomenta las líneas seleccionadas con <code>//</code>.</td><td>Para «apagar» un momento una línea mientras pruebas.</td></tr>
+<tr><td>Ctrl+E</td><td>Borra la línea actual.</td><td></td></tr>
+<tr><td>Ctrl+Shift+↑ / Ctrl+Shift+↓</td><td>Duplica la línea (o la selección) hacia arriba / abajo.</td><td>Para escribir las constantes de colores de <code>Tema</code> una debajo de otra.</td></tr>
+<tr><td>Alt+Shift+↑ / Alt+Shift+↓</td><td>Mueve la línea (o la selección) arriba / abajo.</td><td>Reordenar los <code>agregar(...)</code> de una pantalla.</td></tr>
+<tr><td>Ctrl+Z / Ctrl+Y</td><td>Deshacer / rehacer.</td><td></td></tr>
+<tr><td>Ctrl+S / Ctrl+Shift+S</td><td>Guardar el archivo / guardar todos.</td><td></td></tr>
+</table>
+
+<h2>Plantillas de código: escribe y pulsa Tab</h2>
+<table class="tabla">
+<tr><th>Escribe</th><th>Se convierte en</th></tr>
+<tr><td><code>sout</code> + Tab</td><td><code>System.out.println("");</code></td></tr>
+<tr><td><code>soutv</code> + Tab</td><td><code>System.out.println("variable = " + variable);</code> con la variable más cercana</td></tr>
+<tr><td><code>psvm</code> + Tab</td><td><code>public static void main(String[] args) { }</code></td></tr>
+<tr><td><code>fori</code> + Tab</td><td>Un <code>for (int i = 0; i &lt; …; i++)</code></td></tr>
+<tr><td><code>fore</code> + Tab</td><td>Un for-each sobre el arreglo o la lista más cercanos</td></tr>
+</table>
+<p>La lista completa está en <i>Tools → Options → Editor → Code Templates</i>, y allí puedes crear las tuyas.</p>
+
+<h2>Moverse por el código</h2>
+<table class="tabla">
+<tr><th>Atajo</th><th>Qué hace</th></tr>
+<tr><td>Ctrl+clic (o Ctrl+B)</td><td>Ir a la definición: salta a la clase, método o variable sobre la que haces clic. Funciona hasta con las clases del JDK (<code>JButton</code>).</td></tr>
+<tr><td>Alt+F7</td><td>Buscar usos: dónde se llama a ese método o se usa esa clase.</td></tr>
+<tr><td>Ctrl+O</td><td>Ir a una clase escribiendo su nombre (basta con las mayúsculas: <code>PB</code> encuentra <code>PantallaBase</code>).</td></tr>
+<tr><td>Alt+Shift+O</td><td>Ir a un archivo por su nombre.</td></tr>
+<tr><td>Ctrl+G</td><td>Ir a un número de línea (útil cuando un error dice <code>Partida.java:62</code>).</td></tr>
+<tr><td>Ctrl+[</td><td>Salta a la llave o paréntesis que hace pareja con el que está junto al cursor.</td></tr>
+<tr><td>Ctrl+Tab</td><td>Cambiar entre los archivos abiertos.</td></tr>
+<tr><td>Ctrl+W</td><td>Cerrar la pestaña actual.</td></tr>
+<tr><td>Shift+Esc</td><td>Maximiza la ventana actual (por ejemplo, el editor) o la devuelve a su tamaño.</td></tr>
+<tr><td>Ctrl+1 / Ctrl+2</td><td>Ventana <i>Projects</i> / <i>Files</i>.</td></tr>
+<tr><td>Ctrl+4</td><td>Ventana <i>Output</i> (la salida del programa y de la compilación).</td></tr>
+<tr><td>Ctrl+7</td><td>Ventana <i>Navigator</i>: la lista de métodos y campos del archivo abierto.</td></tr>
+</table>
+
+<h2>Buscar y renombrar</h2>
+<table class="tabla">
+<tr><th>Atajo</th><th>Qué hace</th></tr>
+<tr><td>Ctrl+F / Ctrl+H</td><td>Buscar / reemplazar en el archivo abierto.</td></tr>
+<tr><td>F3 / Shift+F3</td><td>Siguiente / anterior resultado de la búsqueda.</td></tr>
+<tr><td>Ctrl+Shift+F</td><td>Buscar en todo el proyecto (por ejemplo, todos los usos de <code>Tema.MORADO</code>).</td></tr>
+<tr><td>Ctrl+Shift+H</td><td>Reemplazar en todo el proyecto.</td></tr>
+<tr><td>Ctrl+R</td><td>Renombrar: cambia el nombre de una variable, método o clase <b>en todos los lugares donde se usa</b> (y el archivo, si es una clase). Mucho más seguro que buscar y reemplazar.</td></tr>
+</table>
+
+<h2>Compilar, ejecutar y probar</h2>
+<table class="tabla">
+<tr><th>Atajo</th><th>Qué hace</th></tr>
+<tr><td>F6</td><td><i>Run Project</i>: ejecuta la clase principal del proyecto (<code>TotitoApp</code>, la de <code>exec.mainClass</code>).</td></tr>
+<tr><td>Shift+F6</td><td><i>Run File</i>: ejecuta el <code>main</code> del archivo abierto. Es la forma de probar las clases antes del capítulo 61, cuando aún no existe <code>TotitoApp</code>.</td></tr>
+<tr><td>F9</td><td>Compila solo el archivo abierto.</td></tr>
+<tr><td>F11</td><td><i>Build Project</i>: compila el proyecto.</td></tr>
+<tr><td>Shift+F11</td><td><i>Clean and Build Project</i>: borra lo compilado y compila todo de cero (y crea el <code>.jar</code>).</td></tr>
+<tr><td>Alt+F6</td><td><i>Test Project</i>: ejecuta todas las pruebas de JUnit (capítulo 69).</td></tr>
+<tr><td>Ctrl+F6</td><td><i>Test File</i>: ejecuta las pruebas del archivo abierto.</td></tr>
+</table>
+
+<h2>Depurar (capítulo 62)</h2>
+<table class="tabla">
+<tr><th>Atajo</th><th>Qué hace</th></tr>
+<tr><td>Ctrl+F8</td><td>Pone o quita un punto de interrupción en la línea actual (también: clic en el número de línea).</td></tr>
+<tr><td>Ctrl+F5</td><td><i>Debug Project</i>: ejecuta el proyecto con el depurador.</td></tr>
+<tr><td>Ctrl+Shift+F5</td><td><i>Debug File</i>: depura el <code>main</code> del archivo abierto.</td></tr>
+<tr><td>F8</td><td><i>Step Over</i>: ejecuta la línea y pasa a la siguiente, sin entrar en los métodos que llama.</td></tr>
+<tr><td>F7</td><td><i>Step Into</i>: entra en el método que se llama en la línea.</td></tr>
+<tr><td>Ctrl+F7</td><td><i>Step Out</i>: termina el método actual y vuelve a quien lo llamó.</td></tr>
+<tr><td>F4</td><td><i>Run to Cursor</i>: sigue hasta la línea donde está el cursor.</td></tr>
+<tr><td>F5</td><td><i>Continue</i>: sigue hasta el próximo punto de interrupción.</td></tr>
+<tr><td>Shift+F5</td><td>Termina la sesión de depuración.</td></tr>
+</table>
+
+<h2>Proyectos y archivos</h2>
+<table class="tabla">
+<tr><th>Atajo</th><th>Qué hace</th></tr>
+<tr><td>Ctrl+Shift+N</td><td>Proyecto nuevo.</td></tr>
+<tr><td>Ctrl+Shift+O</td><td>Abrir un proyecto (como la carpeta <code>Totito</code>).</td></tr>
+<tr><td>Ctrl+N</td><td>Archivo nuevo (una clase, una interfaz…).</td></tr>
+</table>
+<div class="caja consejo"><b>Aprende tres por semana</b> Nadie memoriza una tabla. Elige tres atajos, pégalos en un papel junto al monitor y oblígate a usarlos una semana. Los que más rinden al principio: Ctrl+Espacio, Alt+Enter y Alt+Shift+F.</div>
+<div class="caja aplica"></div>
+<div class="caja ejercicio"></div>
+</section>

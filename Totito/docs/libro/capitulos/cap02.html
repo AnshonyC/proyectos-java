@@ -1,0 +1,253 @@
+<section class="capitulo" id="cap02">
+<h1><span class="num">Capítulo 2</span>Tu computadora: requisitos y características</h1>
+<p class="entrada">Antes de instalar las herramientas, vas a comprobar que tu computadora puede con ellas. De paso vas a entender qué es cada pieza de una PC (procesador, memoria, disco, sistema operativo, 64 bits) y por qué cada una importa a la hora de programar. Así, cuando algo vaya lento o un instalador se queje, sabrás por dónde mirar.</p>
+
+<h2>Por qué la computadora importa al programar</h2>
+<p>Para usar un programa basta casi cualquier computadora. Para <b>crear</b> programas se pide un poco más, porque mientras trabajas tendrás abiertos a la vez varios programas exigentes:</p>
+<ul>
+<li><b>El editor (NetBeans)</b>, que analiza tu código mientras escribes para avisarte de errores, sugerir palabras y colorear el texto. Ese análisis constante consume memoria y procesador.</li>
+<li><b>El compilador de Java</b>, que cada vez que pulsas <i>Build</i> lee todos tus archivos y los traduce. Es un trabajo intenso de unos segundos.</li>
+<li><b>Tu propio programa</b> (el Totito) funcionando, con su propia copia de Java en memoria.</li>
+<li><b>El navegador</b>, con este libro, la documentación o GitHub abiertos.</li>
+</ul>
+<p>Si la computadora va justa, nada se rompe, pero todo va más lento: NetBeans tarda en abrir, las sugerencias aparecen con retraso y compilar se hace pesado. Eso cansa y desanima. Por eso vale la pena saber qué tienes y, si hace falta, ajustar algo antes de empezar.</p>
+
+<h2>Los requisitos</h2>
+<p>Esta tabla resume lo que necesitas. La columna <b>mínimo</b> es lo que permite seguir el libro completo, aunque a veces con paciencia; la columna <b>recomendado</b> es lo que permite trabajar con comodidad.</p>
+<table class="tabla">
+<tr><th>Componente</th><th>Mínimo</th><th>Recomendado</th><th>Por qué</th></tr>
+<tr><td>Sistema operativo</td><td>Windows 10 de 64 bits, versión 22H2</td><td>Windows 11 (64 bits), actualizado</td><td>winget, el instalador de programas que usarás, viene con estas versiones. Windows 10 ya no recibe soporte general de Microsoft.</td></tr>
+<tr><td>Arquitectura</td><td>64 bits (x64)</td><td>64 bits (x64)</td><td>NetBeans y el JDK 21 que usa el libro son de 64 bits.</td></tr>
+<tr><td>Procesador (CPU)</td><td>2 núcleos</td><td>4 núcleos o más</td><td>NetBeans analiza el código en segundo plano mientras compilas y ejecutas.</td></tr>
+<tr><td>Memoria (RAM)</td><td>4 GB</td><td>8 GB o más</td><td>NetBeans usa entre 1 y 2 GB; Windows y el navegador, otro tanto.</td></tr>
+<tr><td>Espacio libre en disco</td><td>~5 GB</td><td>10 GB o más, en disco SSD</td><td>Las herramientas, sus archivos temporales y los instaladores que fabricarás.</td></tr>
+<tr><td>Pantalla</td><td>1366×768</td><td>1920×1080</td><td>La ventana del Totito mide 640×690 y NetBeans necesita espacio para sus paneles.</td></tr>
+<tr><td>Internet</td><td>Para instalar y para GitHub</td><td>Banda ancha</td><td>Las herramientas se descargan (en total, más de 1 GB) y el proyecto se sube a GitHub.</td></tr>
+<tr><td>Cuenta de Windows</td><td>Con permisos de administrador (o alguien que los tenga)</td><td>Tu propia cuenta de administrador</td><td>Instalar el JDK y NetBeans para todo el equipo pide confirmación de administrador.</td></tr>
+</table>
+<p>No te preocupes si todavía no sabes qué es un núcleo o qué significa 64 bits: ahora lo explicamos, pieza por pieza, y después vas a comprobar cada dato en tu propia computadora.</p>
+
+<h2>Qué es cada componente</h2>
+<p>Una analogía ayuda mucho: piensa en la computadora como una <b>cocina de restaurante</b>. Vamos a ir viendo quién es quién.</p>
+
+<h3>El procesador (CPU): el cocinero</h3>
+<p>La <b>CPU</b> (siglas en inglés de <i>unidad central de procesamiento</i>), o procesador, es el chip que <b>ejecuta las instrucciones</b>. Todo lo que hace la computadora, desde mover el puntero del ratón hasta compilar el Totito, son millones de instrucciones pequeñas («suma estos dos números», «compara estos dos valores», «guarda esto aquí») que el procesador ejecuta una tras otra a enorme velocidad.</p>
+<p>Dos datos lo describen:</p>
+<ul>
+<li><b>Núcleos.</b> Un núcleo es un «cocinero» completo dentro del chip. Un procesador de 4 núcleos puede hacer cuatro trabajos a la vez: por ejemplo, NetBeans revisando tu código en un núcleo, el compilador trabajando en otro y el navegador en un tercero. Con 2 núcleos todo se turna más y se nota la espera. A veces verás también <i>procesadores lógicos</i> o <i>hilos</i>: muchos núcleos pueden atender dos tareas casi a la vez, así que un procesador de 4 núcleos puede mostrar 8 procesadores lógicos.</li>
+<li><b>Frecuencia (GHz).</b> Cuántos «pasos» da cada núcleo por segundo. 3 GHz son unos tres mil millones de pasos por segundo. Sirve para comparar procesadores de la misma época y familia, pero un procesador moderno a 2,5 GHz suele ser más rápido que uno de hace diez años a 3,5 GHz, porque hace más trabajo en cada paso.</li>
+</ul>
+<p><b>Para programar importa porque</b> compilar, analizar el código y ejecutar tu programa son trabajo puro del procesador. En el capítulo 31 vas a ver un ejemplo muy claro: la IA del Totito revisa miles de partidas posibles antes de cada jugada, y lo hace en una fracción de segundo gracias a esta velocidad.</p>
+
+<h3>La memoria RAM: la mesa de trabajo</h3>
+<p>La <b>RAM</b> (memoria de acceso aleatorio) es donde viven los programas <b>mientras están abiertos</b>, junto con los datos que están usando. Es como la mesa del cocinero: lo que está sobre la mesa se alcanza al instante. Es muy rápida, pero tiene dos limitaciones: es <b>pequeña</b> comparada con el disco y es <b>volátil</b>, es decir, se borra por completo al apagar la computadora. Por eso hay que <i>guardar</i> los archivos: guardar es copiar de la RAM al disco.</p>
+<p>La RAM se mide en <b>gigabytes (GB)</b>. Un gigabyte son unos mil millones de bytes, y un byte es lo que ocupa más o menos una letra de texto. Una referencia de lo que consume cada cosa mientras trabajas:</p>
+<table class="tabla">
+<tr><th>Qué está abierto</th><th>RAM aproximada</th></tr>
+<tr><td>Windows 10/11 por sí solo</td><td>2–3 GB</td></tr>
+<tr><td>NetBeans con el proyecto Totito abierto</td><td>1–2 GB</td></tr>
+<tr><td>El Totito funcionando</td><td>100–200 MB</td></tr>
+<tr><td>Un navegador con 5–10 pestañas</td><td>1–2 GB</td></tr>
+</table>
+<p>Suma y verás por qué 4 GB es el mínimo y 8 GB lo recomendado. Cuando la mesa se llena, Windows empieza a mover cosas de la RAM al disco (que es mucho más lento) para hacer sitio, y la computadora se vuelve torpe: ese es el típico «se trabó».</p>
+
+<h3>El disco: la despensa</h3>
+<p>El <b>disco</b> (o unidad de almacenamiento) es donde quedan guardados los archivos y los programas <b>aunque apagues la computadora</b>. Es la despensa: cabe muchísimo más que en la mesa, pero ir a buscar algo tarda más. Hay dos tipos:</p>
+<ul>
+<li><b>HDD</b> (disco duro mecánico): un disco que gira, con una aguja que lee. Barato y lento.</li>
+<li><b>SSD</b> (unidad de estado sólido): sin piezas que se muevan, como una memoria USB muy rápida. Diez o más veces más rápido que un HDD al abrir programas.</li>
+</ul>
+<p><b>Para programar importa porque</b> compilar implica leer y escribir muchísimos archivos pequeños. Si tu computadora tiene un SSD, NetBeans abrirá en segundos; con un HDD puede tardar un minuto. Si puedes elegir, un SSD es la mejora más notable que le puedes hacer a una computadora vieja.</p>
+<p>¿Por qué unos 5 GB libres? Esta es la cuenta aproximada de lo que vas a instalar y generar:</p>
+<table class="tabla">
+<tr><th>Qué</th><th>Espacio aproximado</th></tr>
+<tr><td>JDK 21 (Eclipse Temurin)</td><td>300–350 MB</td></tr>
+<tr><td>Apache NetBeans 25</td><td>600–800 MB</td></tr>
+<tr><td>Git para Windows</td><td>300–400 MB</td></tr>
+<tr><td>GitHub CLI</td><td>40–60 MB</td></tr>
+<tr><td>Archivos de Maven y caché de NetBeans</td><td>200–500 MB</td></tr>
+<tr><td>WiX Toolset (capítulo 66)</td><td>100–150 MB</td></tr>
+<tr><td>El proyecto Totito con sus carpetas de compilación, la versión portable y el instalador</td><td>200–300 MB</td></tr>
+<tr><td>Descargas temporales de los instaladores</td><td>~1 GB</td></tr>
+<tr><td><b>Total, con margen</b></td><td><b>~5 GB</b></td></tr>
+</table>
+<p>Además, Windows necesita espacio libre para funcionar bien (para actualizaciones y archivos temporales). Con menos de 10 GB libres en <code>C:</code> en total, conviene hacer limpieza antes de seguir.</p>
+
+<h3>El sistema operativo: el jefe de cocina</h3>
+<p>El <b>sistema operativo (SO)</b> es el programa principal, el que arranca al encender la computadora y administra todo lo demás: reparte el procesador entre los programas, decide qué entra a la RAM, organiza los archivos en carpetas, dibuja las ventanas y controla quién puede hacer qué. En este libro el sistema operativo es <b>Windows</b>.</p>
+<p>Windows tiene <b>ediciones</b> (Home, Pro…) y <b>versiones</b>. Las ediciones no importan para este libro: todo funciona igual en Home que en Pro. Las versiones sí importan. Desde Windows 10, Microsoft nombra las actualizaciones grandes con el año y la mitad del año en que salieron: <code>22H2</code> significa «2022, segunda mitad». Además, cada versión tiene un <b>número de compilación</b> (<i>build</i>) que la identifica sin ambigüedad:</p>
+<table class="tabla">
+<tr><th>Número de compilación</th><th>Qué Windows es</th><th>¿Sirve para el libro?</th></tr>
+<tr><td>menor que 19045</td><td>Windows 10 anterior a 22H2</td><td>Actualízalo primero con Windows Update.</td></tr>
+<tr><td>19045</td><td>Windows 10 22H2 (la última de Windows 10)</td><td>Sí (mínimo).</td></tr>
+<tr><td>22000</td><td>Windows 11 21H2</td><td>Sí, aunque conviene actualizar.</td></tr>
+<tr><td>22621 / 22631</td><td>Windows 11 22H2 / 23H2</td><td>Sí.</td></tr>
+<tr><td>26100 o mayor</td><td>Windows 11 24H2 o posterior</td><td>Sí (recomendado).</td></tr>
+</table>
+<p><b>Para programar importa porque</b> las herramientas modernas dan por hecho un Windows reciente. La más visible es <code>winget</code>, el instalador de programas desde la terminal que usarás en el capítulo 4: viene incluido en Windows 11 y en Windows 10 actualizado. Windows 10 dejó de recibir soporte general de Microsoft en octubre de 2025; todo lo del libro funciona en Windows 10 22H2, pero si tu equipo admite Windows 11, es mejor opción también por seguridad.</p>
+
+<h3>32 o 64 bits: el tamaño de los «números de casillero»</h3>
+<p>Imagina que la RAM es un enorme mueble de casilleros, cada uno con su número. Para guardar o buscar algo, el procesador usa el número del casillero. Un procesador de <b>32 bits</b> usa números de 32 cifras binarias (ceros y unos), con los que solo se pueden numerar unos 4 mil millones de casilleros: unos <b>4 GB</b>. Un procesador de <b>64 bits</b> usa números de 64 cifras binarias, con los que se pueden numerar tantos casilleros que el límite, en la práctica, no existe.</p>
+<p>Por eso hoy prácticamente todo es de 64 bits, y las herramientas de desarrollo modernas ya no se publican para 32 bits: NetBeans 25 y el JDK 21 de este libro son de 64 bits, y las versiones recientes de Java eliminaron por completo el soporte para Windows de 32 bits. Hay dos datos que comprobar:</p>
+<ul>
+<li><b>El sistema operativo</b> debe ser de 64 bits. Si tu Windows es de 32 bits, este libro no te sirve en esa instalación.</li>
+<li><b>El tipo de procesador.</b> Casi todas las PC tienen procesadores <b>x64</b> (Intel o AMD). Algunas laptops recientes usan procesadores <b>ARM64</b> (por ejemplo, Snapdragon). Java y Git existen para ARM64, pero el libro se probó con x64; si tu equipo es ARM64, podrás seguir casi todo, aunque en algún paso puede que haya diferencias.</li>
+</ul>
+<div class="caja concepto"><b>Bit y byte.</b> Un <b>bit</b> es la unidad mínima de información: un 0 o un 1, como un interruptor apagado o encendido. Un <b>byte</b> son 8 bits juntos, suficientes para representar una letra. Kilobyte (KB), megabyte (MB) y gigabyte (GB) son aproximadamente mil, un millón y mil millones de bytes. Vas a volver a ver bits y bytes en el capítulo 12, cuando estudies los tipos de datos de Java, y en el capítulo 35, cuando un color se guarde como tres números de 8 bits.</div>
+
+<h3>La pantalla</h3>
+<p>La <b>resolución</b> es cuántos puntos (píxeles) tiene la pantalla de ancho por alto: 1366×768 significa 1366 puntos de ancho y 768 de alto. La ventana del Totito mide 640×690, más la barra de título, y está pensada para caber en una pantalla de 1366×768.</p>
+<p>Hay un detalle: Windows aplica una <b>escala</b> para que el texto no se vea diminuto en pantallas de mucha resolución (100 %, 125 %, 150 %…). Java respeta esa escala, así que lo que cuenta es el tamaño <i>efectivo</i>: una pantalla de 1920×1080 al 150 % se comporta como una de 1280×720. En ese caso la ventana del Totito queda muy justa de alto y la barra de tareas puede tapar el borde inferior. Si te pasa, baja la escala a 125 % en <i>Configuración → Sistema → Pantalla → Escala</i>. Para NetBeans, cuanto más ancho mejor: el editor, la lista de archivos y el panel de resultados tienen que convivir.</p>
+
+<h3>Internet</h3>
+<p>Lo necesitarás en tres momentos: para descargar las herramientas (capítulo 4), para que NetBeans descargue la primera vez las piezas de Maven que necesita (capítulo 5) y para subir tu proyecto a GitHub (Parte II). El resto del libro, el código en sí, funciona sin conexión.</p>
+
+<h3>Permisos de administrador</h3>
+<p>En Windows hay cuentas <b>estándar</b> y cuentas de <b>administrador</b>. Una cuenta estándar puede usar programas y guardar sus propios archivos, pero no puede cambiar cosas que afectan a todo el equipo, como instalar un programa en <code>C:\Program Files</code> para todos los usuarios. El JDK y NetBeans se instalan así, de modo que Windows mostrará una ventana del <b>Control de cuentas de usuario</b> (UAC) preguntando «¿Quieres permitir que esta aplicación haga cambios en el dispositivo?».</p>
+<ul>
+<li>Si tu cuenta es de administrador, solo haces clic en <b>Sí</b>.</li>
+<li>Si es estándar, la ventana pedirá la contraseña de un administrador. En una computadora del trabajo o del colegio, pídele a la persona encargada que te acompañe en el capítulo 4.</li>
+</ul>
+<div class="caja cuidado"><b>No le des «Sí» a ciegas.</b> La ventana del UAC existe para protegerte: muestra el nombre del programa y su editor. Cuando instales con el libro verás nombres conocidos (Eclipse Adoptium, Git, GitHub, Apache NetBeans). Si alguna vez aparece una ventana de UAC que no esperabas, de un programa que no reconoces, responde <b>No</b>.</div>
+
+<h2>Cómo ver las características de tu computadora</h2>
+<p>Ahora vas a comprobar todo lo anterior en tu propia PC. Hay tres caminos; los dos primeros son con el ratón y el tercero es tu primer contacto con PowerShell.</p>
+
+<h3>Camino 1: Configuración → Sistema → Información</h3>
+<ol>
+<li>Presiona <b>Win+I</b> para abrir <i>Configuración</i> (o haz clic en el botón Inicio y en el engranaje).</li>
+<li>Entra en <i>Sistema</i> y baja hasta el final de la lista, a <i>Información</i> (en algunas versiones se llama <i>Acerca de</i>).</li>
+</ol>
+<p>Arriba verás las <b>Especificaciones del dispositivo</b> y, más abajo, las <b>Especificaciones de Windows</b>. Lo que te interesa:</p>
+<table class="tabla">
+<tr><th>Dato en pantalla</th><th>Qué significa</th><th>Qué buscar</th></tr>
+<tr><td>Procesador</td><td>Marca y modelo de la CPU, con su frecuencia.</td><td>Anótalo; el número de núcleos lo verás con PowerShell.</td></tr>
+<tr><td>RAM instalada</td><td>La memoria total.</td><td>4 GB o más.</td></tr>
+<tr><td>Tipo de sistema</td><td>Bits del sistema y del procesador.</td><td>«Sistema operativo de 64 bits, procesador basado en x64».</td></tr>
+<tr><td>Edición</td><td>Windows 10/11, Home/Pro…</td><td>Windows 10 o 11.</td></tr>
+<tr><td>Versión</td><td>La actualización grande.</td><td>22H2 o posterior.</td></tr>
+<tr><td>Compilación del SO</td><td>El número de compilación.</td><td>19045 o mayor (mira la tabla anterior).</td></tr>
+</table>
+<p>Para el espacio en disco, en la misma <i>Configuración → Sistema</i> entra en <i>Almacenamiento</i>: verás cuánto está usado y cuánto libre en <code>C:</code>. Otra forma es abrir el Explorador de archivos (<b>Win+E</b>), hacer clic en <i>Este equipo</i> y mirar la barra del <i>Disco local (C:)</i>. Para la pantalla, <i>Configuración → Sistema → Pantalla</i> muestra la <i>Resolución de pantalla</i> y la <i>Escala</i>.</p>
+
+<h3>Camino 2: winver</h3>
+<p><code>winver</code> («versión de Windows») es un programita que muestra la versión exacta en una ventana. Para abrirlo:</p>
+<ol>
+<li>Presiona <b>Win+R</b>: se abre la ventana <i>Ejecutar</i>.</li>
+<li>Escribe <code>winver</code> y presiona <b>Enter</b>.</li>
+</ol>
+<p>Aparece una ventana «Acerca de Windows» con un texto como «Versión 23H2 (compilación del SO 22631.4317)». El número antes del punto es el número de compilación que buscas en la tabla.</p>
+
+<h3>Camino 3: PowerShell</h3>
+<p>PowerShell es la terminal de Windows. La vas a conocer a fondo en el capítulo 3; por ahora basta con abrirla y copiar un par de comandos.</p>
+<ol>
+<li>Presiona la tecla <b>Win</b>, escribe <code>powershell</code> y presiona <b>Enter</b>. Se abre una ventana con texto y un cursor parpadeando después de algo como <code>PS C:\Users\ana&gt;</code>.</li>
+<li>Escribe (o pega con <b>Ctrl+V</b> o con clic derecho) el siguiente comando, todo en una sola línea, y presiona <b>Enter</b>:</li>
+</ol>
+<pre class="ps">Get-ComputerInfo | Select-Object OsName, OsVersion, OsArchitecture, CsProcessors, CsTotalPhysicalMemory</pre>
+<p>Tarda unos segundos (está reuniendo muchísima información) y luego muestra algo así:</p>
+<pre class="salida">OsName                : Microsoft Windows 11 Home
+OsVersion             : 10.0.22631
+OsArchitecture        : 64 bits
+CsProcessors          : {Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz}
+CsTotalPhysicalMemory : 8402694144</pre>
+<p>Vamos a desarmar el comando, porque es tu primer comando de PowerShell y tiene tres ideas que vas a usar muchísimo:</p>
+<ul>
+<li><b><code>Get-ComputerInfo</code></b> es un <i>cmdlet</i> (se pronuncia «comandlet»): un comando de PowerShell. Su nombre sigue el patrón <i>Verbo-Sustantivo</i>: «obtener-información-del-equipo». Por sí solo devuelve más de cien datos.</li>
+<li><b><code>|</code></b> es la <b>tubería</b> (<i>pipe</i>; en el teclado latinoamericano está en la tecla a la izquierda del <b>1</b>, debajo de <b>Esc</b>; en el teclado de España se escribe con <b>AltGr+1</b>, y en el estadounidense con <b>Shift+\</b>). Toma el resultado del comando de la izquierda y se lo pasa al de la derecha, como una cinta transportadora.</li>
+<li><b><code>Select-Object</code></b> («seleccionar-objeto») se queda solo con los datos que le nombras, separados por comas. Así, de los cien datos, ves solo cinco.</li>
+</ul>
+<p>Y los datos que pediste significan:</p>
+<table class="tabla">
+<tr><th>Dato</th><th>Qué es</th><th>Cómo leerlo</th></tr>
+<tr><td><code>OsName</code></td><td>Nombre del sistema operativo.</td><td>Debe decir Windows 10 o Windows 11.</td></tr>
+<tr><td><code>OsVersion</code></td><td>Versión interna.</td><td>El último número es la compilación: <code>10.0.22631</code> es la 22631, o sea, Windows 11 23H2. (Windows 11 también empieza por <code>10.0</code>: es una herencia interna, no un error).</td></tr>
+<tr><td><code>OsArchitecture</code></td><td>Bits del sistema.</td><td>Debe decir <code>64 bits</code> (o <code>64-bit</code> si tu Windows está en inglés).</td></tr>
+<tr><td><code>CsProcessors</code></td><td>Modelo del procesador.</td><td>Las llaves <code>{ }</code> indican que es una lista (algunas PC de servidor tienen varios procesadores).</td></tr>
+<tr><td><code>CsTotalPhysicalMemory</code></td><td>RAM total, <b>en bytes</b>.</td><td>8402694144 bytes son unos 7,8 GB: es una PC con 8 GB (una parte la reserva el sistema).</td></tr>
+</table>
+<p>Leer la RAM en bytes es incómodo. PowerShell sabe hacer cuentas y conoce la unidad <code>1GB</code>, así que puedes pedirle la conversión:</p>
+<pre class="ps">[math]::Round((Get-ComputerInfo).CsTotalPhysicalMemory / 1GB, 1)</pre>
+<pre class="salida">7.8</pre>
+<p>Según la configuración regional de tu Windows, el decimal puede aparecer con coma: <code>7,8</code>. Es lo mismo.</p>
+<p>No te preocupes por entender cada símbolo de esa línea: los paréntesis piden «calcula primero esto y toma su dato <code>CsTotalPhysicalMemory</code>», la barra <code>/</code> divide entre un gigabyte y <code>[math]::Round(…, 1)</code> redondea a un decimal. Vas a ver ideas muy parecidas en Java en el capítulo 12.</p>
+<p>Para saber cuántos <b>núcleos</b> tiene el procesador:</p>
+<pre class="ps">Get-CimInstance Win32_Processor | Select-Object Name, NumberOfCores, NumberOfLogicalProcessors</pre>
+<pre class="salida">Name                                     NumberOfCores NumberOfLogicalProcessors
+----                                     ------------- -------------------------
+Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz             4                         8</pre>
+<p><code>NumberOfCores</code> son los núcleos reales y <code>NumberOfLogicalProcessors</code> los procesadores lógicos (hilos) que explicamos antes.</p>
+<p>Por último, el <b>espacio en disco</b> de la unidad <code>C:</code>:</p>
+<pre class="ps">Get-PSDrive C</pre>
+<pre class="salida">Name           Used (GB)     Free (GB) Provider      Root                 CurrentLocation
+----           ---------     --------- --------      ----                 ---------------
+C                 151.27         86.42 FileSystem    C:\                     Users\ana</pre>
+<p><code>Get-PSDrive</code> («obtener unidad») muestra una unidad: <code>Used (GB)</code> es lo usado y <code>Free (GB)</code> lo libre, ya en gigabytes. En este ejemplo hay 86 GB libres, de sobra. Las demás columnas no importan ahora (<code>CurrentLocation</code> es la carpeta donde estás parado en la terminal, algo que verás en el capítulo 3).</p>
+<div class="caja consejo"><b>Desconfía del dato <code>WindowsProductName</code>.</b> Si exploras más datos de <code>Get-ComputerInfo</code>, verás uno llamado <code>WindowsProductName</code> que en muchas PC con Windows 11 dice «Windows 10». Es un dato antiguo que Microsoft no actualizó. Fíate de <code>OsName</code> y, sobre todo, del número de compilación.</div>
+
+<h3>¿Mi cuenta es de administrador?</h3>
+<p>Con el ratón: <i>Configuración → Cuentas → Tu información</i>; debajo de tu nombre dice «Administrador» o «Estándar». Con PowerShell:</p>
+<pre class="ps">whoami /groups | Select-String "S-1-5-32-544"</pre>
+<p><code>whoami /groups</code> («quién soy») lista los grupos a los que pertenece tu cuenta, y <code>Select-String</code> filtra las líneas que contienen el texto indicado. <code>S-1-5-32-544</code> es el código interno del grupo de administradores, el mismo en Windows en español, inglés o cualquier idioma. Si aparece una línea (con <code>BUILTIN\Administradores</code> al principio), tu cuenta es de administrador. Si no aparece nada, es estándar.</p>
+
+<h2>Tu ficha técnica</h2>
+<p>Anota los resultados en tu cuaderno, en una tabla como esta. Te servirá ahora para decidir si sigues adelante, y más tarde si alguna vez tienes que pedir ayuda («¿cuánta RAM tienes?» es una de las primeras preguntas que te harán):</p>
+<table class="tabla">
+<tr><th>Dato</th><th>Mínimo</th><th>Mi PC</th><th>¿Cumple?</th></tr>
+<tr><td>Windows y compilación</td><td>Windows 10 22H2 (19045)</td><td></td><td></td></tr>
+<tr><td>64 bits</td><td>Sí</td><td></td><td></td></tr>
+<tr><td>Núcleos</td><td>2</td><td></td><td></td></tr>
+<tr><td>RAM</td><td>4 GB</td><td></td><td></td></tr>
+<tr><td>Libre en C:</td><td>5 GB</td><td></td><td></td></tr>
+<tr><td>Resolución efectiva</td><td>1366×768</td><td></td><td></td></tr>
+<tr><td>Administrador</td><td>Sí (o alguien que ayude)</td><td></td><td></td></tr>
+</table>
+
+<h2>Si tu computadora no llega</h2>
+<p>No todo está perdido. Según lo que falte:</p>
+<ul>
+<li><b>Windows 10 antiguo:</b> abre <i>Configuración → Windows Update</i> y busca actualizaciones hasta llegar a 22H2. Puede tardar y pedir varios reinicios.</li>
+<li><b>Poca RAM (4 GB):</b> funciona, pero trabaja con lo mínimo abierto: cierra el navegador mientras compilas, o deja solo una pestaña. Si la computadora lo permite, ampliar a 8 GB suele ser barato y es la mejora más notable para programar.</li>
+<li><b>Poco espacio:</b> en <i>Configuración → Sistema → Almacenamiento</i> activa el <i>Sensor de almacenamiento</i> y usa <i>Recomendaciones de limpieza</i>. Vacía la Papelera de reciclaje y la carpeta <i>Descargas</i>. Desinstala programas que no uses en <i>Configuración → Aplicaciones</i>.</li>
+<li><b>Disco HDD (no SSD):</b> todo funciona igual, solo más lento. Ten paciencia la primera vez que abras NetBeans.</li>
+<li><b>Windows de 32 bits:</b> no hay forma de seguir el libro en esa instalación. Si el procesador es de 64 bits (Configuración lo dice: «procesador basado en x64»), se puede instalar Windows de 64 bits, pero eso implica reinstalar el sistema; consúltalo con alguien de confianza. Si no, usa otra computadora.</li>
+<li><b>Sin permisos de administrador:</b> pide a quien administre el equipo que esté presente en el capítulo 4, o que instale las herramientas por ti siguiendo esa lista.</li>
+</ul>
+
+<h2>Antes de seguir</h2>
+<ul>
+<li><b>Actualiza Windows</b> (<i>Configuración → Windows Update</i>) y reinicia si lo pide. Instalar herramientas sobre un sistema con actualizaciones pendientes a veces falla de maneras raras.</li>
+<li><b>Si usas laptop, conéctala a la corriente</b> durante las instalaciones: algunos modos de ahorro de energía frenan las descargas o suspenden el equipo a mitad de una instalación.</li>
+<li><b>Ten a mano tu contraseña de Windows</b> (o la del administrador) para el capítulo 4.</li>
+</ul>
+
+<h2>Resumen</h2>
+<ul>
+<li>Para programar se necesita algo más que para usar programas, porque el editor, el compilador, tu programa y el navegador funcionan a la vez.</li>
+<li>Mínimo: Windows 10 22H2 de 64 bits, 2 núcleos, 4 GB de RAM, ~5 GB libres, pantalla de 1366×768, internet y permisos de administrador. Recomendado: Windows 11, 4 núcleos, 8 GB y un SSD.</li>
+<li>La CPU ejecuta instrucciones (el cocinero), la RAM guarda lo que está abierto (la mesa, se borra al apagar) y el disco guarda los archivos para siempre (la despensa).</li>
+<li>64 bits permite usar más de 4 GB de memoria; las herramientas modernas de Java ya no existen para 32 bits.</li>
+<li>El número de compilación identifica tu Windows: 19045 es Windows 10 22H2; 22000 o más, Windows 11.</li>
+<li>Puedes ver tus datos en <i>Configuración → Sistema → Información</i>, con <code>winver</code> o con PowerShell: <code>Get-ComputerInfo</code>, <code>Get-CimInstance Win32_Processor</code> y <code>Get-PSDrive C</code>.</li>
+<li>La tubería <code>|</code> pasa el resultado de un comando al siguiente, y <code>Select-Object</code> elige qué datos mostrar.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> Saber leer las características de una computadora sirve mucho más allá de este libro:
+<ul>
+<li><b>Comprar una computadora para programar o estudiar:</b> ya sabes qué mirar (64 bits, núcleos, al menos 8 GB de RAM, SSD) y por qué, en lugar de dejarte llevar por la frecuencia en GHz o por el tamaño de la pantalla.</li>
+<li><b>Revisar los requisitos de cualquier programa</b> (un editor de video, un juego, AutoCAD): compara la tabla del fabricante con tu ficha técnica antes de descargar nada.</li>
+<li><b>Dar soporte a otra persona:</b> pedirle que ejecute <code>winver</code> o <code>Get-ComputerInfo</code> y te envíe el resultado es más fiable que preguntarle «¿qué Windows tienes?».</li>
+<li><b>Programas que reportan su entorno:</b> muchas aplicaciones, al fallar, incluyen en su informe de error el sistema operativo, la memoria y la versión; es la misma información que acabas de reunir, y en Java se puede leer con <code>System.getProperty("os.name")</code>, algo que verás en la Parte III.</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Completa tu ficha técnica con los datos de tu computadora y marca qué requisitos cumple.</li>
+<li>Comprueba la versión de Windows por dos caminos distintos (Configuración y <code>winver</code>) y verifica que el número de compilación coincida.</li>
+<li>Ejecuta <code>Get-ComputerInfo | Select-Object OsName, OsVersion</code> y luego cambia los nombres por <code>CsManufacturer, CsModel</code>. ¿Qué te muestra? Pista: <i>Manufacturer</i> significa «fabricante».</li>
+<li>Calcula a mano cuántos GB son 17112150016 bytes (divide tres veces entre 1024) y luego compruébalo en PowerShell con <code>17112150016 / 1GB</code>.</li>
+<li>Abre el <i>Administrador de tareas</i> (<b>Ctrl+Shift+Esc</b>), ve a la pestaña <i>Rendimiento</i> y observa cuánta memoria está en uso con lo que tienes abierto ahora. Abre cinco pestañas en el navegador y mira cuánto sube. ¿Cuánto margen te quedaría para NetBeans?</li>
+</ol>
+</div>
+</section>

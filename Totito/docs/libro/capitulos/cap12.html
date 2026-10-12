@@ -1,0 +1,424 @@
+<section class="capitulo" id="cap12">
+<h1><span class="num">Capítulo 12</span>Variables, tipos y operadores</h1>
+<p class="entrada">Un programa que no recuerda nada no puede jugar al totito: necesita saber qué hay en cada casilla, de quién es el turno y cuántas partidas lleva ganadas cada uno. En este capítulo aprendes a guardar datos en variables, a elegir el tipo correcto para cada dato (y por qué la ficha del Totito es un <code>char</code> y no un texto) y a hacer cuentas con ellos, incluidas las cuentas con decimales que dibujan el tablero.</p>
+
+<h2>Qué es una variable</h2>
+<p>Una <b>variable</b> es un espacio con nombre en la memoria de la computadora donde se guarda un dato que puede cambiar mientras el programa corre. Piensa en una caja con una etiqueta: la etiqueta es el nombre (<code>victorias</code>), lo que hay dentro es el valor (<code>3</code>) y la forma de la caja es el <b>tipo</b>: una caja para números enteros no admite un texto, igual que en un monedero no cabe una sandía.</p>
+<p>En el Totito hay variables por todas partes. En <code>Partida.java</code>:</p>
+<pre class="java">private int empates;
+/** Indice (0 o 1) del jugador al que le toca. */
+private int turno;</pre>
+<p>Cada partida empatada, <code>empates</code> aumenta en uno; cada jugada válida, <code>turno</code> cambia de 0 a 1 o de 1 a 0. Ese «cambiar» es lo que hace que sean <i>variables</i>.</p>
+
+<h3>Declarar, asignar, inicializar</h3>
+<pre class="java">public class Variable {
+    public static void main(String[] args) {
+        int victorias;             // 1) declarar: reservar la caja
+        victorias = 0;             // 2) asignar: guardar un valor
+        System.out.println("Al empezar: " + victorias);
+        victorias = victorias + 1; // leer, sumar y volver a guardar
+        System.out.println("Tras ganar una: " + victorias);
+        int empates = 2;           // declarar e inicializar a la vez
+        int partidas = victorias + empates;
+        System.out.println("Partidas jugadas: " + partidas);
+        empates = 5;
+        System.out.println("partidas sigue valiendo " + partidas);
+    }
+}</pre>
+<pre class="salida">Al empezar: 0
+Tras ganar una: 1
+Partidas jugadas: 3
+partidas sigue valiendo 3</pre>
+<ul>
+<li><b>Declarar</b> (<code>int victorias;</code>) es decirle a Java «necesito una caja de tipo <code>int</code> llamada <code>victorias</code>». Primero va el tipo, después el nombre, y termina en <code>;</code>.</li>
+<li><b>Asignar</b> (<code>victorias = 0;</code>) es guardar un valor. El signo <code>=</code> en Java <b>no</b> significa «es igual a» como en matemáticas; significa «guarda lo de la derecha en la caja de la izquierda». Por eso <code>victorias = victorias + 1;</code> tiene sentido: primero se calcula la derecha con el valor viejo (0 + 1) y el resultado (1) se guarda en la caja, reemplazando lo que había.</li>
+<li><b>Inicializar</b> es asignar el primer valor. Se puede hacer en la misma línea que la declaración: <code>int empates = 2;</code>.</li>
+<li>La última línea demuestra algo importante: <code>partidas</code> guardó el <i>resultado</i> de la suma (3) en el momento de calcularla, no la fórmula. Cambiar <code>empates</code> después no la recalcula. Una variable no es una celda de Excel con fórmula: es una caja con un valor.</li>
+</ul>
+<div class="caja cuidado">Java no te deja leer una variable local que nunca recibió valor. Si escribes <code>int victorias;</code> y enseguida <code>System.out.println(victorias);</code>, el compilador protesta: <code>error: variable victorias might not have been initialized</code>. Es una protección: en otros lenguajes leerías «basura» que quedó en esa memoria. (Los <i>campos</i> de una clase, como <code>empates</code> en <code>Partida</code>, son distintos: Java los pone automáticamente en 0, <code>false</code> o <code>null</code>; lo verás en el capítulo 18.)</div>
+
+<h2>Los tipos: qué forma tiene cada caja</h2>
+<p>Java es un lenguaje de <b>tipado estático</b>: cada variable tiene un tipo fijo desde que se declara y el compilador comprueba que nunca le metas algo de otro tipo. Puede parecer rígido, pero atrapa montones de errores antes de ejecutar. Java tiene ocho <b>tipos primitivos</b> (los «átomos» del lenguaje, en minúscula) y, encima de ellos, todas las clases, como <code>String</code>.</p>
+<table class="tabla">
+<tr><th>Tipo</th><th>Guarda</th><th>Rango / tamaño</th><th>Ejemplo en el Totito</th></tr>
+<tr><td><code>int</code></td><td>Enteros</td><td>de −2 147 483 648 a 2 147 483 647 (4 bytes)</td><td><code>int fila</code>, <code>int turno</code>, <code>PAUSA_IA_MS = 450</code></td></tr>
+<tr><td><code>long</code></td><td>Enteros grandes</td><td>±9,2 trillones (8 bytes)</td><td>No lo usa; sirve para milisegundos, montos grandes, identificadores</td></tr>
+<tr><td><code>double</code></td><td>Números con decimales</td><td>unos 15–16 dígitos de precisión (8 bytes)</td><td><code>double tam = tamCasilla();</code> en <code>PanelTablero</code></td></tr>
+<tr><td><code>float</code></td><td>Decimales con menos precisión</td><td>unos 7 dígitos (4 bytes)</td><td><code>float grosor</code>; los trazos de Java2D piden <code>float</code></td></tr>
+<tr><td><code>boolean</code></td><td>Verdadero o falso</td><td>solo <code>true</code> o <code>false</code></td><td><code>boolean interactivo</code>, el resultado de <code>tableroLleno()</code></td></tr>
+<tr><td><code>char</code></td><td>Un solo carácter</td><td>una letra, dígito o símbolo (2 bytes)</td><td><code>char ficha</code>, <code>VACIA = ' '</code></td></tr>
+<tr><td><code>byte</code>, <code>short</code></td><td>Enteros pequeños</td><td>1 y 2 bytes</td><td>Solo en casos especiales (archivos binarios: <code>GeneradorIcono</code>, capítulo 64)</td></tr>
+<tr><td><code>String</code></td><td>Texto (no es primitivo: es una clase)</td><td>tan largo como quieras</td><td><code>String nombre</code> en <code>Jugador</code></td></tr>
+</table>
+<p>Este programa declara una variable de cada tipo que usaremos:</p>
+<pre class="java">public class TiposDelTotito {
+    public static void main(String[] args) {
+        int fila = 1;                    // un numero entero
+        long milisegundos = System.currentTimeMillis();
+        double tamCasilla = 100.0;       // un numero con decimales
+        float grosor = 8.5f;             // decimales de menor precision
+        boolean juegoTerminado = false;  // verdadero o falso
+        char ficha = 'X';                // un solo caracter
+        String nombre = "Ana";           // texto
+
+        System.out.println("fila = " + fila);
+        System.out.println("milisegundos desde 1970 &gt; 0: " + (milisegundos &gt; 0));
+        System.out.println("tamCasilla = " + tamCasilla);
+        System.out.println("grosor = " + grosor);
+        System.out.println("juegoTerminado = " + juegoTerminado);
+        System.out.println("ficha = " + ficha);
+        System.out.println("nombre = " + nombre);
+    }
+}</pre>
+<pre class="salida">fila = 1
+milisegundos desde 1970 &gt; 0: true
+tamCasilla = 100.0
+grosor = 8.5
+juegoTerminado = false
+ficha = X
+nombre = Ana</pre>
+
+<h3><code>int</code>: el caballo de batalla</h3>
+<p>Casi todos los números del Totito son <code>int</code>: filas y columnas (0, 1, 2), el turno (0 o 1), las victorias, los milisegundos de pausa, los tamaños en píxeles de los botones (<code>384, 88</code>). Un <code>int</code> no puede tener decimales y tiene límites. ¿Qué pasa si te pasas?</p>
+<pre class="java">public class Limites {
+    public static void main(String[] args) {
+        System.out.println("int va de " + Integer.MIN_VALUE + " a " + Integer.MAX_VALUE);
+        System.out.println("long va de " + Long.MIN_VALUE + " a " + Long.MAX_VALUE);
+        int maximo = Integer.MAX_VALUE;
+        System.out.println("MAX_VALUE + 1 = " + (maximo + 1));
+        long grande = Integer.MAX_VALUE;
+        System.out.println("como long: " + (grande + 1));
+        System.out.println("0.1 + 0.2 = " + (0.1 + 0.2));
+    }
+}</pre>
+<pre class="salida">int va de -2147483648 a 2147483647
+long va de -9223372036854775808 a 9223372036854775807
+MAX_VALUE + 1 = -2147483648
+como long: 2147483648
+0.1 + 0.2 = 0.30000000000000004</pre>
+<p>Al sumar 1 al máximo, el <code>int</code> «da la vuelta» al mínimo, como el cuentakilómetros de un carro viejo que pasa de 99999 a 00000. Se llama <b>desbordamiento</b> (<i>overflow</i>) y Java no avisa. Con un <code>long</code> la cuenta sale bien. En el Totito nunca se llega ni cerca, pero si programas un sistema de ventas que suma centavos de todo un año, usa <code>long</code>.</p>
+<p><code>Integer.MIN_VALUE</code> y <code>Integer.MAX_VALUE</code> sí aparecen en el Totito, y con mucha intención. En <code>IA_Minimax</code>:</p>
+<pre class="java">int mejorValor = Integer.MIN_VALUE;</pre>
+<p>La IA busca la jugada de puntaje más alto. Para empezar a comparar necesita un «récord» inicial que cualquier jugada real supere; el número más pequeño que existe es perfecto: hace de «menos infinito». Es como empezar a buscar al más alto de la clase anotando «estatura récord: 0 cm». Lo verás funcionar en el capítulo 31.</p>
+<div class="caja consejo">Para escribir un <code>long</code> grande a mano se le pone una <code>L</code> al final: <code>long poblacion = 8_000_000_000L;</code>. Los guiones bajos dentro de un número están permitidos y solo sirven para leerlo mejor, como los separadores de miles.</div>
+
+<h3><code>double</code> y <code>float</code>: números con decimales</h3>
+<p>Para dibujar, los enteros no bastan: el centro de una casilla puede caer en el píxel 268.5. Por eso <code>PanelTablero</code> calcula sus medidas con <code>double</code>:</p>
+<pre class="java">private double tamCasilla() {
+    return (getWidth() - 2.0 * (MARGEN + RELLENO)) / 3.0;
+}</pre>
+<p>En Java un número escrito con punto decimal, como <code>3.0</code>, es <code>double</code> por defecto (el separador decimal siempre es el punto, nunca la coma). Si quieres un <code>float</code>, tienes que añadir una <code>f</code>: <code>1.5f</code>. ¿Por qué existe <code>float</code> si <code>double</code> es más preciso? Porque gasta la mitad de memoria y muchas bibliotecas gráficas lo prefieren. Java2D, la parte de Java que dibuja, pide <code>float</code> para el grosor de las líneas; por eso en el Totito verás llamadas como:</p>
+<pre class="java">Dibujo.trazoNeon(g2, marco, Tema.MORADO, 1.5f, 0.8f);</pre>
+<p>Si olvidas la <code>f</code>, el compilador no te deja seguir, porque meter un <code>double</code> en una caja <code>float</code> podría perder precisión:</p>
+<pre class="salida">FloatMal.java:3: error: incompatible types: possible lossy conversion from double to float
+        float grosor = 1.5;
+                       ^</pre>
+<div class="caja cuidado"><b>Los decimales no son exactos.</b> Como viste arriba, <code>0.1 + 0.2</code> da <code>0.30000000000000004</code>. La computadora guarda los decimales en binario, y 0.1 en binario tiene infinitas cifras (como 1/3 en decimal: 0.3333…), así que se redondea. Para dibujar da igual (nadie ve una milmillonésima de píxel), pero <b>nunca uses <code>double</code> para dinero</b>: en un sistema de facturación se usan centavos en un <code>long</code>, o la clase <code>BigDecimal</code>. Y nunca compares decimales con <code>==</code>: <code>0.1 + 0.2 == 0.3</code> da <code>false</code>.</div>
+
+<h3><code>boolean</code>: sí o no</h3>
+<p>Un <code>boolean</code> (en honor al matemático George Boole) solo puede valer <code>true</code> (verdadero) o <code>false</code> (falso). Es el tipo de las preguntas de sí o no: «¿el tablero se puede pulsar?» (<code>interactivo</code>), «¿está lleno?», «¿fue válida la jugada?». En <code>Tablero</code>, <code>marcarCasilla</code> devuelve un <code>boolean</code> que dice si se pudo colocar la ficha, y <code>tableroLleno()</code> otro que dice si quedan casillas. Toda comparación produce un <code>boolean</code>, como verás en un momento, y todas las decisiones del capítulo 13 se toman con ellos.</p>
+<div class="caja consejo">Nombra los <code>boolean</code> como preguntas o estados: <code>juegoTerminado</code>, <code>esComputadora</code>, <code>resaltado</code>, <code>sePuedeJugar</code>. Así, al leer <code>if (sePuedeJugar)</code>, el código suena a español.</div>
+
+<h3><code>char</code>: por qué la ficha es un carácter</h3>
+<p>Un <code>char</code> guarda <b>un solo carácter</b> y se escribe entre <b>comillas simples</b>: <code>'X'</code>, <code>'O'</code>, <code>' '</code>. En el Totito, toda ficha es un <code>char</code>: el campo <code>ficha</code> de <code>Jugador</code>, cada casilla de la matriz <code>char[][] casillas</code> y la constante <code>VACIA = ' '</code> (un espacio). ¿Por qué no un <code>String</code> como <code>"X"</code>?</p>
+<ol>
+<li><b>Es exactamente lo que el dato es.</b> Una casilla contiene una X, una O o nada: un símbolo, nunca una palabra. El tipo documenta la intención: quien lea <code>char ficha</code> sabe que ahí no cabe <code>"Equis"</code>.</li>
+<li><b>Se compara con <code>==</code> sin trampas.</b> <code>casillas[0][0] == casillas[1][1]</code> compara dos caracteres directamente. Con <code>String</code>, <code>==</code> no compara el contenido sino otra cosa (lo verás en el capítulo 17) y habría que usar <code>equals</code> en cada una de las muchas comparaciones de <code>verificarGanador</code>.</li>
+<li><b>Es ligero.</b> Un <code>char</code> ocupa 2 bytes. Minimax crea cientos de miles de copias del tablero mientras piensa (capítulo 31); con caracteres eso es rapidísimo.</li>
+<li><b>Tiene un valor «vacío» claro.</b> <code>' '</code> se dibuja bien en consola (capítulo 32) y no da problemas, a diferencia de un <code>String</code> que podría ser <code>null</code>.</li>
+</ol>
+<p>Por dentro, un <code>char</code> es un número: el código del carácter en la tabla <b>Unicode</b> (el catálogo mundial que da un número a cada letra de cada idioma). Eso tiene consecuencias curiosas:</p>
+<pre class="java">public class LaFicha {
+    public static void main(String[] args) {
+        char ficha = 'X';
+        char vacia = ' ';
+        System.out.println("ficha: " + ficha + "  su codigo: " + (int) ficha);
+        System.out.println("'O' tiene el codigo " + (int) 'O');
+        System.out.println("la casilla vacia ' ' tiene el codigo " + (int) vacia);
+        System.out.println("ficha == 'X'? " + (ficha == 'X'));
+        System.out.println("ficha == 'x'? " + (ficha == 'x'));
+        char siguiente = (char) (ficha + 1);
+        System.out.println("la letra que sigue a X es " + siguiente);
+        System.out.println("'X' + 'O' = " + ('X' + 'O'));
+        System.out.println("\"\" + 'X' + 'O' = " + ("" + 'X' + 'O'));
+    }
+}</pre>
+<pre class="salida">ficha: X  su codigo: 88
+'O' tiene el codigo 79
+la casilla vacia ' ' tiene el codigo 32
+ficha == 'X'? true
+ficha == 'x'? false
+la letra que sigue a X es Y
+'X' + 'O' = 167
+"" + 'X' + 'O' = XO</pre>
+<p>Fíjate en las dos últimas: sumar dos <code>char</code> suma sus códigos (88 + 79 = 167), no los pega. Para pegarlos hace falta que en la suma haya un texto, aunque sea vacío (<code>""</code>). Y la X mayúscula no es la x minúscula: códigos distintos. El <code>\"</code> dentro del texto es una <b>secuencia de escape</b>: como las comillas terminan el texto, para escribir unas comillas <i>dentro</i> se les pone una barra invertida delante. Otras útiles: <code>\n</code> (salto de línea) y <code>\\</code> (una barra invertida, como en las rutas de Windows).</p>
+<div class="caja concepto"><b>Comillas simples o dobles.</b> <code>'X'</code> es un <code>char</code>; <code>"X"</code> es un <code>String</code> de longitud 1. Son tipos distintos y no se pueden mezclar libremente: <code>char ficha = "X";</code> no compila. Es como la diferencia entre una ficha física del totito y una tarjeta que dice «X».</div>
+
+<h3><code>String</code>: el texto</h3>
+<p><code>String</code> se escribe con mayúscula porque no es primitivo: es una <b>clase</b> que viene con Java, y cada texto es un objeto. Por eso tiene métodos (<code>nombre.length()</code>, <code>nombre.trim()</code>…). Su capítulo es el 17; por ahora te basta saber que se escribe entre comillas dobles y que el <code>+</code> lo pega con lo que sea: <code>"Turno de " + enTurno.getNombre()</code> es como <code>PantallaJuego</code> arma el letrero «Turno de Ana».</p>
+
+<h2>Nombres de variables</h2>
+<p>Reglas que <b>obliga</b> Java: el nombre empieza por letra (o <code>_</code> o <code>$</code>), luego letras, dígitos o <code>_</code>; sin espacios ni guiones; no puede ser una palabra reservada (<code>int</code>, <code>class</code>…); y distingue mayúsculas (<code>fila</code> y <code>Fila</code> son dos variables distintas). Java admite tildes y eñes en los nombres, pero la costumbre (y la del Totito) es no usarlas en el código: <code>tamano</code>, no <code>tamaño</code>.</p>
+<p>Convenciones que <b>esperan</b> los demás programadores: variables y métodos en <i>camelCase</i> (<code>filaEncima</code>, <code>columnaEncima</code>, <code>mejorValor</code>), constantes en mayúsculas (<code>PAUSA_RESULTADO_MS</code>).</p>
+<table class="tabla">
+<tr><th>Mal nombre</th><th>Buen nombre (del Totito)</th><th>Por qué</th></tr>
+<tr><td><code>int t;</code></td><td><code>int turno;</code></td><td>Una letra no dice nada; dentro de un mes no sabrás qué era <code>t</code></td></tr>
+<tr><td><code>int p = 450;</code></td><td><code>PAUSA_IA_MS = 450</code></td><td>Dice qué es y en qué unidad está (milisegundos)</td></tr>
+<tr><td><code>boolean b;</code></td><td><code>boolean interactivo;</code></td><td>Se lee como una pregunta de sí o no</td></tr>
+<tr><td><code>double d1, d2;</code></td><td><code>double x1, y1, x2, y2;</code></td><td>Para coordenadas, <code>x</code>/<code>y</code> sí son nombres claros: es la convención de la geometría</td></tr>
+</table>
+<p>Hay una excepción aceptada a «nada de una letra»: los contadores cortos de un bucle, como <code>i</code> en <code>for (int i = 1; i &lt; 3; i++)</code>. Todo el mundo los entiende.</p>
+
+<h2>Operadores aritméticos</h2>
+<pre class="java">public class Aritmetica {
+    public static void main(String[] args) {
+        System.out.println("7 + 2 = " + (7 + 2));
+        System.out.println("7 - 2 = " + (7 - 2));
+        System.out.println("7 * 2 = " + (7 * 2));
+        System.out.println("7 / 2 = " + (7 / 2));
+        System.out.println("7.0 / 2 = " + (7.0 / 2));
+        System.out.println("7 % 2 = " + (7 % 2));
+        System.out.println("8 % 3 = " + (8 % 3));
+
+        // El turno del Totito: 0 -&gt; 1 -&gt; 0 -&gt; 1 ...
+        int turno = 0;
+        turno = 1 - turno;
+        System.out.println("turno despues de una jugada: " + turno);
+        turno = 1 - turno;
+        System.out.println("turno despues de otra: " + turno);
+
+        // Casilla numero 0..8 convertida a fila y columna
+        int casilla = 7;
+        System.out.println("casilla 7 -&gt; fila " + (casilla / 3) + ", columna " + (casilla % 3));
+
+        // Contadores
+        int empates = 0;
+        empates++;
+        empates++;
+        System.out.println("empates = " + empates);
+        int puntos = 10;
+        puntos += 5;
+        puntos -= 3;
+        puntos *= 2;
+        System.out.println("puntos = " + puntos);
+    }
+}</pre>
+<pre class="salida">7 + 2 = 9
+7 - 2 = 5
+7 * 2 = 14
+7 / 2 = 3
+7.0 / 2 = 3.5
+7 % 2 = 1
+8 % 3 = 2
+turno despues de una jugada: 1
+turno despues de otra: 0
+casilla 7 -&gt; fila 2, columna 1
+empates = 2
+puntos = 24</pre>
+<ul>
+<li><b><code>+ - *</code></b>: suma, resta, multiplicación (el asterisco, no la x).</li>
+<li><b><code>/</code> entre dos enteros es división entera</b>: corta los decimales. <code>7 / 2</code> da 3, no 3.5. Basta con que uno de los dos sea decimal (<code>7.0 / 2</code>) para obtener 3.5. Por eso <code>tamCasilla()</code> escribe <code>2.0</code> y <code>3.0</code> en lugar de <code>2</code> y <code>3</code>: si el tablero mide 337 píxeles, cada casilla debe medir 100.33…, no 100.</li>
+<li><b><code>%</code> es el resto</b> (módulo) de la división entera: <code>7 % 2</code> es 1 porque 7 = 2×3 + 1. Sirve para tres cosas que verás en todos lados: saber si un número es par (<code>n % 2 == 0</code>; <code>Iconos</code> lo usa para alternar las puntas largas y cortas de la estrella), «dar la vuelta» (las horas del reloj: <code>(hora + 1) % 12</code>) y repartir en filas y columnas: la casilla número 7 de un tablero numerado del 0 al 8 está en la fila <code>7 / 3 = 2</code>, columna <code>7 % 3 = 1</code>.</li>
+<li><b><code>turno = 1 - turno</code></b>: el truco que usa <code>Partida.jugar</code> para pasar el turno. Si vale 0 queda en 1; si vale 1 queda en 0. Una sola cuenta, sin preguntar nada.</li>
+</ul>
+<div class="caja cuidado">Dividir un <b>entero</b> entre cero detiene el programa (<code>ArithmeticException: / by zero</code>). Dividir un <b>decimal</b> entre cero no falla, pero da <code>Infinity</code>, que luego contamina todas las cuentas. Si un divisor puede ser cero, compruébalo antes.</div>
+
+<h3>Atajos: <code>++</code>, <code>--</code>, <code>+=</code> y compañía</h3>
+<p>Sumar uno es tan frecuente que tiene su propio operador: <code>empates++</code> equivale a <code>empates = empates + 1</code>. El Totito lo usa en <code>Partida.jugar</code> para el marcador: <code>empates++;</code> y <code>victorias[turno]++;</code> (suma una victoria al jugador en turno). Su opuesto es <code>--</code>: el bucle del halo en <code>Dibujo.trazoNeon</code> cuenta hacia atrás con <code>i--</code>.</p>
+<p>Los <b>operadores compuestos</b> <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>%=</code> aplican la operación y guardan: <code>puntos += 5</code> es <code>puntos = puntos + 5</code>. <code>Dibujo.textoNeon</code> recorre los ángulos de 45 en 45 grados con <code>angulo += 45</code>.</p>
+<div class="caja cuidado"><b><code>a++</code> o <code>++a</code>.</b> Escritos solos en su línea dan igual. Dentro de otra expresión no: <code>int b = a++;</code> guarda en <code>b</code> el valor <i>antiguo</i> y luego suma; <code>int d = ++c;</code> suma primero y guarda el nuevo. Con <code>a = 5</code> y <code>c = 5</code>, el resultado es <code>a = 6, b = 5</code> y <code>c = 6, d = 6</code>. Para no confundirte, usa <code>++</code> siempre en una línea propia, como hace el Totito.</div>
+
+<h2>Operadores de comparación</h2>
+<p>Comparan dos valores y producen un <code>boolean</code>:</p>
+<table class="tabla">
+<tr><th>Operador</th><th>Significa</th><th>En el Totito</th></tr>
+<tr><td><code>==</code></td><td>igual a</td><td><code>casillas[fila][columna] == VACIA</code></td></tr>
+<tr><td><code>!=</code></td><td>distinto de</td><td><code>casillas[fila][columna] != VACIA</code> (casilla ocupada)</td></tr>
+<tr><td><code>&lt;</code> / <code>&gt;</code></td><td>menor / mayor que</td><td><code>fila &lt; 0</code>, <code>fila &gt; 2</code></td></tr>
+<tr><td><code>&lt;=</code> / <code>&gt;=</code></td><td>menor o igual / mayor o igual</td><td><code>if (grosor &gt;= 5)</code> en <code>trazoNeon</code></td></tr>
+</table>
+<pre class="java">public class Comparar {
+    public static void main(String[] args) {
+        int fila = 3;
+        System.out.println("fila &lt; 0  : " + (fila &lt; 0));
+        System.out.println("fila &gt; 2  : " + (fila &gt; 2));
+        System.out.println("fila == 3 : " + (fila == 3));
+        System.out.println("fila != 3 : " + (fila != 3));
+        System.out.println("fila &gt;= 3 : " + (fila &gt;= 3));
+        boolean fuera = fila &lt; 0 || fila &gt; 2;
+        System.out.println("fuera del tablero: " + fuera);
+        System.out.println("0.1 + 0.2 == 0.3 : " + (0.1 + 0.2 == 0.3));
+        System.out.println("1 + 2 + \"3\" = " + (1 + 2 + "3"));
+        System.out.println("\"1\" + 2 + 3 = " + ("1" + 2 + 3));
+    }
+}</pre>
+<pre class="salida">fila &lt; 0  : false
+fila &gt; 2  : true
+fila == 3 : true
+fila != 3 : false
+fila &gt;= 3 : true
+fuera del tablero: true
+0.1 + 0.2 == 0.3 : false
+1 + 2 + "3" = 33
+"1" + 2 + 3 = 123</pre>
+<p>La línea <code>boolean fuera = fila &lt; 0 || fila &gt; 2;</code> es casi la primera comprobación de <code>Tablero.marcarCasilla</code>. El <code>||</code> significa «o» (capítulo 13): la fila 3 está fuera del tablero, y por eso <code>marcarCasilla(3, 0, 'X')</code> devuelve <code>false</code> sin tocar la matriz. Las dos últimas líneas muestran que el <code>+</code> se evalúa de izquierda a derecha: mientras ve números, suma; en cuanto aparece un texto, pega. Por eso en este libro las cuentas dentro de un <code>println</code> siempre van entre paréntesis.</p>
+<div class="caja cuidado"><b><code>=</code> asigna, <code>==</code> compara.</b> <code>if (turno = 1)</code> es un error; lo correcto es <code>if (turno == 1)</code>. Por suerte, en Java el compilador casi siempre te avisa (<code>incompatible types: int cannot be converted to boolean</code>).</div>
+
+<h2>Precedencia: quién va primero</h2>
+<p>Igual que en matemáticas, en <code>2 + 3 * 4</code> se multiplica antes de sumar: da 14, no 20. Java sigue un orden de <b>precedencia</b>; los más comunes, de mayor a menor:</p>
+<table class="tabla">
+<tr><th>Orden</th><th>Operadores</th></tr>
+<tr><td>1</td><td>Paréntesis <code>( )</code>, acceso con punto <code>.</code>, corchetes <code>[ ]</code>, llamadas a métodos</td></tr>
+<tr><td>2</td><td><code>++</code> <code>--</code> <code>!</code>, signo menos <code>-x</code>, casting <code>(int)</code></td></tr>
+<tr><td>3</td><td><code>*</code> <code>/</code> <code>%</code></td></tr>
+<tr><td>4</td><td><code>+</code> <code>-</code></td></tr>
+<tr><td>5</td><td><code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code></td></tr>
+<tr><td>6</td><td><code>==</code> <code>!=</code></td></tr>
+<tr><td>7</td><td><code>&amp;&amp;</code>, después <code>||</code></td></tr>
+<tr><td>8</td><td><code>? :</code> (ternario, capítulo 13)</td></tr>
+<tr><td>9</td><td><code>=</code> <code>+=</code> <code>-=</code> … (la asignación, siempre al final)</td></tr>
+</table>
+<p>Los del mismo nivel se hacen de izquierda a derecha: <code>10 - 4 - 3</code> es <code>(10 - 4) - 3 = 3</code>. Veámoslo con las cuentas reales de <code>PanelTablero</code>, que calcula el tamaño del tablero y el centro de cada columna:</p>
+<pre class="java">public class Medidas {
+    public static void main(String[] args) {
+        final int MARGEN = 10;    // como en PanelTablero
+        final int RELLENO = 8;
+        int tamCasilla = 100;
+
+        // Lado del tablero: lo mismo que calcula el constructor de PanelTablero
+        int lado = 2 * (MARGEN + RELLENO) + 3 * tamCasilla;
+        System.out.println("lado del tablero = " + lado);
+        int sinParentesis = 2 * MARGEN + RELLENO + 3 * tamCasilla;
+        System.out.println("sin parentesis   = " + sinParentesis);
+
+        // Centro de la columna 2, como centroX(2)
+        double tam = (lado - 2.0 * (MARGEN + RELLENO)) / 3.0;
+        double centroX = MARGEN + RELLENO + (2 + 0.5) * tam;
+        System.out.println("tam = " + tam + ", centro de la columna 2 = " + centroX);
+    }
+}</pre>
+<pre class="salida">lado del tablero = 336
+sin parentesis   = 328
+tam = 100.0, centro de la columna 2 = 268.0</pre>
+<p>Paso a paso: <code>2 * (MARGEN + RELLENO) + 3 * tamCasilla</code> → primero el paréntesis, <code>10 + 8 = 18</code> → luego las multiplicaciones, <code>2 * 18 = 36</code> y <code>3 * 100 = 300</code> → al final la suma, <code>336</code>. Es lógico: el tablero lleva margen y relleno a <b>los dos lados</b> (por eso ×2) más tres casillas. Sin el paréntesis, el 2 solo multiplica al margen y el resultado es 328: un tablero 8 píxeles más estrecho de lo debido, con la última columna recortada. Un error así no lo detecta el compilador; lo ves en la pantalla.</p>
+<p>Otro ejemplo, el halo de <code>trazoNeon</code>: <code>int alfa = Math.round((6 + (capas - i) * 5) * intensidad);</code> Con <code>capas = 6</code>, <code>intensidad = 1</code> y la capa <code>i = 1</code>: <code>(6 - 1) = 5</code> → <code>5 * 5 = 25</code> → <code>6 + 25 = 31</code> → <code>31 * 1 = 31</code>. Para <code>i = 6</code> sale 6. Así, la capa más ancha es casi invisible (alfa 6 de 255) y la más fina, más opaca (31): eso es el resplandor.</p>
+<div class="caja consejo">Ante la duda, <b>pon paréntesis</b>. No cuestan nada, no hacen el programa más lento y dejan clara tu intención a quien lea. El código del Totito los usa incluso cuando no hacen falta, como en <code>(capas - i) * 5</code>.</div>
+
+<h2>Conversiones y casting</h2>
+<p>A veces tienes un dato de un tipo y lo necesitas en otro. Hay dos casos:</p>
+<h3>Ampliar: automático</h3>
+<p>Pasar de un tipo «pequeño» a uno «grande» (<code>int</code> → <code>long</code>, <code>int</code> → <code>double</code>, <code>float</code> → <code>double</code>) nunca pierde información, así que Java lo hace solo: <code>double ancho = 3;</code> guarda <code>3.0</code>. También ocurre dentro de las cuentas: en <code>MARGEN + RELLENO + (columna + 0.5) * tamCasilla()</code> los enteros se convierten a <code>double</code> en cuanto se encuentran con uno.</p>
+<h3>Reducir: casting explícito</h3>
+<p>Pasar de grande a pequeño (<code>double</code> → <code>int</code>, <code>double</code> → <code>float</code>) puede perder información, así que Java exige que lo pidas por escrito, poniendo el tipo destino entre paréntesis delante: <code>(int) 2.99</code>. A eso se le llama <b>casting</b> (o «conversión de tipo»). Es tu firma diciendo «sé que puedo perder algo, y está bien».</p>
+<pre class="java">public class Casting {
+    public static void main(String[] args) {
+        // Ampliar: automatico, no se pierde nada
+        int entero = 3;
+        double ancho = entero;
+        System.out.println("int 3 como double: " + ancho);
+
+        // Reducir: hay que pedirlo con (tipo) y se pueden perder decimales
+        double tam = 100.0;
+        float grosor = (float) Math.max(3, tam * 0.085);
+        System.out.println("grosor de las fichas: " + grosor);
+        System.out.println("(int) 2.99 = " + (int) 2.99);
+        System.out.println("(int) -0.08 = " + (int) -0.08);
+        System.out.println("Math.floor(-0.08) = " + Math.floor(-0.08));
+        System.out.println("Math.round(2.5f) = " + Math.round(2.5f));
+
+        // Que columna hay bajo el raton? (actualizarCasillaEncima de PanelTablero)
+        int x = 250;
+        System.out.println("x = 250 -&gt; columna " + (int) Math.floor((x - 18) / tam));
+        x = 10;
+        System.out.println("x = 10  -&gt; con floor: " + (int) Math.floor((x - 18) / tam)
+                + ", solo con (int): " + (int) ((x - 18) / tam));
+    }
+}</pre>
+<pre class="salida">int 3 como double: 3.0
+grosor de las fichas: 8.5
+(int) 2.99 = 2
+(int) -0.08 = 0
+Math.floor(-0.08) = -1.0
+Math.round(2.5f) = 3
+x = 250 -&gt; columna 2
+x = 10  -&gt; con floor: -1, solo con (int): 0</pre>
+<p>Lo que enseña este programa:</p>
+<ul>
+<li><b><code>(float) Math.max(3, tam * 0.085)</code></b> es la línea exacta de <code>PanelTablero.paintComponent</code> que calcula el grosor de las fichas: 8.5 % del tamaño de la casilla, pero nunca menos de 3 píxeles (<code>Math.max</code> devuelve el mayor de los dos). <code>Math.max</code> devuelve <code>double</code> y los trazos piden <code>float</code>: de ahí el casting.</li>
+<li><b><code>(int)</code> corta, no redondea</b>: <code>(int) 2.99</code> es 2. Y corta <i>hacia el cero</i>: <code>(int) -0.08</code> es 0.</li>
+<li><b><code>Math.floor</code> redondea hacia abajo</b> (hacia menos infinito): <code>Math.floor(-0.08)</code> es <code>-1.0</code>.</li>
+<li><b><code>Math.round</code> redondea al más cercano</b>, y con un <code>float</code> devuelve directamente un <code>int</code> (por eso <code>trazoNeon</code> lo usa para el alfa).</li>
+</ul>
+<p>La última parte explica una línea que parece rebuscada en <code>PanelTablero.actualizarCasillaEncima</code>:</p>
+<pre class="java">int columna = (int) Math.floor((x - MARGEN - RELLENO) / tam);</pre>
+<p>Para saber sobre qué columna está el ratón se resta el borde (18 píxeles) y se divide entre el tamaño de la casilla: en x = 250, (250 − 18) / 100 = 2.32 → columna 2. Pero si el ratón está en el borde izquierdo, en x = 10, sale −0.08. Con solo <code>(int)</code> daría 0, y el juego resaltaría la columna 0 aunque el ratón esté fuera de la rejilla. Con <code>Math.floor</code> da −1, que el código siguiente reconoce como «fuera» (<code>columna &gt;= 0</code> es falso). Un detalle de una palabra que evita un error visible.</p>
+<div class="caja concepto"><b>Casting de objetos.</b> Los paréntesis también convierten entre clases: en <code>Dibujo.preparar</code>, <code>(Graphics2D) g.create()</code> le dice a Java «este objeto <code>Graphics</code> es en realidad un <code>Graphics2D</code>, más completo». Es otro tipo de conversión, que entenderás con la herencia (capítulos 22 y 23).</div>
+
+<h2>Números en hexadecimal</h2>
+<p>En <code>Tema.java</code> los colores se escriben así: <code>new Color(0x1C, 0x17, 0x40)</code>. El prefijo <code>0x</code> indica un número en <b>hexadecimal</b> (base 16, con dígitos 0–9 y A–F): <code>0x1C</code> es 28 y <code>0xFF</code> es 255. Se usa porque los diseñadores escriben los colores como <code>#1C1740</code>, y así el código se parece al diseño. Para Java, <code>0x1C</code> y <code>28</code> son exactamente el mismo <code>int</code>. El capítulo 35 explica los colores a fondo.</p>
+
+<h2>Constantes con <code>final</code></h2>
+<p>Un valor que no debe cambiar nunca se declara con <code>final</code>: se le da valor una vez y el compilador impide cualquier otra asignación. En el Totito:</p>
+<pre class="java">public static final char VACIA = ' ';                 // Tablero
+private static final int MARGEN = 10;   // espacio para el halo del borde (PanelTablero)
+private static final int PAUSA_IA_MS = 450;           // PantallaJuego</pre>
+<p>(<code>static</code> significa que la constante pertenece a la clase y hay una sola para todos, capítulo 20.) Si alguien intenta cambiarla:</p>
+<pre class="salida">ConstanteMal.java:5: error: cannot assign a value to static final variable VACIA
+        VACIA = '-';
+        ^</pre>
+<p>¿Para qué sirven, si podrías escribir <code>' '</code> o <code>450</code> directamente?</p>
+<ul>
+<li><b>Dan nombre al número.</b> <code>esperar(PAUSA_IA_MS, …)</code> se entiende; <code>esperar(450, …)</code> obliga a adivinar qué es 450. A los números sueltos sin explicación se les llama «números mágicos» (capítulo 27).</li>
+<li><b>Un solo lugar para cambiarlo.</b> Si la IA te parece lenta, cambias 450 por 300 en una línea y afecta a todo el juego. Si cambiaras la casilla vacía de <code>' '</code> a <code>'-'</code>, con la constante lo haces en un sitio; sin ella tendrías que encontrar cada <code>' '</code> (y no confundirlo con los espacios de los textos).</li>
+<li><b>Protegen.</b> Nadie puede cambiar el valor por accidente a mitad del programa.</li>
+</ul>
+<p><code>final</code> también se usa en variables que no son constantes «globales»: en <code>Jugador</code>, <code>private final char ficha;</code> significa que, una vez creado el jugador, su ficha no cambia nunca. Y en <code>trazoNeon</code>, <code>final int capas = 6;</code> es una variable local que no se va a modificar.</p>
+
+<h2><code>var</code>: que Java deduzca el tipo</h2>
+<p>Desde Java 10 puedes escribir <code>var</code> en lugar del tipo cuando el valor inicial ya lo deja claro:</p>
+<pre class="java">public class Constantes {
+    static final char VACIA = ' ';
+    static final int PAUSA_IA_MS = 450;
+
+    public static void main(String[] args) {
+        System.out.println("La IA espera " + PAUSA_IA_MS + " ms");
+        System.out.println("Casilla vacia: [" + VACIA + "]");
+        var nombre = "Totito";      // Java deduce: String
+        var victorias = 3;          // Java deduce: int
+        System.out.println(nombre + " lleva " + victorias + " victorias");
+    }
+}</pre>
+<pre class="salida">La IA espera 450 ms
+Casilla vacia: [ ]
+Totito lleva 3 victorias</pre>
+<p><code>var</code> <b>no</b> hace que la variable acepte cualquier cosa: <code>victorias</code> sigue siendo un <code>int</code> para siempre, solo que no lo escribiste. Solo vale para variables locales (dentro de un método) y que se inicializan en la misma línea. Es cómodo con tipos largos: <code>var raton = new MouseAdapter() { … }</code>. El Totito no lo usa a propósito: para alguien que aprende, ver <code>Tablero copia = tablero.obtenerCopia();</code> con el tipo escrito ayuda a entender qué es cada cosa. Úsalo cuando el tipo sea obvio por la derecha de la línea.</p>
+
+<h2>Resumen</h2>
+<ul>
+<li>Una variable es una caja con nombre y tipo. Se <b>declara</b> (<code>int turno;</code>), se <b>asigna</b> (<code>turno = 0;</code>) y el <code>=</code> significa «guarda», no «es igual».</li>
+<li>Tipos que usa el Totito: <code>int</code> para filas, turnos y contadores; <code>double</code> y <code>float</code> para medidas de dibujo; <code>boolean</code> para sí/no; <code>char</code> para las fichas; <code>String</code> para nombres.</li>
+<li>La ficha es <code>char</code> porque es un único símbolo, se compara con <code>==</code> sin trampas y es ligera para Minimax.</li>
+<li><code>/</code> entre enteros corta los decimales; <code>%</code> da el resto (pares, vueltas, fila/columna). <code>turno = 1 - turno</code> alterna 0 y 1.</li>
+<li><code>++</code>, <code>--</code>, <code>+=</code>… son atajos; las comparaciones dan <code>boolean</code>; <code>=</code> asigna y <code>==</code> compara.</li>
+<li>La precedencia decide el orden de las cuentas; un paréntesis olvidado cambia el resultado sin que el compilador lo note.</li>
+<li>Ampliar tipos es automático; reducir exige casting (<code>(int)</code>, <code>(float)</code>), que corta hacia el cero; <code>Math.floor</code> y <code>Math.round</code> redondean de otras formas.</li>
+<li><code>final</code> crea constantes con nombre; <code>var</code> deja que Java deduzca el tipo de una variable local.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Un punto de venta.</b> Precios en centavos con <code>long</code> (nunca <code>double</code>), cantidad de productos con <code>int</code>, «¿pagó con tarjeta?» con <code>boolean</code>, y el impuesto como constante: <code>static final int IVA_PORCENTAJE = 12;</code>.</li>
+<li><b>Convertir tiempos.</b> Con <code>/</code> y <code>%</code> pasas segundos a minutos y segundos: <code>int minutos = total / 60; int segundos = total % 60;</code>. Es lo mismo que convertir la casilla 7 a fila 2, columna 1.</li>
+<li><b>Cualquier cuadrícula en pantalla</b> (un calendario, un Buscaminas, una galería de fotos): el cálculo «posición del ratón → celda» con <code>Math.floor</code> de <code>PanelTablero</code> sirve tal cual.</li>
+<li><b>Configuración con nombre.</b> En un juego de plataformas, <code>GRAVEDAD</code>, <code>VELOCIDAD_SALTO</code> y <code>VIDAS_INICIALES</code> como constantes <code>final</code> permiten ajustar la dificultad en un solo lugar.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>En jshell, predice y luego comprueba: <code>17 / 5</code>, <code>17 % 5</code>, <code>17 / 5.0</code>, <code>(int) 3.7</code>, <code>(int) -3.7</code>, <code>Math.round(3.5)</code>, <code>'A' + 1</code>, <code>"" + 'A' + 1</code>.</li>
+<li>Escribe un programa con las variables de un jugador del Totito: nombre, ficha, victorias, derrotas y empates. Calcula e imprime cuántas partidas jugó y su porcentaje de victorias con decimales. Pista: cuidado con la división entera; convierte con <code>(double)</code> antes de dividir.</li>
+<li>Numera las casillas del tablero de 0 a 8 (de izquierda a derecha y de arriba abajo). Escribe un programa que, dada una variable <code>casilla</code>, imprima su fila y columna; y otro cálculo que haga lo contrario: dada <code>fila</code> y <code>columna</code>, obtenga el número. Pista: <code>fila * 3 + columna</code>.</li>
+<li>Usando la fórmula de <code>PanelTablero</code>, calcula el lado del tablero y los centros de las tres columnas para casillas de 60 píxeles (el tamaño del tablero pequeño de las instrucciones podría ser así). Declara <code>MARGEN</code> y <code>RELLENO</code> como constantes <code>final</code>.</li>
+<li>Reto: calcula, con <code>Math.floor</code>, sobre qué fila y columna cae un clic en (x = 300, y = 40) en un tablero con casillas de 100 y borde de 18. Luego prueba (x = 5, y = 5) y explica por qué el resultado se considera «fuera».</li>
+</ol></div>
+</section>

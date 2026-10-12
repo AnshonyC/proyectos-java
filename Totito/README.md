@@ -12,6 +12,10 @@ y todo está dibujado con código (Java2D), sin imágenes ni librerías extra.
 |---|---|---|
 | ![Partida](docs/capturas/4-juego.png) | ![Victoria](docs/capturas/5-victoria.png) | ![Empate](docs/capturas/6-empate.png) |
 
+> 📘 **Libro: [Java desde cero con el Totito](docs/Libro_Java_desde_cero_con_el_Totito.pdf)** (1118 páginas).
+> Aprende Java, programación orientada a objetos, diseño y color, Git/GitHub y cómo crear el `.exe` con instalador,
+> construyendo este juego desde cero y explicado línea por línea. Sus fuentes están en [`docs/libro/`](docs/libro/).
+>
 > 📄 **Documentación completa:** [`docs/Integracion_Grafica_Totito.pdf`](docs/Integracion_Grafica_Totito.pdf) explica
 > qué se hizo y por qué, la arquitectura y **cada archivo bloque por bloque** (con números de línea).
 
@@ -134,7 +138,16 @@ casi transparente, y cada vez más fina y opaca. Encima va la línea normal
 y, en trazos gruesos, un centro casi blanco. El ojo lo ve como luz
 difuminada. Todos los bordes, fichas e iconos usan esa misma función.
 
-## 5. Cómo seguir trabajando
+## 5. Herramientas
+
+En `herramientas/` hay tres programas de apoyo (se ejecutan con `java -cp target/classes herramientas/X.java`
+después de compilar):
+
+- `PruebaConsola.java`: jugar contra la IA en la consola.
+- `VistaPrevia.java`: abrir una pantalla suelta mientras se construye.
+- `GeneradorIcono.java`: crea `recursos/totito.ico` (icono del `.exe`) y `recursos/totito.png`.
+
+## 6. Cómo seguir trabajando
 
 - **Cambiar colores o la letra:** `Tema.java`.
 - **Agregar una pantalla:** crear `class PantallaX extends PantallaBase`,
@@ -157,7 +170,7 @@ difuminada. Todos los bordes, fichas e iconos usan esa misma función.
 - Sonidos al marcar y al ganar.
 - Jugar con el teclado (teclas 1–9).
 
-## 6. Qué se verificó
+## 7. Qué se verificó
 
 - Compila con `javac` y con `mvn package`, para Java 17 (probado con el JDK 21).
 - Reglas: casilla ocupada, turnos, victoria, empate, marcador y reinicio.

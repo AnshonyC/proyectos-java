@@ -1,0 +1,659 @@
+<section class="capitulo" id="cap27">
+<h1><span class="num">Capítulo 27</span>Principios de diseño, patrones y buenas prácticas</h1>
+<p class="entrada">Ya conoces las piezas de la programación orientada a objetos. Este capítulo trata de cómo <b>combinarlas bien</b>: qué hace que un programa sea fácil de entender, de cambiar y de probar, qué «recetas» probadas (patrones) usa el Totito sin decirlo, y qué hábitos de escritura distinguen al código que se mantiene del código que se tira. Terminarás con un caso real: cómo el primer Totito, todo en una clase, se convirtió en el diseño final.</p>
+
+<h2>Por qué importa el diseño si el programa ya funciona</h2>
+<p>Un programa no se escribe una vez: se lee y se cambia cientos de veces. El Totito empezó con una ventana gris y un solo modo (capítulo 33) y terminó con cinco pantallas, dos modos, marcador y diseño neón. Cada una de esas mejoras fue posible —o difícil— según cómo estaba organizado el código anterior.</p>
+<p>Piensa en una cocina. Una cocina donde los cuchillos están con los platos, la sal en el baño y la receta escrita en la puerta de la refrigeradora también «funciona»: con paciencia se cocina. Pero cuando llega un ayudante nuevo, o hay que preparar el doble de comida, o se quiere cambiar el menú, todo cuesta el triple. El diseño de software es el orden de la cocina: no cambia lo que se cocina hoy, cambia lo que cuesta cocinar mañana.</p>
+<div class="caja concepto"><b>Mantenibilidad</b> Qué tan fácil es entender, corregir y ampliar un programa. Casi todos los principios de este capítulo persiguen eso. Un código mantenible se puede cambiar en un lugar sin romper otro que no tenía nada que ver.</div>
+
+<h2>Principio 1: responsabilidad única</h2>
+<p><b>Cada clase debe tener una sola razón para cambiar.</b> En un restaurante, el mesero toma pedidos, el cocinero cocina y el cajero cobra. Si el cocinero también cobrara, cada cambio en la forma de pago lo distraería de la cocina, y un error en la caja podría quemar la sopa.</p>
+<p>En el Totito cada clase tiene una frase que la describe, y la propia documentación de cada archivo la dice:</p>
+<table class="tabla">
+<tr><th>Clase</th><th>Su única responsabilidad</th><th>Cambiaría solo si…</th></tr>
+<tr><td><code>Tablero</code></td><td>Guardar las 9 casillas y saber si hay ganador o empate.</td><td>…cambian las reglas del tablero (por ejemplo, 4×4).</td></tr>
+<tr><td><code>Jugador</code></td><td>Nombre y ficha de un participante.</td><td>…un jugador necesita más datos (un avatar).</td></tr>
+<tr><td><code>IA_Minimax</code></td><td>Decidir la jugada de la computadora.</td><td>…quieres una IA más rápida o con dificultades.</td></tr>
+<tr><td><code>Partida</code></td><td>Turnos, estado y marcador de una serie de partidas.</td><td>…cambian las reglas de turnos o del marcador.</td></tr>
+<tr><td><code>Tema</code></td><td>Colores y fuentes.</td><td>…cambia el aspecto visual.</td></tr>
+<tr><td><code>Dibujo</code></td><td>Herramientas de dibujo comunes (neón, fichas, texto).</td><td>…cambia la forma de dibujar el efecto neón.</td></tr>
+<tr><td><code>PanelTablero</code></td><td>Dibujar un tablero y avisar de los clics.</td><td>…cambia cómo se ve o se toca el tablero.</td></tr>
+<tr><td><code>PantallaJuego</code></td><td>Coordinar la pantalla de juego: clics, pausas de la IA, letreros.</td><td>…cambia lo que muestra o cómo responde esa pantalla.</td></tr>
+<tr><td><code>PanelPrincipal</code></td><td>Cambiar de pantalla y guardar la partida en curso.</td><td>…aparece una pantalla nueva.</td></tr>
+</table>
+<p>El comentario de <code>Tablero.java</code> lo deja por escrito: «Se encarga unicamente del estado del juego (casillas, validaciones, deteccion de victoria/empate). No conoce nada de la interfaz grafica ni de la logica de la IA». Esa frase es un contrato: si algún día alguien quisiera agregarle a <code>Tablero</code> un método <code>pintar(Graphics g)</code>, el comentario le recuerda que ese no es su sitio.</p>
+<p><b>¿Qué pasaría si no?</b> Si <code>Tablero</code> también dibujara, la IA (que crea miles de copias del tablero para simular jugadas, capítulo 31) arrastraría código de dibujo que nunca usa, y no podrías probar las reglas en la consola (capítulo 32) sin cargar Swing. Si cambiaras un color, tendrías que tocar la clase de las reglas, con el riesgo de romperlas.</p>
+<div class="caja consejo"><b>La prueba de la frase</b> Intenta describir tu clase en una frase sin usar «y». «Guarda las casillas y sabe si hay ganador» pasa (es una sola idea: el estado del tablero). «Dibuja el tablero y decide la jugada de la IA y guarda el marcador» no pasa: son tres clases.</div>
+
+<h2>Principio 2: alta cohesión, bajo acoplamiento</h2>
+<p>Dos palabras que verás en cualquier libro de diseño:</p>
+<ul>
+<li><b>Cohesión</b>: qué tan relacionadas están entre sí las cosas <i>dentro</i> de una clase. Alta cohesión = todo lo de la clase trabaja para lo mismo. <code>Tema</code> es muy cohesiva: colores, fuentes y funciones para mezclar colores. Nada más.</li>
+<li><b>Acoplamiento</b>: cuánto depende una clase de los detalles de <i>otras</i>. Bajo acoplamiento = puedes cambiar una sin tener que cambiar las demás.</li>
+</ul>
+<p>Analogía: los aparatos eléctricos de tu casa están poco acoplados a la red eléctrica: solo conocen el enchufe. Puedes cambiar la licuadora por otra marca, o la empresa eléctrica puede cambiar sus cables, y nada se rompe mientras el enchufe sea el mismo. Si la licuadora estuviera soldada a los cables de la pared, cambiarla requeriría un electricista.</p>
+<p>En el Totito, los «enchufes» son las <b>interfaces</b> (capítulo 24). La pantalla del menú no conoce a <code>PanelPrincipal</code>; solo conoce la interfaz <code>Navegacion</code>:</p>
+<pre class="java">public PantallaMenu(Navegacion navegacion) {
+    super(navegacion);
+
+    BotonNeon jugar = BotonNeon.menu("Jugar", Iconos.JUGAR, Tema.ROSA);
+    jugar.addActionListener(e -&gt; navegacion.irAConfiguracion());
+</pre>
+<p>El comentario de <code>Navegacion.java</code> lo explica: «Gracias a esta interfaz ninguna pantalla conoce a las demas: solo dicen "quiero ir al menu" y PanelPrincipal se encarga». Si mañana cambias <code>CardLayout</code> por animaciones de transición, solo cambia <code>PanelPrincipal</code>; las cinco pantallas ni se enteran. Y la prueba más clara de ese bajo acoplamiento es <code>herramientas/VistaPrevia.java</code> (capítulo 56): puede abrir la pantalla del menú <b>sin que exista</b> <code>PanelPrincipal</code>, enchufándole una navegación «de mentira».</p>
+<p><b>Señales de acoplamiento alto</b> que conviene vigilar: una clase que llama a muchos <code>getAlgo().getOtraCosa().hacer()</code> encadenados (conoce demasiado de las entrañas ajenas), clases que no puedes usar sin crear otras cinco, o un cambio pequeño que obliga a tocar muchos archivos. El Totito tiene un punto honesto de acoplamiento: <code>Partida.getTablero()</code> entrega el tablero real, y lo analizaste en el capítulo 19; en un sistema grande se protegería más.</p>
+
+<h2>Principio 3: separar la lógica de la interfaz (y la idea de MVC)</h2>
+<p>Este es el principio que más moldeó el Totito. <b>Las reglas del juego no deben saber cómo se muestran, y la pantalla no debe decidir las reglas.</b></p>
+<p>La forma clásica de organizarlo se llama <b>MVC</b> (Modelo-Vista-Controlador):</p>
+<ul>
+<li><b>Modelo</b>: los datos y las reglas. En el Totito: <code>Tablero</code>, <code>Jugador</code>, <code>IA_Minimax</code> y <code>Partida</code>. Ninguna importa nada de Swing.</li>
+<li><b>Vista</b>: lo que se ve. <code>PanelTablero</code>, <code>PanelMarcador</code>, <code>Rotulo</code>… Su comentario lo dice: <code>PanelTablero</code> «Solo DIBUJA: no sabe de reglas ni de turnos».</li>
+<li><b>Controlador</b>: recibe lo que hace el usuario, se lo pasa al modelo y le pide a la vista que se actualice. En el Totito, <code>PantallaJuego</code> hace ese papel.</li>
+</ul>
+<p>Mira el recorrido de un clic, con el código real de <code>PantallaJuego</code> (capítulo 59):</p>
+<pre class="java">private void alPulsarCasilla(int fila, int columna) {
+    if (pendiente != null || partida.esTurnoDeIA()) {
+        return;   // mientras la IA "piensa" no se aceptan clics
+    }
+    if (partida.jugar(fila, columna)) {
+        despuesDeJugada();
+    }
+}
+</pre>
+<ol>
+<li>La <b>vista</b> (<code>PanelTablero</code>) detecta el clic y solo avisa: «pulsaron la casilla (1, 2)».</li>
+<li>El <b>controlador</b> (<code>PantallaJuego.alPulsarCasilla</code>) decide si es momento de aceptar clics y le pide al <b>modelo</b>: <code>partida.jugar(fila, columna)</code>.</li>
+<li>El <b>modelo</b> (<code>Partida.jugar</code>) aplica las reglas: ¿la partida sigue?, ¿la casilla está libre?, ¿alguien ganó? Y responde <code>true</code> o <code>false</code>.</li>
+<li>Si la jugada valió, el controlador llama a <code>actualizar()</code>, que le pasa a la vista el nuevo estado: <code>tablero.mostrar(partida.getTablero())</code>.</li>
+</ol>
+<p>El comentario de <code>Partida</code> explica la ganancia: «No sabe nada de la interfaz grafica: la pantalla le pide jugar una casilla y despues le pregunta como quedo. Asi las reglas se pueden probar, o usar desde otra interfaz, sin abrir ninguna ventana».</p>
+<p>Para que lo veas funcionando, este programa tiene un modelo mini que no imprime nada, <b>dos vistas</b> distintas que lo muestran de formas diferentes, y un controlador que le pasa jugadas de una lista (en un juego real vendrían de clics):</p>
+<pre class="java">public class Separar {
+
+    public static void main(String[] args) {
+        // CONTROLADOR: recibe las jugadas (aqui, de una lista fija) y se las pasa al modelo.
+        int[][] jugadas = {{1, 1}, {0, 0}, {1, 1}, {0, 2}, {0, 1}, {2, 0}, {2, 1}};
+        MiniPartida partida = new MiniPartida();
+        Vista[] vistas = {new VistaTablero(), new VistaUnaLinea()};
+
+        for (int[] j : jugadas) {
+            boolean valida = partida.jugar(j[0], j[1]);
+            if (!valida) {
+                System.out.println("(jugada " + j[0] + "," + j[1] + " rechazada)");
+                continue;
+            }
+            for (Vista vista : vistas) {
+                vista.mostrar(partida);
+            }
+        }
+    }
+}
+
+/** MODELO: solo reglas y datos. No imprime nada ni conoce ninguna ventana. */
+class MiniPartida {
+    private final char[][] casillas = new char[3][3];
+    private char turno = 'X';
+    private char ganador = ' ';
+
+    MiniPartida() {
+        for (char[] fila : casillas) {
+            java.util.Arrays.fill(fila, ' ');
+        }
+    }
+
+    boolean jugar(int fila, int columna) {
+        if (ganador != ' ' || casillas[fila][columna] != ' ') {
+            return false;
+        }
+        casillas[fila][columna] = turno;
+        if (hayLinea(turno)) {
+            ganador = turno;
+        } else {
+            turno = turno == 'X' ? 'O' : 'X';
+        }
+        return true;
+    }
+
+    private boolean hayLinea(char f) {
+        for (int i = 0; i &lt; 3; i++) {
+            boolean fila = casillas[i][0] == f &amp;&amp; casillas[i][1] == f &amp;&amp; casillas[i][2] == f;
+            boolean columna = casillas[0][i] == f &amp;&amp; casillas[1][i] == f &amp;&amp; casillas[2][i] == f;
+            if (fila || columna) {
+                return true;
+            }
+        }
+        return (casillas[0][0] == f &amp;&amp; casillas[1][1] == f &amp;&amp; casillas[2][2] == f)
+                || (casillas[0][2] == f &amp;&amp; casillas[1][1] == f &amp;&amp; casillas[2][0] == f);
+    }
+
+    char casilla(int fila, int columna) {
+        return casillas[fila][columna];
+    }
+
+    char getTurno() {
+        return turno;
+    }
+
+    char getGanador() {
+        return ganador;
+    }
+}
+
+/** VISTA: cualquier forma de mostrar la partida. */
+interface Vista {
+    void mostrar(MiniPartida partida);
+}
+
+class VistaTablero implements Vista {
+    @Override
+    public void mostrar(MiniPartida p) {
+        for (int f = 0; f &lt; 3; f++) {
+            System.out.println(" " + p.casilla(f, 0) + " | " + p.casilla(f, 1) + " | " + p.casilla(f, 2));
+        }
+    }
+}
+
+class VistaUnaLinea implements Vista {
+    @Override
+    public void mostrar(MiniPartida p) {
+        String estado = p.getGanador() != ' ' ? "¡Ganó " + p.getGanador() + "!" : "Turno de " + p.getTurno();
+        System.out.println("&gt;&gt; " + estado);
+    }
+}
+</pre>
+<pre class="ps">cd $HOME\Proyectos\Practicas
+java Separar.java</pre>
+<pre class="salida">   |   |  
+   | X |  
+   |   |  
+&gt;&gt; Turno de O
+ O |   |  
+   | X |  
+   |   |  
+&gt;&gt; Turno de X
+(jugada 1,1 rechazada)
+ O |   | X
+   | X |  
+   |   |  
+&gt;&gt; Turno de O
+ O | O | X
+   | X |  
+   |   |  
+&gt;&gt; Turno de X
+ O | O | X
+   | X |  
+ X |   |  
+&gt;&gt; ¡Ganó X!
+(jugada 2,1 rechazada)</pre>
+<p>Las mismas reglas alimentan dos vistas, y podrías agregar una tercera (una ventana, una página web) sin tocar <code>MiniPartida</code>. Fíjate también en que la jugada repetida en (1,1) y la jugada después de la victoria son rechazadas <b>por el modelo</b>, no por las vistas: las reglas viven en un solo lugar. Es exactamente lo que pasa en el Totito: <code>PanelTablero</code> se usa en tres pantallas (juego, resultado e instrucciones) y en ninguna de ellas repite una regla.</p>
+<div class="caja cuidado"><b>MVC no es una receta rígida</b> En Swing la vista y el controlador suelen quedar muy juntos (<code>PantallaJuego</code> es a la vez un panel que se ve y quien coordina). Lo que no se negocia es la frontera con el modelo: <b>ninguna clase del modelo importa nada de <code>javax.swing</code> ni de <code>java.awt</code></b>. Puedes comprobarlo en el Totito: <code>Tablero</code>, <code>Jugador</code>, <code>IA_Minimax</code> y <code>Partida</code> no tienen ni un <code>import</code>.</div>
+
+<h2>Patrones de diseño: recetas con nombre</h2>
+<p>Un <b>patrón de diseño</b> es una solución probada a un problema que aparece una y otra vez, con un nombre que todos los programadores reconocen. Como en la cocina: «sofrito», «baño María» o «punto de nieve» no son platos, son técnicas con nombre que se usan en muchos platos. Decir «aquí uso un Observer» ahorra un párrafo de explicación. El Totito usa varios sin anunciarlo; veamos cada uno.</p>
+
+<h3>Observer (observador u oyente)</h3>
+<p><b>Problema:</b> un objeto necesita avisar que algo pasó, pero no debe saber quién está interesado ni qué hará con el aviso. <b>Solución:</b> los interesados se «suscriben» entregando un objeto con un método conocido; cuando ocurre el suceso, el objeto los llama a todos. Es como suscribirte a las noticias de un canal: el canal publica sin saber quién eres; tú decides qué hacer con cada aviso.</p>
+<p>En el Totito aparece tres veces:</p>
+<ul>
+<li><code>PanelTablero</code> define su propia interfaz <code>OyenteCasilla</code> con un método <code>casillaPulsada(int fila, int columna)</code>. <code>PantallaJuego</code> se suscribe con <code>tablero.setOyente(this::alPulsarCasilla);</code>. El panel solo dice «pulsaron aquí»; qué significa eso lo decide la pantalla.</li>
+<li>Todos los botones: <code>jugar.addActionListener(e -&gt; navegacion.irAConfiguracion());</code>. <code>ActionListener</code> es el Observer que trae Swing.</li>
+<li><code>OpcionModo</code> guarda un <code>Runnable alSeleccionar</code> y lo ejecuta al recibir un clic; <code>PantallaConfiguracion</code> lo conecta con <code>opcionContraIA.setAlSeleccionar(() -&gt; elegirModo(Partida.Modo.CONTRA_IA));</code>.</li>
+</ul>
+<p><b>Sin Observer</b>, <code>PanelTablero</code> tendría que conocer a <code>PantallaJuego</code> y llamar a sus métodos directamente; entonces ya no podría usarse en la pantalla de resultado ni en las instrucciones, que no tienen nada que ver con jugar. Este ejemplo muestra un marcador con dos observadores que no se conocen entre sí:</p>
+<pre class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class Observador {
+
+    public static void main(String[] args) {
+        Marcador marcador = new Marcador("Ana", "Luis");
+
+        // Dos "oyentes" distintos: el marcador no sabe nada de ellos.
+        marcador.agregarOyente((nombre, victorias) -&gt;
+                System.out.println("[Pantalla] " + nombre + " ahora tiene " + victorias));
+        marcador.agregarOyente((nombre, victorias) -&gt; {
+            if (victorias == 3) {
+                System.out.println("[Logros] ¡" + nombre + " ganó 3 partidas!");
+            }
+        });
+
+        int[] ganadores = {0, 1, 0, 0};   // 0 = Ana, 1 = Luis
+        for (int indice : ganadores) {
+            marcador.sumarVictoria(indice);
+        }
+    }
+}
+
+/** Quien quiera enterarse de los cambios del marcador implementa esta interfaz. */
+interface OyenteMarcador {
+    void marcadorCambio(String nombre, int victorias);
+}
+
+class Marcador {
+    private final String[] nombres;
+    private final int[] victorias = new int[2];
+    private final List&lt;OyenteMarcador&gt; oyentes = new ArrayList&lt;&gt;();
+
+    Marcador(String jugador1, String jugador2) {
+        nombres = new String[]{jugador1, jugador2};
+    }
+
+    void agregarOyente(OyenteMarcador oyente) {
+        oyentes.add(oyente);
+    }
+
+    void sumarVictoria(int indice) {
+        victorias[indice]++;
+        for (OyenteMarcador oyente : oyentes) {
+            oyente.marcadorCambio(nombres[indice], victorias[indice]);
+        }
+    }
+}
+</pre>
+<pre class="salida">[Pantalla] Ana ahora tiene 1
+[Pantalla] Luis ahora tiene 1
+[Pantalla] Ana ahora tiene 2
+[Pantalla] Ana ahora tiene 3
+[Logros] ¡Ana ganó 3 partidas!</pre>
+<p><code>List&lt;OyenteMarcador&gt;</code> es una lista que crece sola (la clase <code>ArrayList</code> de Java); los <code>&lt; &gt;</code> indican qué tipo de objetos guarda. Agregar un tercer observador (un sonido, guardar en un archivo) es una línea más en <code>main</code>; <code>Marcador</code> no cambia.</p>
+
+<h3>Factory method (método de fábrica)</h3>
+<p><b>Problema:</b> crear un objeto requiere muchos parámetros, y solo algunas combinaciones tienen sentido. <b>Solución:</b> métodos <code>static</code> con nombre que crean el objeto ya bien configurado, y un constructor privado para que nadie lo arme a mano (lo viste a fondo en el capítulo 20). En una pizzería no le dices al cocinero cuántos gramos de cada cosa: pides «una hawaiana».</p>
+<pre class="java">/** Boton grande del menu principal. */
+public static BotonNeon menu(String texto, Iconos.Icono icono, Color color) {
+    return new BotonNeon(texto, icono, color, color, Estilo.MENU, 384, 88);
+}
+</pre>
+<p>El constructor de <code>BotonNeon</code> recibe siete parámetros. Con la fábrica, <code>PantallaMenu</code> escribe <code>BotonNeon.menu("Jugar", Iconos.JUGAR, Tema.ROSA)</code> y es imposible equivocarse con el tamaño o el estilo de un botón de menú. <code>Rotulo.titulo</code>, <code>Rotulo.seccion</code> y <code>Rotulo.leyenda</code> siguen la misma idea. <b>Sin fábricas</b>, el número 384 estaría repetido en cada pantalla, y cambiar el ancho de los botones del menú obligaría a buscarlo por todo el proyecto.</p>
+
+<h3>Template Method (método plantilla)</h3>
+<p><b>Problema:</b> varias clases siguen el mismo procedimiento con un paso que cambia. <b>Solución:</b> la clase padre escribe el procedimiento completo y deja «huecos» (métodos) que las hijas rellenan. Es como un formulario impreso: el orden de los campos es fijo; lo que escribe cada persona, no.</p>
+<p><code>Tarjeta.paintComponent</code> (capítulo 43) es el procedimiento: fondo de cristal, tinte de color, <b>decoración</b>, borde de neón. El paso de la decoración es un hueco:</p>
+<pre class="java">@Override
+protected void paintComponent(Graphics g) {
+    Graphics2D g2 = Dibujo.preparar(g);
+    RoundRectangle2D forma = forma();
+    g2.setColor(Tema.SUPERFICIE);
+    g2.fill(forma);
+    g2.setColor(Tema.conAlfa(color, 12));
+    g2.fill(forma);
+    pintarDecoracion(g2, forma);
+    Dibujo.trazoNeon(g2, forma, color, 1.8f);
+    g2.dispose();
+}
+
+/** Gancho para las subclases. Por defecto no dibuja nada. */
+protected void pintarDecoracion(Graphics2D g2, RoundRectangle2D forma) {
+}
+</pre>
+<p>La <code>TarjetaConConfeti</code> de la pantalla de victoria (capítulo 60) solo sobrescribe <code>pintarDecoracion</code> para tirar sus papelitos; no vuelve a escribir ni el fondo ni el borde. Y como el confeti se pinta <b>antes</b> del borde, el borde de neón queda encima, siempre. <b>Sin plantilla</b>, la tarjeta con confeti copiaría las cinco líneas del fondo y el borde, y si un día se cambiara el borde de las tarjetas, habría que acordarse de cambiarlo en dos lugares.</p>
+<p>Este ejemplo lleva la idea a reportes de una escuela y de una tienda. <code>imprimir()</code> es la plantilla; es <code>final</code> para que ninguna hija altere el orden; <code>titulo()</code> e <code>imprimirCuerpo()</code> son pasos obligatorios (abstractos, capítulo 24) y <code>pie()</code> es un gancho opcional, como <code>pintarDecoracion</code>:</p>
+<pre class="java">public class Plantilla {
+
+    public static void main(String[] args) {
+        Reporte[] reportes = {
+            new ReporteNotas("Ana", new int[]{85, 92, 78}),
+            new ReporteVentas(new double[]{120.50, 89.99, 300.00})
+        };
+        for (Reporte r : reportes) {
+            r.imprimir();
+        }
+    }
+}
+
+/** El METODO PLANTILLA: imprimir() fija los pasos; las subclases rellenan los huecos. */
+abstract class Reporte {
+
+    /** final: ninguna subclase puede cambiar el orden de los pasos. */
+    public final void imprimir() {
+        System.out.println("==============================");
+        System.out.println(titulo().toUpperCase());
+        System.out.println("------------------------------");
+        imprimirCuerpo();
+        String pie = pie();
+        if (!pie.isEmpty()) {
+            System.out.println("------------------------------");
+            System.out.println(pie);
+        }
+        System.out.println();
+    }
+
+    /** Paso obligatorio: cada reporte tiene su titulo. */
+    protected abstract String titulo();
+
+    /** Paso obligatorio: el contenido. */
+    protected abstract void imprimirCuerpo();
+
+    /** Gancho opcional: por defecto no hay pie (como Tarjeta.pintarDecoracion). */
+    protected String pie() {
+        return "";
+    }
+}
+
+class ReporteNotas extends Reporte {
+    private final String alumno;
+    private final int[] notas;
+
+    ReporteNotas(String alumno, int[] notas) {
+        this.alumno = alumno;
+        this.notas = notas;
+    }
+
+    @Override
+    protected String titulo() {
+        return "Notas de " + alumno;
+    }
+
+    @Override
+    protected void imprimirCuerpo() {
+        for (int i = 0; i &lt; notas.length; i++) {
+            System.out.println("Unidad " + (i + 1) + ": " + notas[i]);
+        }
+    }
+}
+
+class ReporteVentas extends Reporte {
+    private final double[] ventas;
+
+    ReporteVentas(double[] ventas) {
+        this.ventas = ventas;
+    }
+
+    @Override
+    protected String titulo() {
+        return "Ventas del día";
+    }
+
+    @Override
+    protected void imprimirCuerpo() {
+        for (double venta : ventas) {
+            System.out.printf("Q%8.2f%n", venta);
+        }
+    }
+
+    @Override
+    protected String pie() {
+        double total = 0;
+        for (double venta : ventas) {
+            total += venta;
+        }
+        return String.format("Total: Q%.2f", total);
+    }
+}
+</pre>
+<pre class="salida">==============================
+NOTAS DE ANA
+------------------------------
+Unidad 1: 85
+Unidad 2: 92
+Unidad 3: 78
+
+==============================
+VENTAS DEL DÍA
+------------------------------
+Q  120.50
+Q   89.99
+Q  300.00
+------------------------------
+Total: Q510.49</pre>
+<p><code>PantallaBase</code> (capítulo 55) es una variante del mismo espíritu: su constructor monta el esqueleto común (encabezado arriba, columna de contenido al centro) y su <code>paintComponent</code> pinta el fondo; cada pantalla hija solo agrega lo suyo con <code>agregar()</code>, <code>espacio()</code> y <code>relleno()</code>.</p>
+
+<h3>Strategy (estrategia)</h3>
+<p><b>Problema:</b> una clase necesita hacer algo que puede hacerse de varias maneras, y quieres poder cambiar la manera sin tocar la clase. <b>Solución:</b> la «manera» se convierte en un objeto aparte, que se recibe desde fuera. Como un taladro con brocas intercambiables: el taladro gira igual; lo que cambia es la broca que le pones.</p>
+<p>En el Totito, la estrategia es <code>Iconos.Icono</code> (capítulos 25 y 42): una interfaz con un único método <code>dibujar(g, x, y, tam, color)</code>. <code>BotonNeon</code> guarda un <code>Icono</code> y, al pintarse, simplemente llama a <code>icono.dibujar(...)</code>. No sabe si es un triángulo, una casa o un libro:</p>
+<pre class="java">if (icono != null) {
+    icono.dibujar(g2, x, cy - tamIcono / 2, tamIcono, Tema.TEXTO);
+}
+</pre>
+<p><b>Sin Strategy</b>, <code>BotonNeon</code> tendría un <code>switch</code> gigante con el dibujo de cada icono, y agregar un icono nuevo obligaría a modificar el botón (y la tarjeta de jugador, y la opción de modo, que también dibujan iconos). Con Strategy, un icono nuevo es una constante nueva en <code>Iconos</code> y todos los componentes lo aceptan de inmediato. En una tienda, la estrategia típica es la forma de calcular un descuento:</p>
+<pre class="java">public class Estrategia {
+
+    public static void main(String[] args) {
+        double total = 250.00;
+        Descuento[] promociones = {
+            Descuento.ninguno(),
+            Descuento.porcentaje(10),
+            Descuento.montoFijo(40),
+            subtotal -&gt; subtotal &gt;= 200 ? subtotal * 0.15 : 0   // una nueva, sin tocar Caja
+        };
+        String[] nombres = {"Sin promoción", "10 %", "Q40 menos", "15 % desde Q200"};
+
+        for (int i = 0; i &lt; promociones.length; i++) {
+            Caja caja = new Caja(promociones[i]);
+            System.out.printf("%-16s -&gt; pagar Q%.2f%n", nombres[i], caja.cobrar(total));
+        }
+    }
+}
+
+/** La ESTRATEGIA: una forma intercambiable de calcular el descuento. */
+@FunctionalInterface
+interface Descuento {
+    double calcular(double subtotal);
+
+    // Metodos de fabrica: crean las estrategias mas comunes.
+    static Descuento ninguno() {
+        return subtotal -&gt; 0;
+    }
+
+    static Descuento porcentaje(double porcentaje) {
+        return subtotal -&gt; subtotal * porcentaje / 100;
+    }
+
+    static Descuento montoFijo(double monto) {
+        return subtotal -&gt; Math.min(monto, subtotal);
+    }
+}
+
+/** La caja no sabe QUE descuento aplica: solo sabe que tiene uno. */
+class Caja {
+    private final Descuento descuento;
+
+    Caja(Descuento descuento) {
+        this.descuento = descuento;
+    }
+
+    double cobrar(double subtotal) {
+        return subtotal - descuento.calcular(subtotal);
+    }
+}
+</pre>
+<pre class="salida">Sin promoción    -&gt; pagar Q250.00
+10 %             -&gt; pagar Q225.00
+Q40 menos        -&gt; pagar Q210.00
+15 % desde Q200  -&gt; pagar Q212.50</pre>
+<p>Este ejemplo junta tres ideas: Strategy (<code>Descuento</code>), métodos de fábrica (<code>Descuento.porcentaje(10)</code>, que son métodos <code>static</code> dentro de una interfaz, capítulo 24) y lambdas (capítulo 25). La cuarta promoción se inventó en <code>main</code> sin tocar ni <code>Caja</code> ni <code>Descuento</code>: así se ve el código «abierto a extensiones».</p>
+
+<h3>Facade (fachada)</h3>
+<p><b>Problema:</b> usar un conjunto de clases requiere conocer cómo se coordinan entre ellas. <b>Solución:</b> una clase que ofrece una puerta de entrada sencilla y hace la coordinación por dentro. Como la recepción de un hotel: no hablas con limpieza, cocina y mantenimiento; hablas con recepción.</p>
+<p><code>Partida</code> es la fachada del modelo. <code>PantallaJuego</code> no le pide jugadas a <code>IA_Minimax</code> ni marca casillas en <code>Tablero</code>: llama a <code>partida.jugar(...)</code> y <code>partida.jugarTurnoIA()</code>, y <code>Partida</code> se encarga de lo demás:</p>
+<pre class="java">/** Le pide a IA_Minimax su mejor jugada y la aplica. */
+public void jugarTurnoIA() {
+    if (!esTurnoDeIA()) {
+        return;
+    }
+    int[] jugada = ia.calcularMejorJugada(tablero);
+    jugar(jugada[0], jugada[1]);
+}
+</pre>
+<p><code>Dibujo.trazoNeon</code> es una fachada más pequeña: por dentro traza la figura siete u ocho veces con grosores y transparencias distintas, guarda y restaura el pincel; por fuera es una sola llamada. <b>Sin fachadas</b>, cada pantalla repetiría la coordinación, y cualquier cambio interno (por ejemplo, que la IA tarde menos) se propagaría a todas.</p>
+
+<h3>El objeto «de mentira» de VistaPrevia</h3>
+<p><code>VistaPrevia</code> crea una <code>Navegacion</code> cuyos métodos no hacen nada (salvo <code>salir</code>), para abrir una pantalla sin el resto del programa:</p>
+<pre class="java">// Una Navegacion "de mentira": cada metodo existe pero no hace nada.
+Navegacion sinNavegacion = new Navegacion() {
+    @Override public void irAlMenu() { }
+</pre>
+<p>Se le llama <b>objeto nulo</b> o, en pruebas, <b>doble de prueba</b>: un sustituto que cumple el contrato de la interfaz pero no tiene efectos. Solo es posible porque las pantallas dependen de una interfaz (bajo acoplamiento). En las pruebas automáticas (capítulo 69) se usa a diario: un «banco de mentira» para probar una caja sin mover dinero real.</p>
+
+<div class="caja cuidado"><b>No fuerces patrones</b> Los patrones son soluciones a problemas; si no tienes el problema, no necesitas la solución. Una clase con una sola forma de hacer algo no necesita Strategy. Primero escribe lo más simple que funcione; cuando veas el problema repetirse, reconocerás el patrón que lo resuelve.</div>
+
+<h2>Principio 4: no te repitas (DRY)</h2>
+<p><b>DRY</b> viene del inglés <i>Don't Repeat Yourself</i>: cada conocimiento debe estar escrito en <b>un solo lugar</b>. Si la receta de la salsa está copiada en tres cuadernos y la mejoras en uno, los otros dos quedan mal.</p>
+<p>El Totito aplica DRY en muchos sitios:</p>
+<ul>
+<li><b>Colores</b>: todo sale de <code>Tema</code>. Su comentario: «para cambiar el aspecto del juego basta con tocar esta clase, no hay colores sueltos repartidos por las pantallas». Cambia <code>Tema.ROSA</code> y cambian las X, los botones y los títulos a la vez.</li>
+<li><b>El efecto neón</b>: <code>Dibujo.trazoNeon</code>, usado por botones, tarjetas, fichas, iconos y tablero.</li>
+<li><b>Fijar tamaños</b>: <code>Dibujo.fijarTamano(this, ancho, alto)</code> reemplaza las tres llamadas <code>setPreferredSize</code>, <code>setMinimumSize</code>, <code>setMaximumSize</code> en cada componente.</li>
+<li><b>Filas de componentes</b>: <code>PantallaBase.fila(hueco, componentes...)</code> la usan las pantallas de juego, configuración y resultado.</li>
+<li><b>La regla de la ficha inicial</b>: <code>Partida.FICHA_INICIAL = 'X'</code>, en lugar de un <code>'X'</code> perdido dentro de <code>reiniciar()</code>.</li>
+</ul>
+<p>Y tiene una repetición <b>consciente</b>, que vale la pena estudiar. <code>Partida.buscarLineaGanadora</code> revisa las mismas ocho líneas que <code>Tablero.verificarGanador</code>, y su comentario lo admite: «Revisa lo mismo que Tablero.verificarGanador() (3 filas, 3 columnas y 2 diagonales), pero devolviendo posiciones». ¿Por qué no se reescribió <code>Tablero</code> para que devolviera la línea? Porque <code>Tablero</code>, <code>Jugador</code> e <code>IA_Minimax</code> son las clases originales del proyecto (Parte V) y la Parte VII decidió reutilizarlas «tal cual» (lo dice el comentario de <code>Partida</code>). Fue un intercambio: una pequeña duplicación a cambio de no tocar código que ya funcionaba y estaba probado. DRY es un principio, no una ley; lo importante es repetir <b>a sabiendas</b> y dejarlo escrito.</p>
+<div class="caja consejo"><b>La regla de tres</b> La primera vez escribes el código. La segunda vez que necesitas algo parecido, lo copias con una mueca. La tercera, lo conviertes en un método o una clase. Extraer demasiado pronto, antes de ver los casos reales, suele dar funciones con diez parámetros que nadie entiende.</div>
+
+<h2>Principio 5: nombres claros y consistentes</h2>
+<p>El código se lee muchas más veces de las que se escribe, y los nombres son la mitad de la lectura. Las reglas que sigue el Totito:</p>
+<table class="tabla">
+<tr><th>Qué</th><th>Convención</th><th>Ejemplos del Totito</th></tr>
+<tr><td>Clases e interfaces</td><td>Sustantivo, <code>MayusculaInicial</code> en cada palabra</td><td><code>Tablero</code>, <code>PanelTablero</code>, <code>Navegacion</code></td></tr>
+<tr><td>Métodos</td><td>Verbo en infinitivo, <code>minusculaInicial</code></td><td><code>marcarCasilla</code>, <code>verificarGanador</code>, <code>reiniciar</code>, <code>mostrar</code></td></tr>
+<tr><td>Preguntas que devuelven <code>boolean</code></td><td><code>es…</code>, <code>hay…</code>, <code>tiene…</code> o un adjetivo</td><td><code>esTurnoDeIA</code>, <code>esComputadora</code>, <code>tableroLleno</code></td></tr>
+<tr><td>Leer y cambiar un campo</td><td><code>get…</code> / <code>set…</code> (en inglés, por convención de Java)</td><td><code>getNombre</code>, <code>getFicha</code>, <code>setOyente</code>, <code>setInteractivo</code></td></tr>
+<tr><td>Constantes</td><td><code>MAYUSCULAS_CON_GUIONES</code></td><td><code>VACIA</code>, <code>FICHA_INICIAL</code>, <code>PAUSA_IA_MS</code></td></tr>
+<tr><td>Variables</td><td>Sustantivo descriptivo</td><td><code>fila</code>, <code>columna</code>, <code>mejorJugada</code>, <code>colorRejilla</code></td></tr>
+</table>
+<p>Algunas decisiones que conviene notar:</p>
+<ul>
+<li><b>Un solo idioma, aplicado con coherencia</b>: todo en español, sin tildes ni eñes en los identificadores (<code>tamano</code>, <code>tamCasilla</code>), porque algunas herramientas y teclados las manejan mal. Solo <code>get</code>/<code>set</code> quedan en inglés, porque son una convención de Java que reconocen NetBeans y muchas bibliotecas. Lo que debes evitar es la mezcla sin regla: <code>getNombre</code>, <code>obtenerFicha</code> y <code>fetchTurno</code> en la misma clase.</li>
+<li><b>Unidades en el nombre</b>: <code>PAUSA_IA_MS</code> dice que son milisegundos. Sin el <code>_MS</code>, ¿450 qué? ¿segundos?</li>
+<li><b>El mismo concepto, la misma palabra</b>: en todo el proyecto es «ficha», nunca «símbolo» en un sitio y «pieza» en otro (salvo el texto que ve el usuario en <code>SelectorSimbolo</code>, que sigue al diseño).</li>
+<li><b>Una excepción honesta</b>: <code>IA_Minimax</code> rompe la convención (lleva guion bajo). Se conservó porque es el nombre original del proyecto y cambiarlo tocaría varios archivos; el nombre ideal sería <code>IAMinimax</code> o <code>MinimaxIA</code>. Ahora sabes reconocerlo.</li>
+</ul>
+<div class="caja consejo"><b>Renombrar sin miedo</b> En NetBeans, clic derecho sobre un nombre → <i>Refactor → Rename…</i> (Ctrl+R) cambia ese nombre en todo el proyecto a la vez, sin tocar textos que solo se le parecen. Un buen nombre se puede poner después; no te quedes con <code>x2</code> o <code>temp</code> por pereza.</div>
+
+<h2>Principio 6: comentarios que explican el porqué</h2>
+<p>El código ya dice <b>qué</b> hace; un buen comentario dice <b>por qué</b>, o advierte algo que el código no puede mostrar. Compara:</p>
+<pre class="java">// INUTIL: repite lo que ya se lee
+i++;   // suma uno a i
+turno = 1 - turno;   // turno es igual a 1 menos turno
+
+// UTIL: explica una decision que no es obvia
+return;   // mientras la IA "piensa" no se aceptan clics
+</pre>
+<p>Comentarios útiles reales del Totito:</p>
+<ul>
+<li>En <code>PantallaResultado.TarjetaConConfeti</code>: «Las posiciones salen de un Random con semilla fija: siempre son las mismas y no "bailan" al repintar». Sin ese comentario, alguien «arreglaría» el <code>new Random(11)</code> quitando el 11 y el confeti temblaría cada vez que pasas el ratón.</li>
+<li>En <code>Partida</code>: «Solo existe en el modo contra la IA; la IA siempre es el Jugador 2». Explica por qué <code>ia</code> puede ser <code>null</code>.</li>
+<li>En <code>PantallaJuego.cancelarPendiente</code>: «Evita que un temporizador viejo actue sobre una partida que ya se reinicio o se dejo». Cuenta el error que ese método previene.</li>
+<li>Los comentarios de cabecera de cada clase (los <code>/** … */</code>, llamados <b>Javadoc</b>): dicen la responsabilidad de la clase y cómo usarla. NetBeans los muestra al pasar el ratón sobre el nombre.</li>
+</ul>
+<p>Y una regla: si necesitas un comentario largo para explicar <i>qué</i> hace un trozo de código, probablemente ese trozo merece ser un método con un nombre que lo diga. <code>actualizarCasillaEncima(x, y)</code> no necesita comentario.</p>
+<div class="caja cuidado"><b>Comentarios que mienten</b> Un comentario desactualizado es peor que ninguno. Si cambias el código, cambia el comentario en el mismo momento. Y no dejes código viejo «comentado por si acaso»: para eso está Git (capítulo 9), que lo guarda en el historial.</div>
+
+<h2>Principio 7: nada de números mágicos</h2>
+<p>Un <b>número mágico</b> es un valor que aparece en el código sin explicación. ¿Qué significa <code>new Timer(450, ...)</code>? ¿Por qué 450? Compara con lo que hace <code>PantallaJuego</code>:</p>
+<pre class="java">/** Pausa antes de que juegue la IA, para que el cambio de turno se note. */
+private static final int PAUSA_IA_MS = 450;
+/** Tiempo que se ve la raya ganadora antes de cambiar de pantalla. */
+private static final int PAUSA_RESULTADO_MS = 1200;
+</pre>
+<p>Tres ganancias: el nombre explica el significado; el valor se cambia en un solo lugar; y el comentario cuenta <i>por qué</i> existe. Otros ejemplos del Totito: <code>Tarjeta.MARGEN</code> («para que quepa el halo»), <code>PanelPrincipal.ANCHO</code> y <code>ALTO</code> («Cabe en pantallas de 1366x768»), <code>CampoTexto.MAXIMO = 14</code> (para que el nombre quepa en el marcador).</p>
+<p>Seamos honestos: el Totito también tiene números sin nombre. <code>BotonNeon.menu</code> usa <code>384, 88</code>; <code>PantallaMenu</code> separa los botones con <code>new Dimension(0, 14)</code>; los iconos están llenos de fracciones como <code>t * 0.24</code>. ¿Es un problema? Depende:</p>
+<ul>
+<li>Los <b>números de geometría de un dibujo</b> (las coordenadas de un icono) son como las medidas en un plano: ponerle nombre a cada una (<code>PUNTA_TRIANGULO_X = 0.24</code>) haría el código más largo sin hacerlo más claro. Ahí el comentario de la clase basta: «todas las medidas son fracciones de t».</li>
+<li>Los valores que se usan <b>una sola vez</b> junto a su contexto (<code>384, 88</code> dentro del método que se llama justamente <code>menu</code>) se entienden en su lugar.</li>
+<li>Los que <b>se repiten</b> o tienen <b>significado de negocio</b> (pausas, márgenes, tamaño máximo, tamaño de la ventana) deben ser constantes. Si el <code>14</code> de <code>PantallaMenu</code> empezara a usarse en otras pantallas, sería el momento de llamarlo <code>SEPARACION_BOTONES</code>.</li>
+</ul>
+
+<h2>Principio 8: formato consistente</h2>
+<p>El formato no cambia lo que hace el programa, pero sí lo que cuesta leerlo. El Totito sigue siempre las mismas reglas: sangría de <b>4 espacios</b> por nivel; la llave que abre <code>{</code> al final de la línea y la que cierra sola en su línea; <b>llaves siempre</b>, aunque el <code>if</code> tenga una sola instrucción; una línea en blanco entre métodos; las líneas largas se parten con una sangría de 8 espacios en la continuación, como en <code>Partida.buscarLineaGanadora</code>:</p>
+<pre class="java">if (a != Tablero.VACIA
+        &amp;&amp; a == tablero.obtenerCasilla(l[2], l[3])
+        &amp;&amp; a == tablero.obtenerCasilla(l[4], l[5])) {
+</pre>
+<p>¿Por qué llaves siempre? Porque esto engaña a la vista:</p>
+<pre class="java">if (ganador != Tablero.VACIA)
+    estado = Estado.VICTORIA;
+    victorias[turno]++;      // ¡se ejecuta SIEMPRE! La sangria miente.
+</pre>
+<p>Sin llaves, el <code>if</code> solo controla la primera línea; la segunda suma una victoria en cada jugada. Con llaves, ese error es imposible. No tienes que formatear a mano: en NetBeans, <i>Source → Format</i> (Alt+Shift+F) aplica el formato a todo el archivo.</p>
+
+<h2>SOLID en una página</h2>
+<p>Muchos de estos principios se resumen en cinco letras que verás en entrevistas de trabajo y libros: <b>SOLID</b>. Sin entrar en teoría, así se ven en el Totito:</p>
+<table class="tabla">
+<tr><th>Letra</th><th>Principio</th><th>En el Totito</th></tr>
+<tr><td><b>S</b></td><td>Responsabilidad única</td><td><code>Tablero</code> reglas, <code>PanelTablero</code> dibujo, <code>Tema</code> colores.</td></tr>
+<tr><td><b>O</b></td><td>Abierto a extensión, cerrado a modificación</td><td>Un icono nuevo o una pantalla nueva (<code>extends PantallaBase</code>) no obliga a modificar <code>BotonNeon</code> ni <code>PantallaBase</code>.</td></tr>
+<tr><td><b>L</b></td><td>Sustitución de Liskov: un hijo debe poder usarse donde se espera al padre</td><td><code>TarjetaConConfeti</code> funciona en cualquier sitio donde va una <code>Tarjeta</code>; cualquier pantalla funciona donde va un <code>JPanel</code> (capítulo 23).</td></tr>
+<tr><td><b>I</b></td><td>Segregación de interfaces: interfaces pequeñas y específicas</td><td><code>OyenteCasilla</code> e <code>Icono</code> tienen un solo método. <code>Navegacion</code> tiene siete: <code>VistaPrevia</code> tuvo que implementar los siete aunque no usa ninguno. Es aceptable aquí, pero es la señal a vigilar.</td></tr>
+<tr><td><b>D</b></td><td>Inversión de dependencias: depender de abstracciones, no de clases concretas</td><td>Las pantallas reciben una <code>Navegacion</code>, no un <code>PanelPrincipal</code>.</td></tr>
+</table>
+
+<h2>Caso de estudio: de JuegoMain a Partida + PantallaJuego</h2>
+<p>El primer Totito jugable (capítulo 33) fue <code>JuegoMain</code>: una sola clase de casi 200 líneas que crea la ventana, guarda el tablero, decide el turno, detecta el final y pinta los botones. Para la versión 0.1 estaba bien: era pequeño y funcionaba. Pero mira su manejo de un clic:</p>
+<pre class="java">private void manejarClicCasilla(int fila, int columna) {
+    if (juegoTerminado || !turnoJugador) {
+        return;
+    }
+    if (!tablero.marcarCasilla(fila, columna, jugador.getFicha())) {
+        return;
+    }
+
+    actualizarBoton(fila, columna);
+    if (verificarFinDePartida()) {
+        return;
+    }
+
+    turnoJugador = false;
+    etiquetaEstado.setText("Turno de la IA (O)");
+</pre>
+<p>En pocas líneas se mezclan <b>reglas</b> (<code>juegoTerminado</code>, <code>turnoJugador</code>, marcar la casilla), <b>interfaz</b> (<code>actualizarBoton</code>, <code>etiquetaEstado.setText</code>) y <b>tiempos</b> (un <code>Timer</code> para la IA, más abajo). Y <code>verificarFinDePartida</code> decide quién ganó <i>y además</i> escribe el letrero y deshabilita los botones. Cuando llegó el diseño neón, aparecieron necesidades que esa estructura no soportaba bien:</p>
+<ul>
+<li><b>Dos modos de juego.</b> En <code>JuegoMain</code> el turno es un <code>boolean turnoJugador</code> que asume «humano contra IA». Dos personas no caben sin reescribir la lógica.</li>
+<li><b>Un marcador</b> de victorias y empates que sobreviva a «Jugar de nuevo».</li>
+<li><b>Una pantalla de resultado</b> separada, que necesita saber quién ganó sin mirar los botones de otra pantalla.</li>
+<li><b>Probar las reglas</b> sin abrir ventanas.</li>
+</ul>
+<p>La refactorización (cambiar la estructura del código sin cambiar lo que hace para el usuario) consistió en preguntarse, línea por línea, «¿esto es regla o es pantalla?», y mover cada cosa a su sitio:</p>
+<table class="tabla">
+<tr><th>Responsabilidad</th><th>En JuegoMain (v0.1)</th><th>En la versión final (v1.0)</th></tr>
+<tr><td>De quién es el turno</td><td><code>boolean turnoJugador</code></td><td><code>Partida.turno</code> (índice 0 o 1) y <code>getJugadorEnTurno()</code></td></tr>
+<tr><td>Si la partida terminó y cómo</td><td><code>boolean juegoTerminado</code> + texto de la etiqueta</td><td><code>Partida.Estado</code> (EN_CURSO, VICTORIA, EMPATE) y <code>getGanador()</code></td></tr>
+<tr><td>Validar y aplicar una jugada</td><td>dentro de <code>manejarClicCasilla</code></td><td><code>Partida.jugar(fila, columna)</code></td></tr>
+<tr><td>Hacer jugar a la IA</td><td><code>turnoIA()</code>, que también pinta</td><td><code>Partida.jugarTurnoIA()</code> (regla) + <code>PantallaJuego.programarTurnoIA()</code> (pausa)</td></tr>
+<tr><td>Marcador</td><td>no existía</td><td><code>Partida.victorias</code>, <code>empates</code></td></tr>
+<tr><td>Dibujar el tablero</td><td>9 <code>JButton</code> con texto</td><td><code>PanelTablero</code>, que solo dibuja y avisa</td></tr>
+<tr><td>Colores</td><td>constantes privadas de <code>JuegoMain</code></td><td><code>Tema</code>, compartido por todo</td></tr>
+<tr><td>Cambiar de pantalla</td><td>no había pantallas</td><td><code>Navegacion</code> + <code>PanelPrincipal</code></td></tr>
+<tr><td>Reglas del tablero</td><td><code>Tablero</code></td><td><code>Tablero</code>, <b>sin cambios</b></td></tr>
+</table>
+<p>Fíjate en la última fila: <code>Tablero</code>, <code>Jugador</code> e <code>IA_Minimax</code> pasaron intactos de la v0.1 a la v1.0. Esa es la recompensa de haberlas diseñado con una sola responsabilidad desde el principio: cuando cambió <b>todo</b> lo visual, las reglas no se tocaron. Y <code>JuegoMain</code> no se borró: sigue en el proyecto y se puede ejecutar, porque usa las mismas clases de lógica.</p>
+<p>El clic de la versión final ya lo viste en <code>PantallaJuego.alPulsarCasilla</code>: cuatro líneas que solo coordinan, porque las reglas viven en <code>Partida</code>. Así se refactoriza con seguridad:</p>
+<ol>
+<li>Asegúrate de que lo actual funciona y guárdalo en Git (un commit antes de empezar).</li>
+<li>Mueve <b>una</b> responsabilidad a la vez (primero el turno, luego el estado…) y prueba después de cada paso.</li>
+<li>No mezcles refactorizar con agregar funciones: primero reorganiza sin cambiar el comportamiento; luego agrega lo nuevo.</li>
+<li>Haz un commit por paso, con un mensaje claro (capítulo 9).</li>
+</ol>
+<div class="caja hito"><b>Hito</b> Con este capítulo terminas la Parte IV. Ya tienes todo el vocabulario para leer el Totito como lo lee un programador: no como 32 archivos sueltos, sino como un modelo pequeño y estable, unas vistas que dibujan y unos controladores que los conectan. En la Parte V empiezas a escribirlo.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li><b>Responsabilidad única</b>: cada clase, una sola razón para cambiar (<code>Tablero</code> reglas, <code>PanelTablero</code> dibujo, <code>Tema</code> colores).</li>
+<li><b>Alta cohesión y bajo acoplamiento</b>: lo de dentro de una clase trabaja para lo mismo; las clases se conectan por interfaces como <code>Navegacion</code>.</li>
+<li><b>Separar lógica e interfaz</b> (MVC): el modelo (<code>Partida</code>, <code>Tablero</code>) no importa nada de Swing; las vistas dibujan; <code>PantallaJuego</code> coordina.</li>
+<li><b>Patrones</b> del Totito: Observer (<code>OyenteCasilla</code>, <code>ActionListener</code>), Factory method (<code>BotonNeon.menu</code>), Template Method (<code>Tarjeta.pintarDecoracion</code>), Strategy (<code>Iconos.Icono</code>), Facade (<code>Partida</code>, <code>Dibujo.trazoNeon</code>) y el objeto de mentira de <code>VistaPrevia</code>.</li>
+<li><b>DRY</b>: cada conocimiento en un solo lugar; si repites, que sea a sabiendas y con un comentario.</li>
+<li><b>Nombres, comentarios, constantes y formato</b>: nombres que dicen lo que son, comentarios que dicen el porqué, constantes en lugar de números mágicos con significado, y llaves siempre.</li>
+<li><b>Refactorizar</b> es reorganizar sin cambiar el comportamiento, paso a paso y con commits: así <code>JuegoMain</code> dio paso a <code>Partida</code> + <code>PantallaJuego</code> sin tocar <code>Tablero</code>.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Tienda:</b> el modelo (<code>Producto</code>, <code>Carrito</code>, <code>Inventario</code>) sin nada de pantallas, para que la misma lógica sirva a la caja de escritorio, a una página web y a un reporte nocturno. Los descuentos como Strategy y los avisos de «existencias bajas» como Observer.</li>
+<li><b>Escuela:</b> los reportes de notas, asistencia y conducta con Template Method (mismo encabezado y pie, distinto cuerpo); el cálculo del promedio en un solo lugar (DRY) aunque se muestre en cinco pantallas.</li>
+<li><b>Banco:</b> una fachada <code>ServicioTransferencias</code> que coordina cuentas, comisiones y bitácora; las pantallas solo llaman a <code>transferir(origen, destino, monto)</code>. Y un «banco de mentira» que implemente la misma interfaz para probar sin dinero real.</li>
+<li><b>Otro juego:</b> en Conecta 4 o Buscaminas (capítulo 68), copia la arquitectura del Totito: <code>Tablero</code> y <code>Partida</code> sin Swing, un panel que solo dibuja y avisa con un oyente, una pantalla que coordina y un <code>Tema</code> con los colores.</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Para cada una de estas clases del Totito, escribe su responsabilidad en una frase sin «y»: <code>Jugador</code>, <code>IA_Minimax</code>, <code>PanelMarcador</code>, <code>PanelPrincipal</code>. Pista: copia la idea del comentario de cabecera de cada archivo.</li>
+<li>Busca en <code>JuegoMain</code> (capítulo 33) tres números o textos mágicos y propón un nombre de constante para cada uno. Pista: mira el <code>Timer</code> y los tamaños de letra.</li>
+<li>Agrega un tercer oyente al programa <code>Observador</code> que imprima «¡Empate en el marcador!» cuando ambos jugadores tengan las mismas victorias. ¿Tuviste que modificar la clase <code>Marcador</code>? Pista: necesitarás que el oyente reciba más información o que pueda consultar el marcador; decide qué cambiar en la interfaz y justifícalo.</li>
+<li>Agrega al programa <code>Separar</code> una tercera vista, <code>VistaContador</code>, que imprima cuántas casillas quedan libres. No debes tocar <code>MiniPartida</code> si ya ofrece lo necesario. Pista: recorre las 9 casillas con <code>casilla(f, c)</code>.</li>
+<li>Reto: toma un programa tuyo de capítulos anteriores (por ejemplo, una calculadora o un juego de adivinar el número) que lo haga todo en <code>main</code>. Refactorízalo en un modelo sin <code>System.out</code> y una clase que solo lea y muestre. Haz un commit antes y otro después, y compara con <code>git diff</code>.</li>
+</ol>
+</div>
+</section>

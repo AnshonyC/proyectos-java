@@ -1,0 +1,512 @@
+<section class="capitulo" id="cap23">
+<h1><span class="num">Capítulo 23</span>Polimorfismo y sobrescritura</h1>
+<p class="entrada">El polimorfismo es la razón por la que Swing, escrito hace más de veinte años, sabe dibujar los botones de neón que tú vas a inventar. Una misma orden («píntate») produce resultados distintos según quién la recibe. En este capítulo verás cómo una clase hija cambia un método heredado (sobrescritura), cómo Java decide en el momento de ejecutar qué versión correr (enlace dinámico) y cómo no confundir todo esto con la sobrecarga.</p>
+
+<h2>La idea: una orden, muchas respuestas</h2>
+<p>Imagina la reunión de padres de familia en una escuela. La maestra dice: «Cada niño, preséntese». No necesita saber de antemano quién es quién ni dar una instrucción distinta a cada uno. Ana dice «Soy Ana y me gusta dibujar»; Luis dice «Soy Luis y juego fútbol». <b>La orden es la misma; la respuesta depende de quién la recibe.</b></p>
+<p>Eso es el <b>polimorfismo</b> (del griego «muchas formas»): poder tratar a objetos de clases distintas a través de un tipo común (su madre) y que cada uno responda con <b>su propia versión</b> del método. Se apoya en dos piezas:</p>
+<ol>
+<li><b>Sobrescritura</b> (<i>override</i>): una clase hija escribe su propia versión de un método que heredó.</li>
+<li><b>Enlace dinámico</b> (<i>dynamic binding</i>): cuando el programa corre, Java mira la clase <b>real</b> del objeto para decidir qué versión ejecutar, no el tipo de la variable que lo apunta.</li>
+</ol>
+<p>Ya lo rozaste en el capítulo 22, cuando <code>ProductoPerecedero</code> escribió su propio <code>describir()</code>. Ahora vamos al fondo.</p>
+
+<h2>Sobrescribir un método</h2>
+<p>Sobrescribir es <b>reemplazar</b> en la hija un método heredado, manteniendo exactamente la misma «firma»: el mismo nombre y los mismos tipos de parámetros, en el mismo orden. Es como heredar la receta del pastel de la abuela y escribir, en tu propio cuaderno, tu versión con el mismo nombre: cuando alguien pida «el pastel de la casa» en tu sucursal, recibirá el tuyo.</p>
+<p>El caso más importante del Totito es <code>paintComponent</code>. Todo <code>JComponent</code> lo tiene, y la versión de Swing dibuja el aspecto estándar: un panel de color liso, un botón gris con relieve. Trece clases del Totito lo sobrescriben para dibujarse a su manera: <code>Tarjeta</code>, <code>TarjetaJugador</code>, <code>BotonNeon</code>, <code>CampoTexto</code>, <code>Rotulo</code>, <code>PanelTablero</code>, <code>PantallaBase</code>, <code>Encabezado</code>, <code>SelectorSimbolo</code>, <code>OpcionModo</code>, <code>PanelMarcador</code>, <code>PasoInstruccion</code> e <code>IconoResultado</code>. Mira la cabecera en <code>PanelTablero</code> (capítulo 48):</p>
+<pre class="java">    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2 = Dibujo.preparar(g);</pre>
+<p>Pieza por pieza:</p>
+<table class="tabla">
+<tr><th>Pieza</th><th>Qué significa</th></tr>
+<tr><td><code>@Override</code></td><td>Una <b>anotación</b>: una nota para el compilador que empieza con <code>@</code>. Dice «el método que sigue sobrescribe uno heredado; compruébalo». No cambia lo que hace el programa; solo activa una revisión.</td></tr>
+<tr><td><code>protected</code></td><td>La misma visibilidad que tiene el método en <code>JComponent</code>. Se puede ampliar (a <code>public</code>) pero nunca reducir (a <code>private</code>).</td></tr>
+<tr><td><code>void</code></td><td>No devuelve nada, igual que el original. El tipo de retorno debe coincidir.</td></tr>
+<tr><td><code>paintComponent</code></td><td>El nombre <b>exacto</b>, con la misma combinación de mayúsculas y minúsculas.</td></tr>
+<tr><td><code>(Graphics g)</code></td><td>Los mismos tipos de parámetros. El nombre (<code>g</code>) puede ser otro; lo que cuenta es el tipo <code>Graphics</code>.</td></tr>
+<tr><td><code>{ ... }</code></td><td>El cuerpo nuevo, que reemplaza al de la madre para los objetos de esta clase.</td></tr>
+</table>
+<p>Si intentas reducir la visibilidad, Java te detiene. Este fragmento pone <code>private</code> donde Swing tenía <code>protected</code>:</p>
+<pre class="java">class MiComponente extends JComponent {
+    @Override
+    private void paintComponent(Graphics g) {
+    }
+}</pre>
+<pre class="salida">MasRestrictivo.java:11: error: paintComponent(Graphics) in MiComponente cannot override paintComponent(Graphics) in JComponent
+    private void paintComponent(Graphics g) {
+                 ^
+  attempting to assign weaker access privileges; was protected
+1 error
+error: compilation failed</pre>
+<p>La lógica es la del capítulo 22: la hija debe cumplir todo lo que promete la madre. Si la madre promete que <code>paintComponent</code> se puede llamar desde sus hijas, la hija no puede esconderlo.</p>
+
+<h3>Por qué <code>@Override</code> te salva de un error invisible</h3>
+<p><code>@Override</code> es opcional: el programa compila sin ella. Pero mira lo que pasa con un simple error de dedo. Guarda <code>SinOverride.java</code>:</p>
+<pre class="java">public class SinOverride {
+    public static void main(String[] args) {
+        Componente c = new Rotulo();
+        c.pintar();
+    }
+}
+
+class Componente {
+    void pintar() {
+        System.out.println("pintar() de Componente: no dibujo nada");
+    }
+}
+
+class Rotulo extends Componente {
+    // Error de dedo: "pintra" en vez de "pintar". Sin @Override, Java no avisa.
+    void pintra() {
+        System.out.println("¡Hola desde Rotulo!");
+    }
+}</pre>
+<pre class="salida">pintar() de Componente: no dibujo nada</pre>
+<p>Compiló y corrió sin una sola queja… pero hizo lo que no querías. Para Java, <code>pintra</code> es un método <b>nuevo</b>, sin relación con <code>pintar</code>; el <code>pintar()</code> heredado sigue intacto y es el que se ejecuta. En Swing esto se vería como un componente que simplemente no aparece, y podrías pasar una hora buscando la causa. Ahora agrega <code>@Override</code> encima de <code>void pintra()</code> (archivo <code>ConOverride.java</code>):</p>
+<pre class="salida">ConOverride.java:15: error: method does not override or implement a method from a supertype
+    @Override
+    ^
+1 error
+error: compilation failed</pre>
+<p>«El método no sobrescribe ni implementa un método de un supertipo». El error salta en el momento de compilar, con el número de línea. Lo mismo pasaría con <code>paintcomponent</code> (con c minúscula) o con <code>paintComponent(Graphics2D g)</code> (otro tipo de parámetro): sin <code>@Override</code>, nada se dibuja y nadie te avisa.</p>
+<div class="caja consejo"><b>Pon siempre <code>@Override</code></b> Cada método del Totito que sobrescribe o implementa algo lleva <code>@Override</code>: los <code>paintComponent</code>, los <code>doLayout</code>, los métodos de <code>Navegacion</code> en <code>PanelPrincipal</code>, los <code>mouseMoved</code> y <code>mousePressed</code> de <code>PanelTablero</code>, el <code>pintarDecoracion</code> del confeti. Es una costumbre gratis que convierte errores invisibles en errores con número de línea.</div>
+
+<h2>Enlace dinámico: Swing llama a tu método sin conocerte</h2>
+<p>Aquí está la parte que parece magia. Cuando una ventana necesita dibujarse (al abrirse, al pasar el ratón por un botón, cuando el código llama a <code>repaint()</code>), Swing recorre los componentes y a cada uno le llama a su método <code>paint(g)</code>. Ese método lo escribieron los autores de Swing dentro de <code>JComponent</code>, y por dentro hace, en este orden:</p>
+<ol>
+<li><code>paintComponent(g)</code> — pintar el propio componente;</li>
+<li><code>paintBorder(g)</code> — pintar su borde, si tiene;</li>
+<li><code>paintChildren(g)</code> — pedir a cada hijo que se pinte.</li>
+</ol>
+<p>El código de <code>JComponent</code> se escribió mucho antes de que existiera tu <code>BotonNeon</code>. No dice «si es un BotonNeon, pinta neón». Solo dice <code>paintComponent(g)</code>. ¿Cómo termina ejecutándose <b>tu</b> versión?</p>
+<p>Porque en Java, cuando se llama a un método de instancia, la decisión de <b>qué versión correr</b> no se toma al compilar, sino en el instante de ejecutar: la máquina virtual mira el objeto real (¿de qué clase lo creaste con <code>new</code>?) y busca el método empezando por esa clase; si no lo encuentra ahí, sube a la madre, luego a la abuela, y así hasta <code>Object</code>. Eso es el <b>enlace dinámico</b>. Como el objeto se creó con <code>new BotonNeon(...)</code>, la búsqueda empieza en <code>BotonNeon</code>, encuentra su <code>paintComponent</code> y lo ejecuta.</p>
+<p>Simulemos a Swing con un programa de consola. <code>MiniSwing</code> hace el papel de Swing: recibe una lista de <code>Componente</code> y les ordena pintarse, sin saber nada de botones ni tableros. Guarda <code>EnlaceDinamico.java</code>:</p>
+<pre class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class EnlaceDinamico {
+    public static void main(String[] args) {
+        List&lt;Componente&gt; ventana = new ArrayList&lt;&gt;();
+        ventana.add(new Componente());
+        ventana.add(new Boton("Jugar"));
+        ventana.add(new Tablero());
+
+        MiniSwing.repintarTodo(ventana);
+
+        Componente c = new Boton("Salir");   // variable de tipo padre, objeto hijo
+        System.out.println("Tipo de la variable: Componente; clase del objeto: "
+                + c.getClass().getSimpleName());
+        c.pintar();                          // se ejecuta el de Boton
+    }
+}
+
+/** Hace el papel de Swing: no conoce a Boton ni a Tablero. */
+class MiniSwing {
+    static void repintarTodo(List&lt;Componente&gt; componentes) {
+        for (Componente c : componentes) {
+            c.pintar();
+        }
+    }
+}
+
+class Componente {
+    void pintar() {
+        System.out.println("[componente vacío]");
+    }
+}
+
+class Boton extends Componente {
+    private final String texto;
+
+    Boton(String texto) {
+        this.texto = texto;
+    }
+
+    @Override
+    void pintar() {
+        System.out.println("(( " + texto + " ))");
+    }
+}
+
+class Tablero extends Componente {
+    @Override
+    void pintar() {
+        System.out.println(" X | O | X ");
+    }
+}</pre>
+<pre class="salida">[componente vacío]
+(( Jugar ))
+ X | O | X 
+Tipo de la variable: Componente; clase del objeto: Boton
+(( Salir ))</pre>
+<p>La línea <code>c.pintar();</code> dentro del <code>for</code> de <code>MiniSwing</code> es una sola, y sin embargo se comportó de tres formas distintas. Si mañana agregas una clase <code>Marcador extends Componente</code>, <code>MiniSwing</code> la pintará correctamente <b>sin cambiar una sola letra</b>. Así funciona Swing con el Totito: Swing no sabe que existen el neón, las X rosadas ni las O azules, y no le hace falta.</p>
+<div class="caja concepto"><b>Tipo de la variable vs. clase del objeto</b> Toda variable de referencia tiene un <b>tipo declarado</b> (el que escribes a la izquierda: <code>Componente c</code>) y apunta a un objeto que tiene una <b>clase real</b> (la del <code>new</code>: <code>Boton</code>). El tipo declarado decide <b>qué métodos puedes llamar</b> (lo revisa el compilador). La clase real decide <b>qué versión se ejecuta</b> (lo decide la máquina virtual al correr).</div>
+
+<h3>El enlace dinámico funciona también desde dentro de la madre</h3>
+<p>Hay un detalle precioso en <code>Tarjeta</code>. Su <code>paintComponent</code> llama a <code>pintarDecoracion(g2, forma)</code>, que en <code>Tarjeta</code> está vacío. Pero cuando el objeto real es un <code>TarjetaConConfeti</code> (la tarjeta de la pantalla de victoria), esa llamada, escrita <b>en el código de la madre</b>, ejecuta la versión de la hija, que dibuja los papelitos. La regla no tiene excepciones: siempre manda la clase real del objeto, sin importar desde dónde se haga la llamada. Recorramos lo que ocurre cuando Swing pinta la tarjeta de victoria:</p>
+<ol>
+<li>Swing llama a <code>paint(g)</code> sobre el objeto. <code>TarjetaConConfeti</code> no tiene <code>paint</code>, <code>Tarjeta</code> tampoco, <code>JPanel</code> tampoco: se usa el de <code>JComponent</code>.</li>
+<li><code>JComponent.paint</code> llama a <code>paintComponent(g)</code>. Búsqueda desde la clase real: <code>TarjetaConConfeti</code> no lo tiene; <code>Tarjeta</code> sí. Se ejecuta el de <code>Tarjeta</code>: fondo de cristal.</li>
+<li><code>Tarjeta.paintComponent</code> llama a <code>pintarDecoracion(...)</code>. Búsqueda desde la clase real: <code>TarjetaConConfeti</code> sí lo tiene. Se dibuja el confeti.</li>
+<li>De vuelta en <code>Tarjeta.paintComponent</code>: se traza el borde de neón encima.</li>
+<li>De vuelta en <code>JComponent.paint</code>: <code>paintChildren</code> pinta el trofeo, el título y el tablero que están dentro de la tarjeta.</li>
+</ol>
+
+<h2>Una variable de tipo madre que apunta a una hija</h2>
+<p>La consecuencia práctica del polimorfismo es que puedes guardar un objeto hijo en una variable del tipo de su madre (o abuela, o cualquier antepasado). Es lo natural: si un <code>PantallaMenu</code> <b>es un</b> <code>JPanel</code>, puede ir donde se espera un <code>JPanel</code>. En la herramienta <code>VistaPrevia</code> (capítulo 56) está esta línea:</p>
+<pre class="java">            JPanel pantalla = new PantallaMenu(sinNavegacion);   // &lt;-- AQUI
+            pantalla.setPreferredSize(new Dimension(640, 690));</pre>
+<ul>
+<li><code>JPanel pantalla</code> — el tipo <b>declarado</b> de la variable es <code>JPanel</code>.</li>
+<li><code>=</code> — guarda en ella…</li>
+<li><code>new PantallaMenu(sinNavegacion)</code> — …una referencia a un objeto cuya clase <b>real</b> es <code>PantallaMenu</code>. Es válido porque <code>PantallaMenu</code> → <code>PantallaBase</code> → <code>JPanel</code>.</li>
+</ul>
+<p>¿Por qué declararla como <code>JPanel</code> y no como <code>PantallaMenu</code>? Por el comentario <code>&lt;-- AQUI</code>: esa es la línea que cambias para ver otra pantalla. Puedes escribir <code>new PantallaInstrucciones(sinNavegacion)</code> o <code>new PantallaConfiguracion(sinNavegacion)</code> y el resto del método sigue funcionando sin tocarlo, porque solo usa cosas que todo <code>JPanel</code> tiene (<code>setPreferredSize</code>) y lo entrega a <code>ventana.setContentPane(pantalla)</code>, que acepta cualquier <code>Container</code>. Cuando la ventana se pinte, por enlace dinámico se usará el <code>paintComponent</code> de <code>PantallaBase</code> y el aspecto de la pantalla elegida.</p>
+<p>A cambio, a través de la variable <code>pantalla</code> solo puedes llamar a métodos que existan en <code>JPanel</code>. Si <code>PantallaMenu</code> tuviera un método propio <code>resaltarJugar()</code>, <code>pantalla.resaltarJugar()</code> no compilaría: el compilador solo ve el tipo declarado y no puede garantizar que ahí habrá siempre un menú.</p>
+<p>Lo mismo ocurre, sin que se note, en muchos otros sitios del Totito:</p>
+<ul>
+<li>En <code>PanelPrincipal</code>, <code>add(new PantallaMenu(this), MENU);</code>. El método <code>add</code> de Swing recibe un <code>Component</code>. Las cinco pantallas, siendo de clases distintas, entran por la misma puerta.</li>
+<li>En <code>TotitoApp</code>, <code>setContentPane(new PanelPrincipal(this::cerrar));</code>: la ventana recibe un <code>Container</code>, y le llega un <code>PanelPrincipal</code>.</li>
+<li>En <code>PantallaBase</code>, <code>protected void agregar(JComponent componente)</code> acepta tarjetas, botones, rótulos, tableros y marcadores: todos son <code>JComponent</code>.</li>
+<li>En <code>TarjetaJugador.paintComponent</code>, <code>Iconos.Icono icono = esComputadora ? Iconos.COMPUTADORA : Iconos.PERSONA;</code> y luego <code>icono.dibujar(...)</code>: una variable, dos dibujos posibles. Aquí el tipo común no es una clase madre sino una <b>interfaz</b>; el polimorfismo funciona igual (capítulos 24 y 25).</li>
+</ul>
+
+<h2>Colecciones de tipo madre, <code>instanceof</code> y conversiones</h2>
+<p>Una lista declarada como <code>List&lt;Pantalla&gt;</code> puede guardar menús y pantallas de juego mezclados, y un solo <code>for</code> los trata a todos. Pero ¿y si una de las hijas tiene un método que las demás no tienen? Entonces hay que preguntar «¿eres de tal clase?» con <code>instanceof</code> y, si sí, ver al objeto con su tipo verdadero. Guarda <code>Conversiones.java</code>:</p>
+<pre class="java">import java.util.List;
+
+public class Conversiones {
+    public static void main(String[] args) {
+        List&lt;Pantalla&gt; pantallas = List.of(new PantallaMenu(), new PantallaJuego(), new PantallaMenu());
+
+        for (Pantalla p : pantallas) {
+            p.mostrar();                            // polimorfismo: no hace falta preguntar
+            if (p instanceof PantallaJuego juego) { // solo PantallaJuego sabe reiniciar
+                juego.reiniciar();
+            }
+        }
+
+        Pantalla cualquiera = pantallas.get(0);
+        PantallaJuego forzada = (PantallaJuego) cualquiera;   // ¡es un menú!
+        forzada.reiniciar();
+    }
+}
+
+class Pantalla {
+    void mostrar() {
+        System.out.println("Pantalla genérica");
+    }
+}
+
+class PantallaMenu extends Pantalla {
+    @Override
+    void mostrar() {
+        System.out.println("Menú: Jugar / Instrucciones / Salir");
+    }
+}
+
+class PantallaJuego extends Pantalla {
+    @Override
+    void mostrar() {
+        System.out.println("Juego: tablero de 3x3");
+    }
+
+    void reiniciar() {
+        System.out.println("  (tablero limpio)");
+    }
+}</pre>
+<pre class="salida">Menú: Jugar / Instrucciones / Salir
+Juego: tablero de 3x3
+  (tablero limpio)
+Menú: Jugar / Instrucciones / Salir
+Exception in thread "main" java.lang.ClassCastException: class PantallaMenu cannot be cast to class PantallaJuego (PantallaMenu and PantallaJuego are in unnamed module of loader com.sun.tools.javac.launcher.Main$MemoryClassLoader @6295d394)
+	at Conversiones.main(Conversiones.java:15)</pre>
+<p>Desarmemos las dos herramientas nuevas:</p>
+<ul>
+<li><code>p instanceof PantallaJuego juego</code> — <code>instanceof</code> pregunta «¿el objeto al que apunta <code>p</code> es un <code>PantallaJuego</code> (o una hija de ella)?» y devuelve <code>true</code> o <code>false</code>. La palabra <code>juego</code> al final es un <b>patrón</b> (disponible desde Java 16): si la respuesta es sí, crea una variable <code>juego</code> de tipo <code>PantallaJuego</code> que apunta al mismo objeto, lista para usar dentro del <code>if</code>.</li>
+<li><code>(PantallaJuego) cualquiera</code> — un <b>cast</b> o conversión de referencia: el nombre de una clase entre paréntesis delante de una expresión. Le dice al compilador «confía en mí, esto es un <code>PantallaJuego</code>». El compilador te cree, pero la máquina virtual lo comprueba al ejecutar; si mentiste, lanza <code>ClassCastException</code> (las excepciones son el tema del capítulo 26). La última línea del mensaje dice dónde ocurrió: <code>Conversiones.java:15</code>.</li>
+</ul>
+<p>El cast no convierte el objeto en otra cosa (un menú nunca se volverá juego); solo cambia el tipo con que <b>lo miras</b>. Es distinto del casting de números del capítulo 12, donde <code>(int) 3.7</code> sí produce un valor nuevo.</p>
+<div class="caja cuidado"><b>Muchos <code>instanceof</code> son una señal de alarma</b> Si te descubres escribiendo «si es menú haz esto, si es juego haz aquello, si es resultado haz lo otro», casi siempre la solución es un método en la madre que cada hija sobrescribe. Ese es precisamente el regalo del polimorfismo: <code>p.mostrar()</code> no pregunta nada. Fíjate en que el Totito no usa ni un solo <code>instanceof</code> en todo su código.</div>
+
+<h2>Sobrecarga y sobrescritura: parecidas de nombre, distintas por completo</h2>
+<p>En el capítulo 16 viste la <b>sobrecarga</b>: varios métodos con el mismo nombre en la misma clase, que se distinguen por sus parámetros. Se confunde mucho con la sobrescritura porque las dos palabras se parecen. La diferencia:</p>
+<table class="tabla">
+<tr><th></th><th>Sobrecarga (<i>overload</i>)</th><th>Sobrescritura (<i>override</i>)</th></tr>
+<tr><td>Dónde</td><td>En la misma clase (o heredados)</td><td>Una hija reemplaza el de su madre</td></tr>
+<tr><td>Firma</td><td>Mismo nombre, <b>parámetros distintos</b></td><td>Mismo nombre, <b>mismos parámetros</b></td></tr>
+<tr><td>Quién decide cuál se usa</td><td>El <b>compilador</b>, mirando los tipos declarados de los argumentos</td><td>La <b>máquina virtual</b>, al ejecutar, mirando la clase real del objeto</td></tr>
+<tr><td>Para qué sirve</td><td>Comodidad: la misma acción con distintos datos</td><td>Que cada tipo de objeto se comporte a su manera</td></tr>
+<tr><td>En el Totito</td><td><code>Tarjeta(Color)</code> y <code>Tarjeta(Color, int)</code>; <code>Dibujo.trazoNeon</code> con 4 y con 5 parámetros; <code>Rotulo.setTexto(texto)</code> y <code>setTexto(texto, desde, hasta)</code></td><td>Los 13 <code>paintComponent</code>; <code>doLayout</code> en <code>TarjetaJugador</code> y <code>Encabezado</code>; <code>pintarDecoracion</code> en <code>TarjetaConConfeti</code></td></tr>
+</table>
+<p>Las dos versiones de <code>Rotulo.setTexto</code> son un buen ejemplo de sobrecarga bien hecha: la de tres parámetros guarda los colores y luego llama a la de uno, así la lógica de «guardar el texto y repintar» existe una sola vez:</p>
+<pre class="java">    public void setTexto(String texto) {
+        this.texto = texto;
+        repaint();
+    }
+
+    public void setTexto(String texto, Color desde, Color hasta) {
+        this.desde = desde;
+        this.hasta = hasta;
+        setTexto(texto);
+    }</pre>
+<p>La diferencia de «quién decide» tiene consecuencias. Guarda <code>SobrecargaYSobrescritura.java</code>:</p>
+<pre class="java">public class SobrecargaYSobrescritura {
+    public static void main(String[] args) {
+        Letrero letrero = new Letrero();
+        letrero.setTexto("Turno de Ana");                    // versión de 1 parámetro
+        letrero.setTexto("¡Empate!", "lavanda", "morado");   // versión de 3 parámetros
+
+        Impresora imp = new Impresora();
+        Object algo = "hola";        // tipo declarado Object, objeto real String
+        imp.imprimir(algo);          // sobrecarga: decide el tipo DECLARADO (al compilar)
+        imp.imprimir("hola");
+
+        Animal a = new Gato();       // sobrescritura: decide el objeto REAL (al ejecutar)
+        a.hablar();
+    }
+}
+
+class Letrero {
+    private String texto = "";
+    private String desde = "blanco";
+    private String hasta = "blanco";
+
+    void setTexto(String texto) {
+        this.texto = texto;
+        System.out.println("Letrero: " + this.texto + " [" + desde + " -&gt; " + hasta + "]");
+    }
+
+    void setTexto(String texto, String desde, String hasta) {
+        this.desde = desde;
+        this.hasta = hasta;
+        setTexto(texto);   // reutiliza la otra versión
+    }
+}
+
+class Impresora {
+    void imprimir(Object o) {
+        System.out.println("imprimir(Object): " + o);
+    }
+
+    void imprimir(String s) {
+        System.out.println("imprimir(String): " + s);
+    }
+}
+
+class Animal {
+    void hablar() {
+        System.out.println("...");
+    }
+}
+
+class Gato extends Animal {
+    @Override
+    void hablar() {
+        System.out.println("Miau");
+    }
+}</pre>
+<pre class="salida">Letrero: Turno de Ana [blanco -&gt; blanco]
+Letrero: ¡Empate! [lavanda -&gt; morado]
+imprimir(Object): hola
+imprimir(String): hola
+Miau</pre>
+<p>Mira la tercera línea de la salida. La variable <code>algo</code> apunta a un <code>String</code>, y aun así se eligió <code>imprimir(Object)</code>. ¿Por qué? Porque la sobrecarga se resuelve <b>al compilar</b>, y el compilador solo sabe que <code>algo</code> es un <code>Object</code>. En cambio <code>a.hablar()</code> dijo «Miau» aunque <code>a</code> se declaró como <code>Animal</code>: la sobrescritura se resuelve <b>al ejecutar</b>, mirando el objeto real. Esta diferencia rara vez te morderá en el Totito, pero explica sorpresas que algún día verás.</p>
+
+<h2><code>doLayout</code>: otra puerta que Swing te deja abrir</h2>
+<p><code>paintComponent</code> no es el único método que Swing llama por ti. Todo <code>Container</code> tiene <code>doLayout()</code>, que Swing ejecuta cada vez que hay que <b>acomodar</b> a los hijos: al mostrarse por primera vez y cada vez que cambia de tamaño. La versión heredada le pide el trabajo al administrador de diseño (el <code>BorderLayout</code>, <code>BoxLayout</code>, etc., capítulo 37). Si no hay administrador (<code>setLayout(null)</code>), no hace nada y los hijos se quedan con tamaño cero: invisibles.</p>
+<p><code>TarjetaJugador</code> necesita colocar su campo de texto con precisión al pie de la tarjeta, debajo del icono y el título que ella misma dibuja. Ningún layout estándar lo hace exactamente así, de modo que quita el administrador y sobrescribe <code>doLayout</code>:</p>
+<pre class="java">        setLayout(null);   // el campo se coloca a mano en doLayout()
+        ...
+    @Override
+    public void doLayout() {
+        campo.setBounds(MARGEN + 12, getHeight() - MARGEN - 10 - 46, getWidth() - 2 * MARGEN - 24, 46);
+    }</pre>
+<ul>
+<li><code>public</code> — en <code>Container</code> el método es público; la hija no puede bajarlo.</li>
+<li><code>campo.setBounds(x, y, ancho, alto)</code> — fija posición y tamaño del campo en píxeles, relativos a la esquina de la tarjeta.</li>
+<li><code>getHeight() - MARGEN - 10 - 46</code> — la y se calcula desde el alto <b>actual</b>, así el campo queda pegado abajo aunque la tarjeta cambie de tamaño.</li>
+</ul>
+<p><code>Encabezado</code> hace lo mismo con su botón de cerrar: <code>super(null)</code> en el constructor y un <code>doLayout</code> que lo pone siempre a la derecha, a partir de <code>getWidth()</code>. ¿Qué pasaría si se borrara cualquiera de esos dos <code>doLayout</code>? El código compilaría sin errores, pero el campo del nombre o la X de cerrar <b>no aparecerían</b>: un ejemplo más de por qué el <code>@Override</code> y entender quién llama a qué importan.</p>
+<p>Y aquí también actúa el enlace dinámico: el código de Swing que llama a <code>doLayout()</code> fue escrito para <code>Container</code>, pero ejecuta el de <code>TarjetaJugador</code>.</p>
+
+<h2>Sobrescribir los métodos de <code>Object</code>: <code>toString</code> y <code>equals</code></h2>
+<p>En el capítulo 22 viste que todo objeto hereda <code>toString()</code>, <code>equals()</code> y <code>hashCode()</code> de <code>Object</code>, con un comportamiento muy básico. Sobrescribirlos es el uso más común del polimorfismo fuera de Swing. Guarda <code>ToStringEquals.java</code>:</p>
+<pre class="java">import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
+public class ToStringEquals {
+    public static void main(String[] args) {
+        JugadorSimple a = new JugadorSimple("Ana", 'X');
+        JugadorSimple b = new JugadorSimple("Ana", 'X');
+        System.out.println("Sin sobrescribir: " + a);
+        System.out.println("a == b: " + (a == b) + ", a.equals(b): " + a.equals(b));
+
+        Jugador c = new Jugador("Ana", 'X');
+        Jugador d = new Jugador("Ana", 'X');
+        System.out.println("Sobrescrito: " + c);
+        System.out.println("c == d: " + (c == d) + ", c.equals(d): " + c.equals(d));
+
+        Set&lt;Jugador&gt; inscritos = new HashSet&lt;&gt;();
+        inscritos.add(c);
+        inscritos.add(d);
+        System.out.println("Jugadores distintos inscritos: " + inscritos.size());
+    }
+}
+
+class JugadorSimple {
+    private final String nombre;
+    private final char ficha;
+
+    JugadorSimple(String nombre, char ficha) {
+        this.nombre = nombre;
+        this.ficha = ficha;
+    }
+}
+
+class Jugador {
+    private final String nombre;
+    private final char ficha;
+
+    Jugador(String nombre, char ficha) {
+        this.nombre = nombre;
+        this.ficha = ficha;
+    }
+
+    @Override
+    public String toString() {
+        return nombre + " (" + ficha + ")";
+    }
+
+    @Override
+    public boolean equals(Object otro) {
+        if (this == otro) {
+            return true;
+        }
+        if (!(otro instanceof Jugador j)) {
+            return false;
+        }
+        return ficha == j.ficha &amp;&amp; nombre.equals(j.nombre);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(nombre, ficha);
+    }
+}</pre>
+<pre class="salida">Sin sobrescribir: JugadorSimple@56528192
+a == b: false, a.equals(b): false
+Sobrescrito: Ana (X)
+c == d: false, c.equals(d): true
+Jugadores distintos inscritos: 1</pre>
+<p>Lo que hay que notar:</p>
+<ul>
+<li><code>toString</code> se declara <code>public String toString()</code>, exactamente como en <code>Object</code>. Ahora, al concatenar un <code>Jugador</code> con texto, Java llama a <b>tu</b> versión (enlace dinámico otra vez: <code>String</code> no sabe que existe tu clase).</li>
+<li><code>equals</code> recibe un <code>Object</code>, no un <code>Jugador</code>. Si escribieras <code>equals(Jugador otro)</code> no estarías sobrescribiendo sino <b>sobrecargando</b>, y colecciones como <code>HashSet</code> seguirían usando la de <code>Object</code>. El <code>@Override</code> te lo señalaría.</li>
+<li>Dentro de <code>equals</code>: si es el mismo objeto, <code>true</code>; si no es un <code>Jugador</code> (o es <code>null</code>: <code>instanceof</code> da <code>false</code> con <code>null</code>), <code>false</code>; si lo es, se comparan los datos. Los <code>String</code> se comparan con <code>equals</code> (capítulo 17) y los <code>char</code> con <code>==</code>.</li>
+<li>Si sobrescribes <code>equals</code>, sobrescribe <b>siempre</b> <code>hashCode</code>: dos objetos iguales deben dar el mismo número. <code>Objects.hash(...)</code> lo calcula a partir de los atributos. Sin él, el <code>HashSet</code> podría guardar a «Ana (X)» dos veces.</li>
+</ul>
+<div class="caja concepto"><b>¿Y por qué el <code>Jugador</code> del Totito no sobrescribe <code>equals</code>?</b> Porque el juego necesita saber si dos variables apuntan al <b>mismo</b> jugador, no si dos jugadores se parecen. En <code>Partida.esComputadora</code> se escribe <code>jugador == jugadores[1]</code>, y en <code>PanelMarcador</code>, <code>partida.getJugadorEnTurno() == jugador</code>. Si los dos jugadores se llamaran «Ana» (cosa que la pantalla de configuración permite), un <code>equals</code> por nombre podría confundirlos; <code>==</code> compara identidad y nunca se equivoca. Sobrescribe <code>equals</code> cuando tu programa necesite decir «son equivalentes» (dos productos con el mismo código, dos fechas iguales), no por costumbre.</div>
+
+<h2>Lo que NO es polimórfico</h2>
+<p>El enlace dinámico se aplica a los <b>métodos de instancia</b> que se pueden sobrescribir. Todo lo demás se decide al compilar, por el tipo declarado. Guarda <code>NoPolimorfico.java</code>:</p>
+<pre class="java">public class NoPolimorfico {
+    public static void main(String[] args) {
+        Padre p = new Hijo();
+        System.out.println("Método de instancia: " + p.saludo());
+        System.out.println("Método static:       " + p.tipo());
+        System.out.println("Campo:               " + p.nombre);
+        Hijo h = (Hijo) p;
+        System.out.println("Campo visto como Hijo: " + h.nombre);
+    }
+}
+
+class Padre {
+    String nombre = "campo del Padre";
+
+    String saludo() {
+        return "saludo del Padre";
+    }
+
+    static String tipo() {
+        return "static del Padre";
+    }
+}
+
+class Hijo extends Padre {
+    String nombre = "campo del Hijo";   // NO sustituye: oculta
+
+    @Override
+    String saludo() {
+        return "saludo del Hijo";
+    }
+
+    static String tipo() {               // NO es sobrescritura: oculta
+        return "static del Hijo";
+    }
+}</pre>
+<pre class="salida">Método de instancia: saludo del Hijo
+Método static:       static del Padre
+Campo:               campo del Padre
+Campo visto como Hijo: campo del Hijo</pre>
+<table class="tabla">
+<tr><th>Elemento</th><th>¿Polimórfico?</th><th>Por qué</th></tr>
+<tr><td>Método de instancia (no <code>private</code>, no <code>final</code>, no <code>static</code>)</td><td>Sí</td><td>Se elige por la clase real del objeto.</td></tr>
+<tr><td>Método <code>static</code></td><td>No</td><td>Pertenece a la clase, no al objeto (capítulo 20). La hija que escribe uno igual lo <b>oculta</b>, no lo sobrescribe; ponerle <code>@Override</code> da error.</td></tr>
+<tr><td>Atributo (campo)</td><td>No</td><td>Un campo con el mismo nombre en la hija es <b>otro</b> campo que oculta al primero; el objeto tiene los dos.</td></tr>
+<tr><td>Método <code>private</code></td><td>No</td><td>La hija ni siquiera lo ve.</td></tr>
+<tr><td>Método <code>final</code></td><td>No se puede sobrescribir</td><td>La madre lo prohibió.</td></tr>
+<tr><td>Constructor</td><td>No</td><td>No se hereda (capítulo 22).</td></tr>
+</table>
+<p>En el Totito esto aparece de forma sana. <code>TarjetaJugador</code> usa <code>MARGEN</code> sin declararlo: es la constante <code>static</code> <code>Tarjeta.MARGEN</code> (vale 10), accesible desde la hija. <code>BotonNeon</code> y <code>PanelTablero</code> tienen cada uno su propio <code>MARGEN</code> privado, pero no hay conflicto: no son parientes de <code>Tarjeta</code>. Y el <code>color</code> de <code>TarjetaJugador</code> no «oculta» al de <code>Tarjeta</code> en el sentido peligroso, porque el de la madre es <code>private</code> e invisible para la hija; son dos campos independientes que guardan el mismo valor (lo viste en el capítulo 22).</p>
+<div class="caja cuidado"><b>No ocultes campos a propósito</b> Declarar en la hija un campo con el mismo nombre que uno visible de la madre casi siempre es un error que produce resultados como el de arriba («campo del Padre» cuando esperabas «campo del Hijo»). Mantén los campos <code>private</code> y accede a ellos con métodos: los métodos sí son polimórficos.</div>
+
+<h2>Dos conversiones reales en el Totito</h2>
+<p>Aunque el Totito no usa <code>instanceof</code>, sí tiene dos casts de referencia, y vale la pena entender por qué son seguros:</p>
+<pre class="java">        Graphics2D g2 = (Graphics2D) g.create();</pre>
+<p>En <code>Dibujo.preparar</code> (capítulo 41). Por razones históricas, <code>paintComponent</code> recibe un <code>Graphics</code>, la clase antigua y sencilla. Pero desde hace décadas Swing <b>siempre</b> entrega en realidad un <code>Graphics2D</code>, su hija, que sabe de degradados, trazos gruesos y suavizado. El cast es la forma de decir «sé que en realidad es un <code>Graphics2D</code>, déjame usar sus métodos». Es seguro porque la documentación de Swing lo garantiza.</p>
+<pre class="java">        ((AbstractDocument) getDocument()).setDocumentFilter(new LimiteDeLargo());</pre>
+<p>En <code>CampoTexto</code> (capítulo 47). <code>getDocument()</code> se declara como un <code>Document</code>, pero el de un <code>JTextField</code> es un <code>AbstractDocument</code>, que es quien tiene <code>setDocumentFilter</code>. Fíjate en los paréntesis dobles: los de dentro hacen el cast, los de fuera agrupan para que el <code>.setDocumentFilter</code> se aplique al resultado ya convertido.</p>
+
+<h2>Qué pasaría sin polimorfismo</h2>
+<p>Sin enlace dinámico, Swing tendría que tener dentro un <code>if</code> por cada clase de componente que exista en el mundo: «si es <code>JButton</code>, pinta botón; si es <code>JLabel</code>, pinta etiqueta…». Como tus clases no existían cuando se escribió Swing, <b>nunca</b> podrías crear un componente con dibujo propio. Tendrías que pedirle a Oracle que agregara tu <code>BotonNeon</code> a Swing. El polimorfismo invierte la situación: Swing define el «hueco» (<code>paintComponent</code>, <code>doLayout</code>) y cada quien lo llena. Es el principio de diseño «abierto para extender, cerrado para modificar» que resume el capítulo 27.</p>
+<p>Lo mismo en tu propio código: <code>PanelPrincipal</code> trata a las cinco pantallas como <code>Component</code> al agregarlas; si mañana agregas una pantalla de «Estadísticas», heredará de <code>PantallaBase</code> y entrará por el mismo <code>add</code> sin cambiar nada de lo que ya funciona.</p>
+
+<h2>Cómo aplicarlo en otros sistemas</h2>
+<ul>
+<li><b>Banco:</b> una lista <code>List&lt;Cuenta&gt;</code> con cuentas monetarias y de ahorro. A fin de mes, un solo <code>for</code> llama a <code>cuenta.calcularInteres()</code> y cada tipo de cuenta aplica su tasa. Agregar «cuenta a plazo fijo» no toca el cierre de mes.</li>
+<li><b>Tienda:</b> <code>producto.precioFinal()</code> sobrescrito en <code>ProductoEnOferta</code> (con descuento) y <code>ProductoPorPeso</code> (precio por libra). La factura suma sin preguntar el tipo.</li>
+<li><b>Escuela:</b> <code>Evaluacion.calcularNota()</code> sobrescrito en <code>Examen</code> (aciertos), <code>Tarea</code> (entregada o no) y <code>Proyecto</code> (rúbrica). El boletín recorre todas.</li>
+<li><b>Otro juego:</b> en un Conecta 4 o un juego de naves, cada enemigo sobrescribe <code>mover()</code> y <code>dibujar()</code>; el ciclo principal del juego llama a esos métodos sobre una lista de enemigos, sin <code>if</code> por tipo.</li>
+<li><b>Reportes:</b> una clase <code>Exportador</code> con <code>exportar(datos)</code>, y hijas que generan CSV, HTML o texto. El botón «Exportar» llama al que el usuario eligió.</li>
+</ul>
+
+<h2>Resumen</h2>
+<ul>
+<li><b>Sobrescribir</b> es escribir en la hija un método con la misma firma que uno heredado; se marca con <code>@Override</code>, que convierte errores de dedo en errores de compilación.</li>
+<li>Al sobrescribir no se puede reducir la visibilidad ni cambiar los parámetros; si cambias los parámetros, estás <b>sobrecargando</b>.</li>
+<li><b>Enlace dinámico:</b> la versión que se ejecuta la decide la clase real del objeto al correr el programa. Por eso Swing ejecuta tu <code>paintComponent</code> y tu <code>doLayout</code> sin conocer tus clases, y <code>Tarjeta</code> ejecuta el <code>pintarDecoracion</code> del confeti.</li>
+<li>Una variable de tipo madre puede apuntar a una hija (<code>JPanel pantalla = new PantallaMenu(...)</code>): el tipo declarado decide qué puedes llamar; la clase real, qué se ejecuta.</li>
+<li><code>instanceof</code> (con patrón) pregunta la clase real; el cast cambia el tipo con que miras un objeto y lanza <code>ClassCastException</code> si es falso. Muchos <code>instanceof</code> suelen pedir un método polimórfico.</li>
+<li>La sobrecarga la resuelve el compilador; la sobrescritura, la máquina virtual. Los métodos <code>static</code>, los campos y los <code>private</code> no son polimórficos.</li>
+<li>Si sobrescribes <code>equals</code>, sobrescribe <code>hashCode</code>; y usa <code>==</code> cuando lo que importa es la identidad, como hace el Totito con sus jugadores.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Componentes propios en cualquier aplicación de escritorio:</b> una gráfica de barras, un indicador de batería o un calendario se hacen igual que <code>PanelTablero</code>: <code>extends JComponent</code> y <code>@Override paintComponent</code>. Swing se encarga de llamarlo cuando haga falta.</li>
+<li><b>Sistema de nóminas:</b> <code>Empleado</code> con <code>calcularSalario()</code>, sobrescrito en <code>EmpleadoPorHora</code> y <code>EmpleadoPorComision</code>. La planilla del mes es un único <code>for</code> sobre una lista de empleados.</li>
+<li><b>Inventario de una ferretería:</b> <code>toString()</code> sobrescrito para que cada artículo se imprima bonito en reportes y listas, y <code>equals</code>/<code>hashCode</code> por código de producto para que un <code>HashSet</code> no repita artículos.</li>
+<li><b>Juegos por turnos:</b> una clase <code>Jugador</code> con <code>elegirJugada()</code>, y dos hijas: <code>JugadorHumano</code> (espera el clic) y <code>JugadorComputadora</code> (consulta a la IA). La partida pide la jugada sin saber quién juega.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b><ol>
+<li>En <code>EnlaceDinamico.java</code>, agrega una clase <code>Marcador extends Componente</code> que pinte <code>Ana 2 - 1 Luis</code>. Agrégala a la lista de <code>main</code> y comprueba que <code>MiniSwing</code> la pinta sin modificar <code>MiniSwing</code>.</li>
+<li>En la clase <code>Tablero</code> de ese mismo archivo, cambia <code>void pintar()</code> por <code>void pintar(String color)</code> sin quitar <code>@Override</code>. Lee el error. Luego quita el <code>@Override</code>, corre el programa y explica qué se imprime para el tablero y por qué. Pista: ¿sobrescritura o sobrecarga?</li>
+<li>En <code>ToStringEquals.java</code>, quita el método <code>hashCode</code> de <code>Jugador</code> y vuelve a correrlo varias veces. ¿Cuántos jugadores inscritos aparecen ahora? Explica por qué <code>equals</code> y <code>hashCode</code> deben ir juntos.</li>
+<li>Escribe <code>Planilla.java</code> con una clase <code>Empleado</code> (nombre y <code>double calcularSalario()</code>) y dos hijas: <code>EmpleadoFijo</code> (salario mensual) y <code>EmpleadoPorHora</code> (horas × tarifa). En <code>main</code>, guarda varios en una <code>List&lt;Empleado&gt;</code>, imprime cada uno con un <code>toString</code> sobrescrito y el total de la planilla. Prohibido usar <code>instanceof</code>.</li>
+<li>Reto: busca en el código del Totito (o en este capítulo) los 13 <code>paintComponent</code> y, para cinco de ellos, escribe una frase sobre qué dibujan y si llaman o no a <code>super.paintComponent</code>. Pista: <code>TarjetaJugador</code> y <code>CampoTexto</code> lo llaman; ¿en qué momento cada uno?</li>
+</ol></div>
+</section>

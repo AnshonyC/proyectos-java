@@ -1,0 +1,754 @@
+<section class="capitulo" id="cap21">
+<h1><span class="num">Capítulo 21</span>Composición y relaciones entre clases</h1>
+<p class="entrada">Ningún objeto del Totito trabaja solo: la partida usa un tablero, el tablero recibe fichas de los jugadores, la IA estudia el tablero y las pantallas le piden cosas al panel principal. En este capítulo aprendes a nombrar y a dibujar esas relaciones (tiene-un, es-un, usa-un) y por qué casi siempre conviene <b>armar</b> objetos con piezas en lugar de heredarlos.</p>
+
+<h2>Un programa es un equipo de objetos</h2>
+<p>Piensa en un carro. Nadie fabrica un carro de una sola pieza: se arma con un motor, cuatro llantas, un timón y un tablero de instrumentos, y cada pieza la hace un especialista. Si se arruina una llanta, se cambia la llanta, no el carro. Y el mismo modelo de llanta sirve para otros carros.</p>
+<p>Los programas bien hechos se arman igual. En los capítulos 18 a 20 viste cómo es <b>una</b> clase por dentro. Ahora la pregunta es otra: <b>¿cómo se relacionan las clases entre sí?</b> Hay pocas formas de hacerlo, y cada una tiene nombre:</p>
+<ul>
+<li><b>Es-un</b>: un <code>BotonNeon</code> <i>es un</i> botón de Swing (<code>JButton</code>). Es la <b>herencia</b>, del capítulo 22.</li>
+<li><b>Cumple el contrato de</b>: <code>PanelPrincipal</code> <i>cumple</i> la interfaz <code>Navegacion</code>. Es la <b>implementación</b>, del capítulo 24.</li>
+<li><b>Tiene-un</b>: una <code>Partida</code> <i>tiene un</i> <code>Tablero</code>. Es la <b>composición</b> (y su prima, la agregación). Tema de este capítulo.</li>
+<li><b>Conoce-a</b> y <b>usa-un</b>: la pantalla de juego <i>conoce</i> la partida que muestra; la IA <i>usa</i> un tablero mientras piensa. Son la <b>asociación</b> y la <b>dependencia</b>. También de este capítulo.</li>
+</ul>
+
+<h2>1. La prueba de la frase: ¿tiene-un o es-un?</h2>
+<p>Antes de escribir código, di la relación en voz alta. Si la frase suena bien con «tiene un», es composición; si suena bien con «es un», puede ser herencia. Si las dos suenan mal, quizá solo hay un «usa».</p>
+<table class="tabla">
+<tr><th>Frase</th><th>¿Suena bien?</th><th>Relación en el Totito</th></tr>
+<tr><td>Una partida <b>tiene un</b> tablero</td><td>Sí</td><td>Composición: <code>Partida</code> guarda un <code>Tablero</code></td></tr>
+<tr><td>Una partida <b>es un</b> tablero</td><td>No: la partida tiene turnos y marcador; el tablero no</td><td>Por eso <code>Partida</code> no hereda de <code>Tablero</code></td></tr>
+<tr><td>Una partida <b>tiene dos</b> jugadores</td><td>Sí</td><td>Agregación: <code>Jugador[] jugadores</code></td></tr>
+<tr><td>Un botón neón <b>es un</b> botón</td><td>Sí</td><td>Herencia: <code>BotonNeon extends JButton</code> (capítulo 22)</td></tr>
+<tr><td>La pantalla de juego <b>tiene un</b> tablero dibujado y un marcador</td><td>Sí</td><td>Composición: <code>PanelTablero</code> y <code>PanelMarcador</code></td></tr>
+<tr><td>La IA <b>tiene un</b> tablero</td><td>No del todo: lo <b>usa</b> mientras piensa</td><td>Dependencia: lo recibe como parámetro</td></tr>
+</table>
+<div class="caja concepto"><b>Composición</b> Es cuando un objeto está <b>hecho de</b> otros objetos: los guarda en sus atributos y les pasa parte del trabajo. En Java no hay ninguna palabra especial para eso: simplemente un atributo cuyo tipo es otra clase.</div>
+
+<h2>2. Composición: Partida tiene un Tablero</h2>
+
+<h3>Cómo se escribe</h3>
+<p>En <code>Partida.java</code> (capítulo 38):</p>
+<pre class="java">private final Tablero tablero = new Tablero();</pre>
+<p>Palabra por palabra:</p>
+<ul>
+<li><code>private</code>: nadie de fuera toca este atributo directamente (capítulo 19).</li>
+<li><code>final</code>: la partida tendrá <b>siempre el mismo</b> tablero; puede vaciarlo, pero no cambiarlo por otro (capítulo 20).</li>
+<li><code>Tablero</code>: el <b>tipo</b> del atributo es otra clase escrita por ti. Aquí está la composición: no es un <code>int</code> ni un <code>String</code>, es un objeto completo con sus propios métodos.</li>
+<li><code>tablero</code>: el nombre del atributo, en minúscula, como la clase. Es la costumbre cuando hay uno solo.</li>
+<li><code>= new Tablero();</code>: la partida <b>crea su propio tablero</b> al nacer. Nadie se lo da; es suyo.</li>
+</ul>
+<p>Que la partida cree su tablero tiene una consecuencia: el tablero <b>nace y muere con la partida</b>. Cuando el programa ya no tiene ninguna referencia a una <code>Partida</code> (por ejemplo, porque empezaste otra nueva), Java se encarga de liberar su memoria y, con ella, la de su tablero. Ese limpiador automático se llama <b>recolector de basura</b> (<i>garbage collector</i>): recorre la memoria y borra los objetos a los que ya nadie apunta. Por eso en Java nunca escribes «borrar objeto».</p>
+<p><code>Partida</code> tiene más piezas del mismo tipo:</p>
+<pre class="java">private final IA_Minimax ia;
+private final int[] victorias = new int[2];</pre>
+<p>La IA también la crea la propia partida, pero solo en el modo contra la computadora (<code>this.ia = modo == Modo.CONTRA_IA ? new IA_Minimax(...) : null;</code>). En el diagrama de la sección 7 verás esa relación anotada como «0..1»: cero o una IA.</p>
+
+<h3>Delegar: pasar el trabajo a la pieza que sabe</h3>
+<p>Tener piezas sirve para algo muy concreto: <b>delegar</b>. Delegar es que un objeto, en vez de hacer él mismo una tarea, se la encargue a una de sus partes. Mira el corazón de <code>Partida.jugar</code>:</p>
+<pre class="java">public boolean jugar(int fila, int columna) {
+    if (estado != Estado.EN_CURSO) {
+        return false;
+    }
+    if (!tablero.marcarCasilla(fila, columna, jugadores[turno].getFicha())) {
+        return false;
+    }
+    if (tablero.verificarGanador() != Tablero.VACIA) {
+        estado = Estado.VICTORIA;
+        ganador = jugadores[turno];
+        victorias[turno]++;
+    } else if (tablero.tableroLleno()) {
+        estado = Estado.EMPATE;
+        empates++;
+    } else {
+        turno = 1 - turno;
+    }
+    return true;
+}</pre>
+<p>Cuenta las preguntas que <code>Partida</code> <b>no</b> sabe responder sola: «¿esta casilla está libre?» (<code>tablero.marcarCasilla</code>), «¿hay tres en línea?» (<code>tablero.verificarGanador</code>), «¿se llenó?» (<code>tablero.tableroLleno</code>). Todas se las delega al tablero. A cambio, <code>Partida</code> se ocupa de lo que el tablero no sabe: de quién es el turno, quién ganó y cuántas veces. Y para el turno de la computadora delega en la IA:</p>
+<pre class="java">int[] jugada = ia.calcularMejorJugada(tablero);
+jugar(jugada[0], jugada[1]);</pre>
+<p>El punto (<code>tablero.</code>, <code>ia.</code>) es la forma de «hablarle» a una pieza: «tablero, marca esta casilla». Cada objeto hace lo suyo y le pide al de al lado lo que no le toca.</p>
+
+<h3>Qué pasaría sin composición</h3>
+<p>Imagina que <code>Partida</code> tuviera dentro su propio <code>char[][] casillas</code>, los bucles de <code>verificarGanador</code> y el algoritmo Minimax completo. Funcionaría, pero:</p>
+<ul>
+<li>Sería una clase de cientos de líneas mezclando tres temas (reglas, turnos e inteligencia artificial), difícil de leer y de corregir.</li>
+<li><b>No se podría reutilizar el tablero</b> sin una partida. Y el Totito lo reutiliza en varios lugares: <code>PruebaConsola</code> (capítulo 32) juega con un <code>Tablero</code> suelto; <code>PantallaInstrucciones.tableroDeEjemplo()</code> crea un tablero de muestra con cuatro fichas para dibujarlo; la IA crea miles de copias con <code>obtenerCopia()</code> para simular jugadas. Nada de eso sería posible si el tablero viviera «enterrado» dentro de <code>Partida</code>.</li>
+<li>No se podría <b>probar</b> cada pieza por separado.</li>
+</ul>
+<p>De hecho, el Totito ya pasó por ese problema. La primera versión, <code>JuegoMain</code> (capítulo 33), guarda el tablero, el jugador y la IA, pero además maneja los turnos, los botones, los colores y la etiqueta de estado, todo en una sola clase. En la versión 1.0 esas tareas se repartieron: las reglas de los turnos pasaron a <code>Partida</code> y la pantalla a <code>PantallaJuego</code>. Ese cambio lo estudiarás como caso completo en el capítulo 27.</p>
+
+<h2>3. Agregación: los jugadores llegan de fuera</h2>
+<p>Mira ahora el otro atributo de <code>Partida</code>:</p>
+<pre class="java">private final Jugador[] jugadores;
+
+public Partida(Jugador jugador1, Jugador jugador2, Modo modo) {
+    ...
+    this.jugadores = new Jugador[]{jugador1, jugador2};</pre>
+<p>La partida crea el <b>arreglo</b>, pero los <b>jugadores</b> no los crea ella: le llegan como parámetros. ¿Quién los crea? <code>PantallaConfiguracion.comenzar()</code> (capítulo 58), con lo que el usuario escribió:</p>
+<pre class="java">navegacion.iniciarPartida(
+        new Jugador(jugador1.getNombre(), fichaJugador1),
+        new Jugador(jugador2.getNombre(), fichaJugador2),
+        modo);</pre>
+<p>A esta variante de «tiene-un» se le llama <b>agregación</b>: el objeto tiene la pieza, pero la pieza <b>viene de fuera</b> y podría existir sin él, o ser compartida. La analogía: un equipo de fútbol <i>tiene</i> jugadores, pero los jugadores existían antes del equipo y pueden pasar a otro. En cambio, el corazón de una persona (composición) no existe sin ella.</p>
+<table class="tabla">
+<tr><th></th><th>Composición</th><th>Agregación</th></tr>
+<tr><td>¿Quién crea la pieza?</td><td>El dueño (<code>new</code> adentro)</td><td>Otro objeto, y se la pasa</td></tr>
+<tr><td>¿Puede vivir sin el dueño?</td><td>No tiene sentido</td><td>Sí</td></tr>
+<tr><td>En el Totito</td><td><code>Partida</code> → <code>Tablero</code>, <code>IA_Minimax</code></td><td><code>Partida</code> → <code>Jugador</code></td></tr>
+<tr><td>En el diagrama UML</td><td>Rombo relleno</td><td>Rombo hueco</td></tr>
+</table>
+<div class="caja consejo"><b>No te obsesiones con la diferencia</b> En el código Java, composición y agregación se escriben igual: un atributo que guarda una referencia. La diferencia está en la <b>intención</b> del diseño: quién crea la pieza y quién es responsable de ella. Muchos equipos dicen «composición» para las dos, y está bien. Lo importante es la pregunta de fondo: «¿esta pieza es solo mía, o la comparto con otros?». Si la compartes, recuerda que un cambio hecho por un dueño lo ven todos (capítulo 18, referencias). Por eso ayuda tanto que <code>Jugador</code> sea inmutable: aunque varios objetos lo compartan, nadie puede cambiarle el nombre a escondidas.</div>
+
+<h3>Una partida mini, armada con piezas</h3>
+<p>Este programa reproduce, en pequeño, cómo se arma <code>Partida</code>: un tablero propio (composición), dos jugadores que llegan de fuera (agregación) y métodos que delegan. Guárdalo como <code>DemoComposicion.java</code> en tu carpeta de prácticas:</p>
+<pre class="java">public class DemoComposicion {
+
+    public static void main(String[] args) {
+        Jugador ana = new Jugador("Ana", 'X');
+        Jugador luis = new Jugador("Luis", 'O');
+
+        MiniPartida partida = new MiniPartida(ana, luis);
+        partida.jugar(0, 0);   // Ana
+        partida.jugar(1, 1);   // Luis
+        partida.jugar(0, 1);   // Ana
+        partida.jugar(2, 2);   // Luis
+        partida.jugar(0, 2);   // Ana: tres en la fila de arriba
+        System.out.println(partida.dibujar());
+        System.out.println("Ganador: " + partida.getGanador().getNombre());
+
+        // Los jugadores llegaron de fuera: siguen existiendo sin la partida
+        MiniPartida revancha = new MiniPartida(luis, ana);
+        System.out.println("Revancha, empieza: " + revancha.getEnTurno().getNombre());
+        System.out.println("¿Es el mismo objeto Ana? " + (revancha.getJugador(1) == ana));
+    }
+}
+
+class Jugador {
+    private final String nombre;
+    private final char ficha;
+
+    Jugador(String nombre, char ficha) {
+        this.nombre = nombre;
+        this.ficha = ficha;
+    }
+
+    String getNombre() { return nombre; }
+    char getFicha() { return ficha; }
+}
+
+class MiniTablero {
+    private final char[][] casillas = new char[3][3];
+
+    MiniTablero() {
+        for (char[] fila : casillas) {
+            java.util.Arrays.fill(fila, '.');
+        }
+    }
+
+    boolean marcar(int fila, int columna, char ficha) {
+        if (casillas[fila][columna] != '.') {
+            return false;
+        }
+        casillas[fila][columna] = ficha;
+        return true;
+    }
+
+    boolean hayTresEnLinea(char f) {
+        for (int i = 0; i &lt; 3; i++) {
+            if (casillas[i][0] == f &amp;&amp; casillas[i][1] == f &amp;&amp; casillas[i][2] == f) return true;
+            if (casillas[0][i] == f &amp;&amp; casillas[1][i] == f &amp;&amp; casillas[2][i] == f) return true;
+        }
+        return (casillas[0][0] == f &amp;&amp; casillas[1][1] == f &amp;&amp; casillas[2][2] == f)
+                || (casillas[0][2] == f &amp;&amp; casillas[1][1] == f &amp;&amp; casillas[2][0] == f);
+    }
+
+    String dibujar() {
+        StringBuilder texto = new StringBuilder();
+        for (char[] fila : casillas) {
+            texto.append(fila[0]).append(' ').append(fila[1]).append(' ').append(fila[2]).append('\n');
+        }
+        return texto.toString();
+    }
+}
+
+class MiniPartida {
+    private final MiniTablero tablero = new MiniTablero();   // composicion: nace y muere con la partida
+    private final Jugador[] jugadores;                       // agregacion: llegan de fuera
+    private int turno = 0;
+    private Jugador ganador;
+
+    MiniPartida(Jugador primero, Jugador segundo) {
+        jugadores = new Jugador[]{primero, segundo};
+    }
+
+    void jugar(int fila, int columna) {
+        Jugador enTurno = jugadores[turno];
+        if (ganador != null || !tablero.marcar(fila, columna, enTurno.getFicha())) {
+            return;                                  // delega la regla en el tablero
+        }
+        if (tablero.hayTresEnLinea(enTurno.getFicha())) {
+            ganador = enTurno;
+        } else {
+            turno = 1 - turno;
+        }
+    }
+
+    String dibujar() { return tablero.dibujar(); }   // delegacion pura
+    Jugador getGanador() { return ganador; }
+    Jugador getEnTurno() { return jugadores[turno]; }
+    Jugador getJugador(int i) { return jugadores[i]; }
+}</pre>
+<pre class="ps">cd $HOME\Proyectos\Practicas
+java DemoComposicion.java</pre>
+<pre class="salida">X X X
+. O .
+. . O
+
+Ganador: Ana
+Revancha, empieza: Luis
+¿Es el mismo objeto Ana? true</pre>
+<p>Lo que debes notar:</p>
+<ul>
+<li><code>MiniPartida</code> no sabe nada de cómo se recorre la matriz: se lo pregunta a su <code>MiniTablero</code>. El método <code>dibujar()</code> es <b>delegación pura</b>: una sola línea que reenvía el pedido.</li>
+<li>Los objetos <code>ana</code> y <code>luis</code> se crearon en <code>main</code>, sirvieron para una partida y luego para la revancha. La última línea lo prueba: el jugador 2 de la revancha <b>es el mismo objeto</b> <code>ana</code> (<code>==</code> compara referencias, capítulo 18). En cambio, cada partida tiene su <b>propio</b> tablero vacío.</li>
+<li>Para escribir varios métodos cortos en una línea (<code>String getNombre() { return nombre; }</code>) solo se juntaron las llaves; Java no distingue entre una línea o varias. En el Totito se usa siempre la forma larga, que es la recomendada.</li>
+</ul>
+
+<h2>4. Asociación y dependencia: conocer y usar</h2>
+
+<h3>Asociación: «te conozco y te hablo cuando hace falta»</h3>
+<p>No toda referencia guardada es una pieza propia. <code>PantallaJuego</code> (capítulo 59) tiene este atributo:</p>
+<pre class="java">private Partida partida;</pre>
+<p>La pantalla <b>no crea</b> la partida (la crea <code>PanelPrincipal</code>), ni la considera parte de sí misma: solo la <b>conoce</b> para mostrarla y pasarle los clics. Y la cambia: cada vez que empiezas una partida nueva, <code>comenzar(partida)</code> le entrega otra. A esa relación de «guardo una referencia a alguien que no es mío» se le llama <b>asociación</b>. Es la relación de un médico con su paciente: lo conoce, lo atiende, pero no le pertenece.</p>
+<p>Otras asociaciones del Totito:</p>
+<ul>
+<li>Cada pantalla guarda la <code>Navegacion</code> que recibe en su constructor (<code>private final Navegacion navegacion;</code> en <code>PantallaJuego</code> y <code>PantallaConfiguracion</code>) para pedirle «llévame al menú».</li>
+<li><code>PanelMarcador</code> guarda <code>private Partida partida;</code> para leer los nombres y las victorias cada vez que se dibuja.</li>
+<li><code>PanelTablero</code> guarda su <code>OyenteCasilla</code>: a quién avisar cuando hacen clic (capítulos 24 y 25).</li>
+</ul>
+
+<h3>Dependencia: «te uso un momento y te suelto»</h3>
+<p>La relación más débil es la <b>dependencia</b>: una clase usa a otra solo durante un método, porque la recibe como parámetro o la crea para un uso rápido, pero <b>no la guarda</b>. El mejor ejemplo es la IA:</p>
+<pre class="java">public int[] calcularMejorJugada(Tablero tablero) {</pre>
+<p><code>IA_Minimax</code> no tiene ningún atributo <code>Tablero</code>. Cada vez que le toca pensar, la partida le pasa el tablero actual; la IA lo estudia, devuelve una jugada y se olvida de él. ¿Por qué así y no guardándolo? Porque si la IA guardara «su» tablero, habría que acordarse de actualizarlo cada vez que se reinicia la partida o se empieza otra, y si alguien olvidara hacerlo, la IA pensaría sobre un tablero viejo. Recibiéndolo como parámetro, <b>siempre</b> trabaja con el tablero de ese momento. Es como un mecánico: no se queda con tu carro, lo revisa cuando se lo llevas.</p>
+<p>Otras dependencias:</p>
+<ul>
+<li><code>PanelTablero.mostrar(Tablero tablero)</code> copia las fichas a su propia matriz y no guarda el tablero (por qué copia lo viste en el capítulo 19).</li>
+<li>Casi todas las clases de la interfaz dependen de <code>Tema</code>, <code>Dibujo</code> e <code>Iconos</code>: usan sus constantes y métodos <code>static</code> (capítulo 20) sin guardar nada.</li>
+</ul>
+
+<h3>Las cuatro relaciones de «usar», de la más fuerte a la más débil</h3>
+<table class="tabla">
+<tr><th>Relación</th><th>Pista en el código</th><th>Ejemplo del Totito</th><th>Analogía</th></tr>
+<tr><td>Composición</td><td>Atributo creado con <code>new</code> por el propio objeto</td><td><code>Partida.tablero</code></td><td>El motor de un carro</td></tr>
+<tr><td>Agregación</td><td>Atributo que llega por el constructor y vive aparte</td><td><code>Partida.jugadores</code></td><td>Los jugadores de un equipo</td></tr>
+<tr><td>Asociación</td><td>Atributo que apunta a algo ajeno, a veces cambiante</td><td><code>PantallaJuego.partida</code>, <code>navegacion</code></td><td>Médico y paciente</td></tr>
+<tr><td>Dependencia</td><td>Solo un parámetro o una variable local</td><td><code>calcularMejorJugada(Tablero tablero)</code></td><td>El mecánico que revisa tu carro</td></tr>
+</table>
+<div class="caja consejo"><b>Elige siempre la relación más débil que funcione</b> Cuanto más fuerte es una relación, más se «amarran» las dos clases: si una cambia, la otra se entera. Si te basta con recibir algo como parámetro, no lo guardes en un atributo. Esa idea de que las clases dependan poco unas de otras se llama <b>bajo acoplamiento</b>, y la retomarás en el capítulo 27.</div>
+
+<h2>5. PanelPrincipal: el objeto que arma a todos</h2>
+<p>Toda aplicación tiene un lugar donde se «arman» las piezas. En el Totito es el constructor de <code>PanelPrincipal</code> (capítulo 61):</p>
+<pre class="java">public PanelPrincipal(Runnable alSalir) {
+    this.alSalir = alSalir;
+    setLayout(cartas);
+    setPreferredSize(new Dimension(ANCHO, ALTO));
+
+    pantallaJuego = new PantallaJuego(this);
+    pantallaResultado = new PantallaResultado(this);
+    add(new PantallaMenu(this), MENU);
+    add(new PantallaInstrucciones(this), INSTRUCCIONES);
+    add(new PantallaConfiguracion(this), CONFIGURACION);
+    add(pantallaJuego, JUEGO);
+    add(pantallaResultado, RESULTADO);
+    cartas.show(this, MENU);
+}</pre>
+<p>Crea las cinco pantallas (composición: son suyas y viven dentro de él, como cartas de un mazo; el <code>CardLayout</code> muestra una a la vez, capítulo 37). Pero fíjate en un detalle: <b>solo dos</b> se guardan en atributos, <code>pantallaJuego</code> y <code>pantallaResultado</code>. Las otras tres se crean y se agregan directamente con <code>add(...)</code>, sin variable. ¿Por qué? Porque <code>PanelPrincipal</code> necesita <b>hablarles más tarde</b> solo a esas dos: a la de juego para decirle <code>comenzar(partida)</code> y a la de resultado para decirle <code>mostrar(partida)</code>. Al menú, a las instrucciones y a la configuración nunca les tiene que pedir nada; basta con que existan dentro del mazo (el propio panel las guarda como hijas). Guardar referencias que nadie usa solo agrega ruido.</p>
+<p>Y fíjate en el <code>this</code> que recibe cada pantalla: es la asociación de vuelta. <code>PanelPrincipal</code> <b>tiene</b> las pantallas, y cada pantalla <b>conoce</b> a <code>PanelPrincipal</code>, pero solo como <code>Navegacion</code> (capítulo 24): sabe que puede pedirle «ir al menú», nada más.</p>
+
+<h3>Sigue el hilo de un clic</h3>
+<p>Para ver las relaciones en acción, sigue lo que pasa cuando el usuario pulsa <b>Comenzar partida</b>:</p>
+<ol>
+<li><code>PantallaConfiguracion.comenzar()</code> crea dos <code>Jugador</code> y llama a <code>navegacion.iniciarPartida(j1, j2, modo)</code>. La pantalla no sabe quién está detrás de <code>navegacion</code>; solo hace el pedido.</li>
+<li>Detrás está <code>PanelPrincipal.iniciarPartida</code>, que hace <code>partida = new Partida(jugador1, jugador2, modo);</code>. Si había una partida anterior, esta variable deja de apuntarle.</li>
+<li>Luego llama a <code>pantallaJuego.comenzar(partida)</code>: la pantalla de juego ahora <b>conoce</b> la partida nueva (asociación) y suelta la vieja. Como ya nadie apunta a la partida vieja, el recolector de basura la eliminará, con su tablero y su IA.</li>
+<li>Por último, <code>cartas.show(this, JUEGO)</code> pone la pantalla de juego al frente.</li>
+</ol>
+<p>Ningún objeto conoce a todos los demás. La pantalla de configuración no sabe que existe la de juego; la partida no sabe que hay pantallas. Cada uno conoce solo a sus vecinos inmediatos. Esa es la señal de un buen diseño.</p>
+
+<h2>6. Composición en la interfaz: pantallas hechas de piezas</h2>
+<p>La interfaz neón se arma como un juego de bloques. <code>PantallaJuego</code> declara sus piezas así:</p>
+<pre class="java">private final PanelMarcador marcador = new PanelMarcador();
+private final Rotulo turno = Rotulo.titulo("", 26f, Tema.TEXTO, Tema.TEXTO, 590, 44);
+private final PanelTablero tablero = new PanelTablero(100);</pre>
+<p>y en el constructor las coloca de arriba abajo: <code>agregar(marcador)</code>, <code>agregar(turno)</code>, <code>agregar(tablero)</code> y una fila con los botones. Cada pieza sabe dibujarse sola; la pantalla solo decide <b>cuáles</b> lleva y <b>en qué orden</b>.</p>
+<p>La gran ventaja es la <b>reutilización</b>. La misma clase <code>PanelTablero</code> aparece en tres pantallas, configurada distinto cada vez:</p>
+<table class="tabla">
+<tr><th>Pantalla</th><th>Cómo crea su PanelTablero</th><th>Para qué</th></tr>
+<tr><td><code>PantallaJuego</code></td><td><code>new PanelTablero(100)</code> + <code>setOyente(...)</code></td><td>Tablero grande e interactivo</td></tr>
+<tr><td><code>PantallaResultado</code></td><td><code>new PanelTablero(66)</code></td><td>Tablero mediano con la raya ganadora</td></tr>
+<tr><td><code>PantallaInstrucciones</code></td><td><code>new PanelTablero(46)</code></td><td>Tablero pequeño de ejemplo</td></tr>
+</table>
+<p>Y así está hecha cada pantalla:</p>
+<table class="tabla">
+<tr><th>Pantalla</th><th>Piezas que tiene (composición)</th></tr>
+<tr><td><code>PantallaMenu</code></td><td>una <code>Tarjeta</code> con tres <code>BotonNeon</code> de menú</td></tr>
+<tr><td><code>PantallaInstrucciones</code></td><td><code>Tarjeta</code>, <code>Rotulo</code> de título, tres <code>PasoInstruccion</code>, <code>PanelTablero</code>, <code>BotonNeon</code></td></tr>
+<tr><td><code>PantallaConfiguracion</code></td><td>tres <code>Rotulo</code> de sección, dos <code>TarjetaJugador</code> (cada una con su <code>CampoTexto</code>), <code>SelectorSimbolo</code>, dos <code>OpcionModo</code>, dos <code>BotonNeon</code></td></tr>
+<tr><td><code>PantallaJuego</code></td><td><code>PanelMarcador</code>, <code>Rotulo</code> del turno, <code>PanelTablero</code>, dos <code>BotonNeon</code></td></tr>
+<tr><td><code>PantallaResultado</code></td><td><code>TarjetaConConfeti</code> con <code>IconoResultado</code>, dos <code>Rotulo</code> y <code>PanelTablero</code>; dos <code>BotonNeon</code></td></tr>
+<tr><td>Todas (vía <code>PantallaBase</code>)</td><td>un <code>Encabezado</code>, que a su vez tiene un <code>BotonNeon</code> de cerrar</td></tr>
+</table>
+<p>Si mañana quisieras mostrar el marcador también en la pantalla de resultado, no tendrías que escribir nada nuevo: bastaría con agregar un <code>PanelMarcador</code> más. Esa es la promesa de la composición: <b>piezas pequeñas que se combinan</b>.</p>
+
+<h2>7. El diagrama de clases del Totito</h2>
+<p>Cuando un programa tiene treinta clases, la lista de archivos ya no basta para entenderlo: hace falta un mapa. Los programadores usan <b>UML</b> (<i>Unified Modeling Language</i>, Lenguaje Unificado de Modelado), una forma estándar de dibujar clases como cajas y sus relaciones como líneas con distintas puntas. UML tiene muchísimos detalles; aquí usamos solo lo esencial. Estas son las puntas:</p>
+<figure>
+<svg viewBox="0 0 620 222" width="100%" role="img" aria-label="Leyenda de los diagramas de clases" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="620" height="222" rx="14" fill="#1C1740"/>
+<polyline points="30,30 157,30" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<polygon points="170,30 157,23 157,37" fill="#1C1740" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="195" y="34" font-family="sans-serif" font-size="13" fill="#FFFFFF" text-anchor="start">Herencia (es-un): flecha hueca hacia el padre</text>
+<polyline points="30,64 157,64" fill="none" stroke="#C8BCF6" stroke-width="1.6" stroke-dasharray="6 4"/>
+<polygon points="170,64 157,57 157,71" fill="#1C1740" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="195" y="68" font-family="sans-serif" font-size="13" fill="#FFFFFF" text-anchor="start">Implementa una interfaz (cumple el contrato)</text>
+<polygon points="30,98 39,104 48,98 39,92" fill="#C8BCF6" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="48,98 170,98" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="195" y="102" font-family="sans-serif" font-size="13" fill="#FFFFFF" text-anchor="start">Composici&#243;n (tiene-un: lo crea y es suyo)</text>
+<polygon points="30,132 39,138 48,132 39,126" fill="#1C1740" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="48,132 170,132" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="195" y="136" font-family="sans-serif" font-size="13" fill="#FFFFFF" text-anchor="start">Agregaci&#243;n (tiene-un, pero llega de fuera)</text>
+<polyline points="30,166 170,166" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="159,160 170,166 159,172" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="195" y="170" font-family="sans-serif" font-size="13" fill="#FFFFFF" text-anchor="start">Asociaci&#243;n (guarda una referencia y la usa)</text>
+<polyline points="30,200 170,200" fill="none" stroke="#C8BCF6" stroke-width="1.6" stroke-dasharray="6 4"/>
+<polyline points="159,194 170,200 159,206" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="195" y="204" font-family="sans-serif" font-size="13" fill="#FFFFFF" text-anchor="start">Dependencia (lo usa solo un momento)</text>
+</svg>
+<figcaption>Las seis líneas que usaremos. La forma de la punta dice qué relación es; la punta va siempre del lado de la clase que «tiene», que «es» o que «es usada», según el caso.</figcaption>
+</figure>
+<p>Para que se lea bien, el Totito va en dos diagramas. El primero muestra la <b>lógica</b> y cómo se conecta con la navegación; las cajas llevan el nombre de la clase arriba y, debajo de la raya, algunos de sus datos y métodos:</p>
+<figure>
+<svg viewBox="0 0 820 495" width="100%" role="img" aria-label="Diagrama de clases del Totito: logica y navegacion" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="820" height="495" rx="14" fill="#1C1740"/>
+<rect x="20" y="20" width="180" height="56" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="110" y="40" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">TotitoApp</text>
+<line x1="20" y1="47" x2="200" y2="47" stroke="#2F84FF" stroke-width="1"/>
+<text x="110" y="62" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">extends JFrame</text>
+<rect x="300" y="20" width="220" height="56" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="410" y="40" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">PanelPrincipal</text>
+<line x1="300" y1="47" x2="520" y2="47" stroke="#2F84FF" stroke-width="1"/>
+<text x="410" y="62" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">extends JPanel</text>
+<rect x="630" y="20" width="170" height="56" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="715" y="40" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Navegacion</text>
+<text x="715" y="56" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">&#171;interfaz&#187;</text>
+<polygon points="200,48 209,54 218,48 209,42" fill="#C8BCF6" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="218,48 300,48" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="285" y="42" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">1</text>
+<polyline points="520,48 617,48" fill="none" stroke="#C8BCF6" stroke-width="1.6" stroke-dasharray="6 4"/>
+<polygon points="630,48 617,41 617,55" fill="#1C1740" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="575" y="40" font-family="sans-serif" font-size="10" fill="#C8BCF6" text-anchor="middle">implementa</text>
+<rect x="20" y="170" width="230" height="122" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="135" y="190" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Las 5 pantallas</text>
+<line x1="20" y1="197" x2="250" y2="197" stroke="#2F84FF" stroke-width="1"/>
+<text x="135" y="212" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">PantallaMenu</text>
+<text x="135" y="228" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">PantallaInstrucciones</text>
+<text x="135" y="244" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">PantallaConfiguracion</text>
+<text x="135" y="260" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">PantallaJuego</text>
+<text x="135" y="276" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">PantallaResultado</text>
+<rect x="330" y="170" width="200" height="122" rx="8" fill="#1C1740" stroke="#A05CFF" stroke-width="2"/>
+<text x="430" y="190" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Partida</text>
+<line x1="330" y1="197" x2="530" y2="197" stroke="#A05CFF" stroke-width="1"/>
+<text x="430" y="212" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">enum Modo, enum Estado</text>
+<text x="430" y="228" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">turno, estado, ganador</text>
+<text x="430" y="244" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">victorias, empates</text>
+<text x="430" y="260" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">jugar(), reiniciar()</text>
+<polygon points="340,76 334,85 340,94 346,85" fill="#C8BCF6" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="340,94 340,120 135,120 135,170" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="147" y="160" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="start">5</text>
+<polygon points="440,76 434,85 440,94 446,85" fill="#C8BCF6" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="440,94 440,170" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="448" y="160" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="start">0..1</text>
+<polyline points="250,195 290,195 290,140 715,140 715,76" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="709,87 715,76 721,87" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="600" y="118" font-family="sans-serif" font-size="10" fill="#C8BCF6" text-anchor="middle">cada pantalla guarda una</text>
+<text x="600" y="132" font-family="sans-serif" font-size="10" fill="#C8BCF6" text-anchor="middle">y le pide los cambios</text>
+<polyline points="250,262 330,262" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="319,256 330,262 319,268" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="290" y="255" font-family="sans-serif" font-size="10" fill="#C8BCF6" text-anchor="middle">usa</text>
+<rect x="230" y="370" width="160" height="80" rx="8" fill="#1C1740" stroke="#A05CFF" stroke-width="2"/>
+<text x="310" y="390" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Tablero</text>
+<line x1="230" y1="397" x2="390" y2="397" stroke="#A05CFF" stroke-width="1"/>
+<text x="310" y="412" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">casillas[3][3]</text>
+<text x="310" y="428" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">marcarCasilla()</text>
+<rect x="420" y="370" width="150" height="80" rx="8" fill="#1C1740" stroke="#A05CFF" stroke-width="2"/>
+<text x="495" y="390" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Jugador</text>
+<line x1="420" y1="397" x2="570" y2="397" stroke="#A05CFF" stroke-width="1"/>
+<text x="495" y="412" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">nombre, ficha</text>
+<text x="495" y="428" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">getNombre()</text>
+<rect x="600" y="370" width="200" height="80" rx="8" fill="#1C1740" stroke="#A05CFF" stroke-width="2"/>
+<text x="700" y="390" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">IA_Minimax</text>
+<line x1="600" y1="397" x2="800" y2="397" stroke="#A05CFF" stroke-width="1"/>
+<text x="700" y="412" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">fichaIA, fichaJugador</text>
+<text x="700" y="428" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">calcularMejorJugada()</text>
+<polygon points="380,292 374,301 380,310 386,301" fill="#C8BCF6" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="380,310 310,370" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="330" y="350" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="start">1</text>
+<polygon points="450,292 444,301 450,310 456,301" fill="#1C1740" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="450,310 495,370" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="480" y="345" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="start">2</text>
+<polygon points="515,292 509,301 515,310 521,301" fill="#C8BCF6" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="515,310 680,370" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="620" y="345" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="start">0..1</text>
+<polyline points="700,450 700,478 310,478 310,450" fill="none" stroke="#C8BCF6" stroke-width="1.6" stroke-dasharray="6 4"/>
+<polyline points="304,461 310,450 316,461" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<text x="505" y="472" font-family="sans-serif" font-size="10" fill="#C8BCF6" text-anchor="middle">recibe un Tablero como par&#225;metro</text>
+<rect x="20" y="330" width="185" height="120" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="112.5" y="350" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Versi&#243;n 0.1</text>
+<line x1="20" y1="357" x2="205" y2="357" stroke="#C8BCF6" stroke-width="1"/>
+<text x="112.5" y="372" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">JuegoMain (JFrame) y</text>
+<text x="112.5" y="388" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">PruebaConsola usan</text>
+<text x="112.5" y="404" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">Tablero, Jugador e</text>
+<text x="112.5" y="420" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">IA_Minimax sin Partida</text>
+</svg>
+<figcaption>Diagrama 1. Lógica y navegación: TotitoApp crea PanelPrincipal; PanelPrincipal implementa Navegacion, tiene las cinco pantallas y la Partida en curso; la Partida tiene un Tablero, dos Jugador y, solo contra la IA, una IA_Minimax, que recibe el tablero como parámetro.</figcaption>
+</figure>
+<p>Los números junto a las líneas se llaman <b>multiplicidad</b>: cuántos objetos hay de cada lado. «1» es exactamente uno; «2», dos (los jugadores); «0..1», ninguno o uno (la IA, que solo existe contra la computadora; o la partida, que no existe hasta que empiezas a jugar); «5», las cinco pantallas.</p>
+<p>El segundo diagrama muestra la <b>herencia</b> de la interfaz: de qué clase de Swing desciende cada componente. Es un adelanto del capítulo 22, donde se explica a fondo:</p>
+<figure>
+<svg viewBox="0 0 820 530" width="100%" role="img" aria-label="Jerarquia de herencia de la interfaz del Totito" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="820" height="530" rx="14" fill="#1C1740"/>
+<rect x="10" y="20" width="120" height="30" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="70" y="39.68" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">JFrame</text>
+<polygon points="20,50 13,63 27,63" fill="#1C1740" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="20,63 20,147" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="20,105 30,105" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="30" y="90" width="100" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="80" y="109.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">TotitoApp</text>
+<polyline points="20,147 30,147" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="30" y="132" width="100" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="80" y="151.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">JuegoMain</text>
+<rect x="150" y="20" width="140" height="30" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="220" y="39.68" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">JPanel</text>
+<polygon points="160,50 153,63 167,63" fill="#1C1740" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="160,63 160,315" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="160,105 170,105" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="170" y="90" width="120" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="230" y="109.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">PanelPrincipal</text>
+<polyline points="160,147 170,147" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="170" y="132" width="120" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="230" y="151.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Encabezado</text>
+<polyline points="160,189 170,189" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="170" y="174" width="120" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="230" y="193.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">PasoInstruccion</text>
+<polyline points="160,231 170,231" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="170" y="216" width="120" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="230" y="235.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Tarjeta</text>
+<polyline points="160,315 170,315" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="170" y="300" width="120" height="30" rx="8" fill="#1C1740" stroke="#FF3BD4" stroke-width="2"/>
+<text x="230" y="319.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle" font-style="italic">PantallaBase</text>
+<polygon points="290,231 303,238 303,224" fill="#1C1740" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="303,231 310,231" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="303,231 303,273 310,273" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="310" y="216" width="150" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="385" y="234.96" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">TarjetaJugador</text>
+<rect x="310" y="258" width="150" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="385" y="276.96" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">TarjetaConConfeti</text>
+<polygon points="290,315 303,322 303,308" fill="#1C1740" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="303,315 303,483" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="303,315 310,315" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="310" y="300" width="150" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="385" y="318.96" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">PantallaMenu</text>
+<polyline points="303,357 310,357" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="310" y="342" width="150" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="385" y="360.96" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">PantallaInstrucciones</text>
+<polyline points="303,399 310,399" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="310" y="384" width="150" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="385" y="402.96" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">PantallaConfiguracion</text>
+<polyline points="303,441 310,441" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="310" y="426" width="150" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="385" y="444.96" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">PantallaJuego</text>
+<polyline points="303,483 310,483" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="310" y="468" width="150" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="385" y="486.96" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">PantallaResultado</text>
+<rect x="480" y="20" width="150" height="30" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="555" y="39.68" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">JComponent</text>
+<polygon points="490,50 483,63 497,63" fill="#1C1740" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="490,63 490,315" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="490,105 500,105" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="500" y="90" width="130" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="565" y="109.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">PanelTablero</text>
+<polyline points="490,147 500,147" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="500" y="132" width="130" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="565" y="151.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Rotulo</text>
+<polyline points="490,189 500,189" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="500" y="174" width="130" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="565" y="193.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">SelectorSimbolo</text>
+<polyline points="490,231 500,231" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="500" y="216" width="130" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="565" y="235.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">OpcionModo</text>
+<polyline points="490,273 500,273" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="500" y="258" width="130" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="565" y="277.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">PanelMarcador</text>
+<polyline points="490,315 500,315" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="500" y="300" width="130" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="565" y="319.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">IconoResultado</text>
+<rect x="650" y="20" width="150" height="30" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="725" y="39.68" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">JButton</text>
+<polygon points="660,50 653,63 667,63" fill="#1C1740" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="660,63 660,105" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="660,105 670,105" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="670" y="90" width="130" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="735" y="109.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">BotonNeon</text>
+<rect x="650" y="150" width="150" height="30" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="725" y="169.68" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">JTextField</text>
+<polygon points="660,180 653,193 667,193" fill="#1C1740" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="660,193 660,235" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<polyline points="660,235 670,235" fill="none" stroke="#C8BCF6" stroke-width="1.6"/>
+<rect x="670" y="220" width="130" height="30" rx="8" fill="#1C1740" stroke="#2F84FF" stroke-width="2"/>
+<text x="735" y="239.32" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">CampoTexto</text>
+<rect x="480" y="400" width="320" height="110" rx="8" fill="#1C1740" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="640" y="420" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Heredan directo de Object</text>
+<line x1="480" y1="427" x2="800" y2="427" stroke="#C8BCF6" stroke-width="1"/>
+<text x="640" y="442" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">Partida, Tablero, Jugador, IA_Minimax</text>
+<text x="640" y="458" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">Tema, Dibujo, Iconos (utilidades)</text>
+<text x="640" y="474" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="middle">Navegacion (interfaz)</text>
+<text x="648" y="290" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="start">Punteado: clases de Swing</text>
+<text x="648" y="308" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="start">Azul: clases del Totito</text>
+<text x="648" y="326" font-family="sans-serif" font-size="11" fill="#C8BCF6" text-anchor="start">Rosa cursiva: abstracta</text>
+</svg>
+<figcaption>Diagrama 2. Jerarquía de la interfaz. Cada clase del Totito extiende una de Swing (en punteado). PantallaBase es abstracta (capítulo 24) y es la madre de las cinco pantallas; Tarjeta es la madre de TarjetaJugador y de TarjetaConConfeti, que es una clase interna de PantallaResultado (capítulo 25). Las clases de lógica y utilidades no extienden nada de Swing: heredan directamente de Object.</figcaption>
+</figure>
+<p>Observa algo revelador al comparar los dos diagramas: la <b>lógica</b> (diagrama 1, parte de abajo) está hecha casi solo de composición, y la <b>interfaz</b> (diagrama 2) usa herencia porque Swing está diseñado así: para que un objeto pueda ponerse en una ventana, tiene que <i>ser</i> un componente de Swing. Pero aun en la interfaz, las pantallas se <b>arman</b> por composición (la tabla de la sección 6).</p>
+
+<h3>Resumen del diagrama en una tabla</h3>
+<table class="tabla">
+<tr><th>Clase</th><th>Es un (hereda de)</th><th>Tiene (composición / agregación)</th><th>Conoce o usa</th></tr>
+<tr><td><code>TotitoApp</code></td><td><code>JFrame</code></td><td><code>PanelPrincipal</code></td><td><code>Dibujo</code>, <code>Iconos</code>, <code>Tema</code></td></tr>
+<tr><td><code>PanelPrincipal</code></td><td><code>JPanel</code>; implementa <code>Navegacion</code></td><td>5 pantallas, <code>CardLayout</code>, <code>Partida</code> en curso</td><td><code>Runnable alSalir</code></td></tr>
+<tr><td><code>Partida</code></td><td><code>Object</code></td><td><code>Tablero</code>, 2 <code>Jugador</code>, 0..1 <code>IA_Minimax</code></td><td>—</td></tr>
+<tr><td><code>Tablero</code></td><td><code>Object</code></td><td><code>char[3][3]</code></td><td>—</td></tr>
+<tr><td><code>IA_Minimax</code></td><td><code>Object</code></td><td>dos <code>char</code></td><td><code>Tablero</code> (parámetro)</td></tr>
+<tr><td><code>Jugador</code></td><td><code>Object</code></td><td><code>String</code> y <code>char</code></td><td>—</td></tr>
+<tr><td>Cada pantalla</td><td><code>PantallaBase</code> → <code>JPanel</code></td><td>sus piezas (sección 6) y un <code>Encabezado</code></td><td><code>Navegacion</code>; la de juego y la de resultado, la <code>Partida</code></td></tr>
+<tr><td><code>PanelTablero</code></td><td><code>JComponent</code></td><td><code>char[3][3]</code> propio</td><td><code>Tablero</code> (parámetro de <code>mostrar</code>), <code>OyenteCasilla</code></td></tr>
+<tr><td><code>JuegoMain</code> (v0.1)</td><td><code>JFrame</code></td><td><code>Tablero</code>, <code>Jugador</code>, <code>IA_Minimax</code>, 9 <code>JButton</code></td><td>—</td></tr>
+</table>
+<div class="caja consejo"><b>Dibuja antes de programar</b> No necesitas un programa especial: papel y lápiz bastan. Antes de escribir un proyecto nuevo, dibuja sus cajas y pregúntate, para cada par, «¿tiene, es, conoce o usa?». Diez minutos de diagrama ahorran horas de reescribir código. En el capítulo 28 harás justo eso con la lógica del Totito antes de escribir <code>Tablero.java</code>.</div>
+
+<h2>8. Por qué preferir la composición</h2>
+<p>Hay un consejo famoso en el diseño orientado a objetos: <b>«prefiere la composición a la herencia»</b>. No significa que la herencia sea mala (el capítulo 22 la usa a fondo), sino que, cuando dudes, empieces por «tiene-un». Tres razones, con el Totito como prueba:</p>
+
+<h3>Razón 1: la herencia te obliga a heredar todo</h3>
+<p>Imagina que alguien, para «ahorrarse» la composición, hubiera escrito <code>class Partida extends Tablero</code>. Una partida tendría entonces, por herencia, el método público <code>marcarCasilla</code>. Cualquier pantalla podría llamar <code>partida.marcarCasilla(0, 0, 'O')</code> y poner una ficha <b>saltándose los turnos</b>, el estado y el marcador. Todas las reglas que <code>Partida.jugar</code> protege se podrían esquivar. Con composición, el tablero es <code>private</code> y la única puerta para jugar es <code>jugar(fila, columna)</code>, que respeta las reglas. La herencia rompería el encapsulamiento del capítulo 19.</p>
+
+<h3>Razón 2: con composición puedes «no tener» la pieza</h3>
+<p>En el modo de dos jugadores no hay IA: <code>ia</code> vale <code>null</code>. Si <code>Partida</code> heredara de <code>IA_Minimax</code>, toda partida <b>sería</b> una IA, haya o no computadora. Con composición, tener o no tener la pieza se decide al crear el objeto.</p>
+
+<h3>Razón 3: la composición se puede cambiar mientras el programa corre</h3>
+<p>Una herencia se decide al escribir el código y no cambia nunca: un <code>BotonNeon</code> será un <code>JButton</code> toda su vida. Una pieza, en cambio, se puede reemplazar. Míralo en un juego de aventuras:</p>
+<pre class="java">public class DemoPersonaje {
+
+    public static void main(String[] args) {
+        Personaje heroe = new Personaje("Itzel", new Arma("espada", 12));
+        heroe.atacar();
+        heroe.atacar();
+
+        System.out.println("-- Itzel encuentra un arco --");
+        heroe.cambiarArma(new Arma("arco", 9));
+        heroe.atacar();
+    }
+}
+
+class Arma {
+    private final String nombre;
+    private final int danio;
+
+    Arma(String nombre, int danio) {
+        this.nombre = nombre;
+        this.danio = danio;
+    }
+
+    String getNombre() { return nombre; }
+    int getDanio() { return danio; }
+}
+
+class Personaje {
+    private final String nombre;
+    private Arma arma;   // TIENE un arma, y la puede cambiar
+
+    Personaje(String nombre, Arma arma) {
+        this.nombre = nombre;
+        this.arma = arma;
+    }
+
+    void cambiarArma(Arma nueva) {
+        this.arma = nueva;
+    }
+
+    void atacar() {
+        System.out.println(nombre + " ataca con " + arma.getNombre()
+                + " y hace " + arma.getDanio() + " de danio");
+    }
+}</pre>
+<pre class="salida">Itzel ataca con espada y hace 12 de danio
+Itzel ataca con espada y hace 12 de danio
+-- Itzel encuentra un arco --
+Itzel ataca con arco y hace 9 de danio</pre>
+<p>Con herencia tendrías que escribir <code>GuerreroConEspada</code>, <code>GuerreroConArco</code>, <code>MagaConEspada</code>, <code>MagaConArco</code>… una clase por cada combinación, y aun así el personaje no podría cambiar de arma a mitad del juego. Con composición son dos clases y cualquier combinación. Fíjate en que <code>arma</code> <b>no</b> es <code>final</code>: es justo la pieza que debe poder cambiar.</p>
+<p>El Totito usa esta misma idea con los iconos: un <code>BotonNeon</code> no es un «botón con icono de casa» ni un «botón con icono de reiniciar»; es un botón que <b>tiene</b> un <code>Iconos.Icono</code>, y el icono que lleva se decide al crearlo. Esa técnica se llama <b>Strategy</b> (estrategia) y la verás con nombre en los capítulos 25 y 27.</p>
+
+<div class="caja cuidado"><b>Cuándo sí heredar</b> La herencia es la herramienta correcta cuando la frase «es un» es verdadera <b>y</b> necesitas que tu objeto se pueda usar en cualquier lugar donde se espera al padre. <code>BotonNeon</code> tiene que <i>ser</i> un <code>JButton</code> porque Swing solo sabe meter en una ventana objetos que sean componentes, y porque así se le puede llamar a <code>addActionListener</code> como a cualquier botón. Lo verás en el capítulo 22, junto con los casos en que heredar es un error.</div>
+
+<h2>9. Fuera del juego: una tienda armada con piezas</h2>
+<p>Las mismas cuatro relaciones aparecen en cualquier sistema. Este programa modela el pedido de una librería: el pedido <b>tiene</b> sus renglones (composición: los crea él y no tienen sentido fuera del pedido), <b>conoce</b> al cliente (asociación: el cliente existe aunque no haya pedidos) y <b>usa</b> una tarifa de envío solo al calcular el recibo (dependencia).</p>
+<pre class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class DemoTienda {
+
+    public static void main(String[] args) {
+        Cliente marta = new Cliente("Marta López", "Zona 1, Quetzaltenango");
+
+        Pedido pedido = new Pedido(1001, marta);
+        pedido.agregar("Cuaderno", 2, 12.50);
+        pedido.agregar("Lapicero azul", 3, 4.00);
+        pedido.agregar("Mochila", 1, 185.00);
+
+        System.out.println(pedido.recibo(new TarifaEnvio(25.00, 300.00)));
+    }
+}
+
+/** Datos del cliente. Existe aunque no haya pedidos. */
+class Cliente {
+    private final String nombre;
+    private final String direccion;
+
+    Cliente(String nombre, String direccion) {
+        this.nombre = nombre;
+        this.direccion = direccion;
+    }
+
+    String getNombre() { return nombre; }
+    String getDireccion() { return direccion; }
+}
+
+/** Un renglon del pedido. Solo tiene sentido dentro de un Pedido. */
+class Linea {
+    private final String producto;
+    private final int cantidad;
+    private final double precio;
+
+    Linea(String producto, int cantidad, double precio) {
+        this.producto = producto;
+        this.cantidad = cantidad;
+        this.precio = precio;
+    }
+
+    double subtotal() { return cantidad * precio; }
+
+    String texto() {
+        return String.format("%2d x %-14s Q%8.2f", cantidad, producto, subtotal());
+    }
+}
+
+/** Sabe cobrar el envio. El pedido solo la USA un momento. */
+class TarifaEnvio {
+    private final double costo;
+    private final double gratisDesde;
+
+    TarifaEnvio(double costo, double gratisDesde) {
+        this.costo = costo;
+        this.gratisDesde = gratisDesde;
+    }
+
+    double calcular(double total) {
+        return total &gt;= gratisDesde ? 0 : costo;
+    }
+}
+
+class Pedido {
+    private final int numero;
+    private final Cliente cliente;                         // asociacion: el cliente viene de fuera
+    private final List&lt;Linea&gt; lineas = new ArrayList&lt;&gt;();  // composicion: las lineas son del pedido
+
+    Pedido(int numero, Cliente cliente) {
+        this.numero = numero;
+        this.cliente = cliente;
+    }
+
+    void agregar(String producto, int cantidad, double precio) {
+        lineas.add(new Linea(producto, cantidad, precio));  // el pedido crea sus lineas
+    }
+
+    double total() {
+        double suma = 0;
+        for (Linea linea : lineas) {
+            suma += linea.subtotal();                       // delega en cada linea
+        }
+        return suma;
+    }
+
+    String recibo(TarifaEnvio tarifa) {                     // dependencia: llega como parametro
+        StringBuilder texto = new StringBuilder();
+        texto.append("Pedido #").append(numero).append(" para ").append(cliente.getNombre()).append('\n');
+        texto.append("Enviar a: ").append(cliente.getDireccion()).append('\n');
+        for (Linea linea : lineas) {
+            texto.append("  ").append(linea.texto()).append('\n');
+        }
+        double envio = tarifa.calcular(total());
+        texto.append(String.format("  Productos:          Q%8.2f%n", total()));
+        texto.append(String.format("  Envio:              Q%8.2f%n", envio));
+        texto.append(String.format("  TOTAL:              Q%8.2f", total() + envio));
+        return texto.toString();
+    }
+}</pre>
+<pre class="salida">Pedido #1001 para Marta López
+Enviar a: Zona 1, Quetzaltenango
+   2 x Cuaderno       Q   25.00
+   3 x Lapicero azul  Q   12.00
+   1 x Mochila        Q  185.00
+  Productos:          Q  222.00
+  Envio:              Q   25.00
+  TOTAL:              Q  247.00</pre>
+<p>Algunas piezas nuevas que aparecen aquí:</p>
+<ul>
+<li><code>List&lt;Linea&gt;</code> y <code>ArrayList</code>: una <b>lista</b> que crece sola, a diferencia de un arreglo de tamaño fijo (capítulo 15). <code>&lt;Linea&gt;</code> indica qué tipo de objetos guarda; <code>lineas.add(...)</code> agrega uno al final. Es la forma normal de expresar «tiene <b>muchos</b>».</li>
+<li><code>StringBuilder</code>: un «armador de textos» que va pegando trozos con <code>append</code> sin crear un <code>String</code> nuevo en cada paso.</li>
+<li><code>String.format</code> con <code>%8.2f</code> (capítulo 17): número con dos decimales en ocho espacios, para que las cifras queden alineadas. Si tu Windows está configurado para un país que usa coma decimal, verás <code>25,00</code> en lugar de <code>25.00</code>.</li>
+</ul>
+<p>Lo importante es la forma: <code>Pedido.total()</code> no calcula subtotales, se los pide a cada <code>Linea</code>; <code>recibo</code> no sabe cuándo el envío es gratis, se lo pregunta a la <code>TarifaEnvio</code>. Y como la tarifa llega por parámetro, mañana podrías pasar otra (envío exprés, envío a la capital) sin tocar <code>Pedido</code>.</p>
+
+<h2>Resumen</h2>
+<ul>
+<li>Las clases se relacionan de pocas formas: <b>es-un</b> (herencia), <b>cumple</b> (interfaz), <b>tiene-un</b> (composición y agregación), <b>conoce</b> (asociación) y <b>usa</b> (dependencia). La prueba de la frase ayuda a elegir.</li>
+<li><b>Composición</b>: el objeto crea y guarda sus piezas (<code>Partida</code> → <code>Tablero</code>, <code>IA_Minimax</code>). Las piezas nacen y mueren con él; el recolector de basura libera lo que nadie apunta.</li>
+<li><b>Agregación</b>: la pieza llega de fuera y puede vivir sin el dueño (<code>Partida</code> → <code>Jugador</code>). En Java se escribe igual que la composición; cambia la intención.</li>
+<li><b>Asociación</b>: guardar una referencia a algo ajeno (<code>PantallaJuego.partida</code>, <code>navegacion</code>). <b>Dependencia</b>: usarlo solo como parámetro (<code>calcularMejorJugada(Tablero)</code>). Elige siempre la más débil que funcione.</li>
+<li><b>Delegar</b> es pasarle el trabajo a la pieza que sabe hacerlo: <code>Partida.jugar</code> le pregunta al tablero si hay ganador.</li>
+<li><code>PanelPrincipal</code> arma la aplicación: crea las pantallas y la partida, y cada objeto conoce solo a sus vecinos.</li>
+<li>Un <b>diagrama de clases UML</b> dibuja clases como cajas y relaciones como líneas con puntas distintas; la multiplicidad dice cuántos hay.</li>
+<li><b>Prefiere la composición</b>: no te obliga a heredar métodos que romperían tus reglas, permite no tener la pieza y permite cambiarla mientras el programa corre.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Escuela</b>: un <code>Curso</code> tiene una lista de <code>Alumno</code> (agregación: los alumnos existen fuera del curso), un <code>Docente</code> asignado (asociación, cambia cada año) y su propio <code>Horario</code> (composición). Un <code>GeneradorDeBoletas</code> recibe el curso como parámetro (dependencia).</li>
+<li><b>Banco</b>: un <code>Cliente</code> tiene varias <code>Cuenta</code>; cada cuenta tiene su lista de <code>Movimiento</code> (composición: un movimiento no existe sin su cuenta). Una <code>CalculadoraDeIntereses</code> recibe la cuenta, no la guarda.</li>
+<li><b>Otro juego</b>: en un Buscaminas, el <code>Juego</code> tiene un <code>Campo</code> (composición) y un <code>Cronometro</code>; el <code>Campo</code> tiene una matriz de <code>Celda</code>. Igual que en el Totito, el panel que dibuja el campo solo lo recibe para mostrarlo.</li>
+<li><b>Tienda en línea</b>: el <code>Carrito</code> tiene <code>Linea</code>s, conoce al <code>Cliente</code> y usa una <code>TarifaEnvio</code> intercambiable (composición para cambiar el comportamiento sin herencia).</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Para cada par, aplica la prueba de la frase y di qué relación es (herencia, composición, agregación, asociación o dependencia): <i>Biblioteca y Libro</i>; <i>Carro y Motor</i>; <i>Gato y Animal</i>; <i>Factura e Impresora</i> (la factura se imprime con ella); <i>Equipo y Jugador</i>.</li>
+<li>Modifica <code>DemoComposicion</code> para que <code>MiniPartida</code> lleve el marcador: un <code>int[] victorias</code> que sume 1 al ganador, y un método <code>reiniciar()</code> que cree un tablero nuevo pero conserve el marcador. Pista: el atributo <code>tablero</code> ya no podrá ser <code>final</code>; o, mejor aún, agrega un método <code>vaciar()</code> a <code>MiniTablero</code> y deja el <code>final</code>, como hace el Totito con <code>Tablero.reiniciar()</code>.</li>
+<li>En <code>DemoTienda</code>, crea una segunda clase <code>TarifaExpres</code> que cobre Q50 siempre, y pásale al recibo una u otra. ¿Tuviste que cambiar algo en <code>Pedido</code>? Pista: si la respuesta es «sí, el tipo del parámetro», anótalo; en el capítulo 24 verás cómo una interfaz lo resuelve.</li>
+<li>Dibuja en papel el diagrama de clases de un sistema de citas de una clínica: <code>Clinica</code>, <code>Medico</code>, <code>Paciente</code>, <code>Cita</code> y <code>Agenda</code>. Usa las puntas de la leyenda y escribe la multiplicidad en cada línea (por ejemplo, un médico tiene 0..* citas).</li>
+<li>Reto: busca en el Totito todas las clases que tienen un atributo de tipo <code>PanelTablero</code> y todas las que reciben un <code>Tablero</code> solo como parámetro. Haz una tabla con dos columnas, «lo guarda» y «solo lo usa», y explica por qué <code>PanelTablero</code> copia las fichas en vez de guardar el <code>Tablero</code>. Pista: busca <code>PanelTablero</code> y <code>(Tablero tablero)</code> con Ctrl+F en NetBeans cuando ya tengas el proyecto.</li>
+</ol>
+</div>
+</section>

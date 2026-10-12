@@ -1,0 +1,273 @@
+<section class="capitulo" id="cap67">
+<h1><span class="num">Capítulo 67</span>Publicar: versiones, etiquetas y GitHub Releases</h1>
+<p class="entrada">Llegó el momento de compartir el Totito con el mundo. En este capítulo aprendes a numerar versiones con sentido, a publicar el instalador y la versión portable en una página de descargas de GitHub con un solo comando, a escribir notas de versión que la gente entienda, a explicar el aviso de SmartScreen que verán quienes lo descarguen y qué es la firma de código, y a dar a cada archivo una huella digital para que nadie pueda cambiarlo sin que se note.</p>
+
+<h2>Versiones semánticas: qué significa 1.0.0</h2>
+<p>Desde el capítulo 33 llevas usando números como <code>v0.1.0</code> y <code>v1.0.0</code>. No son números al azar: siguen una convención muy extendida llamada <b>versionado semántico</b> (<i>Semantic Versioning</i>, o <b>SemVer</b>), en la que cada número tiene un significado. Una versión tiene tres partes separadas por puntos:</p>
+<pre class="texto">MAYOR . MENOR . PARCHE
+  1   .   0   .   0</pre>
+<table class="tabla">
+<tr><th>Parte</th><th>En inglés</th><th>Se sube cuando…</th><th>Ejemplo con el Totito</th></tr>
+<tr><td><b>PARCHE</b></td><td><i>PATCH</i></td><td>Corriges errores sin cambiar lo que el programa hace</td><td><b>1.0.1</b>: arreglas que el marcador no sumaba los empates en cierto caso</td></tr>
+<tr><td><b>MENOR</b></td><td><i>MINOR</i></td><td>Añades funciones nuevas, y todo lo anterior sigue funcionando igual</td><td><b>1.1.0</b>: añades niveles de dificultad para la IA (una idea pendiente del README)</td></tr>
+<tr><td><b>MAYOR</b></td><td><i>MAJOR</i></td><td>Haces cambios que <b>rompen</b> algo de lo anterior, y quien lo usaba tiene que adaptarse</td><td><b>2.0.0</b>: el juego pasa a guardar las estadísticas en un archivo con un formato nuevo, incompatible con el de la versión 1</td></tr>
+</table>
+<p>Las reglas de cómo se suben son mecánicas:</p>
+<ul>
+<li>Al subir un número, los de su derecha <b>vuelven a cero</b>: de 1.0.3 con una función nueva se pasa a <b>1.1.0</b>, no a 1.1.3. De 1.4.2 con un cambio incompatible se pasa a <b>2.0.0</b>.</li>
+<li>Los números no son decimales: después de 1.9.0 viene <b>1.10.0</b>, que es <i>mayor</i> que 1.9.0.</li>
+<li>Una versión publicada <b>no se modifica nunca</b>. Si el instalador 1.0.0 tenía un error, no se reemplaza: se publica el 1.0.1.</li>
+<li>La versión <b>0.x.y</b> significa «en desarrollo inicial, todo puede cambiar». Por eso la primera ventana del Totito fue la 0.1.0 (capítulo 33).</li>
+<li>La <b>1.0.0</b> es una declaración: «esta es la primera versión estable, completa y pensada para que la use cualquiera». Por eso el Totito con la interfaz neón terminada, probado y empaquetado, es la 1.0.0.</li>
+<li>Para versiones de prueba antes de una definitiva se añade un guion y una etiqueta: <code>1.1.0-beta.1</code>, <code>1.1.0-rc.1</code> (<i>release candidate</i>, «candidata a versión»). Son anteriores a la <code>1.1.0</code>.</li>
+</ul>
+<div class="caja concepto"><b>¿Para qué sirve todo esto?</b> Para que el número <b>comunique</b>. Quien ve que pasaste de 1.0.0 a 1.0.1 sabe que puede actualizar sin miedo: solo se corrigieron errores. Si ve 2.0.0, sabe que debe leer las notas antes. Y las herramientas también lo entienden: Windows Installer compara las versiones para decidir si un instalador es una actualización (capítulo 66).</div>
+
+<h3>Una versión, tres lugares</h3>
+<p>En tu proyecto la versión aparece en varios sitios y conviene que cuenten la misma historia:</p>
+<table class="tabla">
+<tr><th>Dónde</th><th>Valor ahora</th><th>Quién lo ve</th></tr>
+<tr><td>Etiqueta de Git</td><td><code>v1.0.0</code></td><td>Quien mira el repositorio. Por convención la etiqueta lleva una <code>v</code> delante</td></tr>
+<tr><td><code>--app-version</code> de jpackage (o <code>MiVersion</code> en Inno Setup)</td><td><code>1.0.0</code></td><td>Quien instala: Configuración → Aplicaciones, propiedades del <code>.exe</code></td></tr>
+<tr><td>Nombres de los archivos</td><td><code>Totito-1.0.0.exe</code>, <code>Totito-1.0.0-portable.zip</code></td><td>Quien descarga</td></tr>
+<tr><td><code>&lt;version&gt;</code> del <code>pom.xml</code></td><td><code>1.0-SNAPSHOT</code></td><td>Solo Maven y tú (capítulo 63)</td></tr>
+</table>
+<p>Las tres primeras deben coincidir siempre. La del <code>pom.xml</code> es interna; en proyectos más grandes también se alinea (se cambia a <code>1.0.0</code> al publicar y a <code>1.1.0-SNAPSHOT</code> al empezar la siguiente), pero eso cambia el nombre del <code>.jar</code> y todos los comandos de empaquetado, así que en este libro la dejamos quieta.</p>
+
+<h2>La etiqueta v1.0.0</h2>
+<p>Una <b>etiqueta</b> (<i>tag</i>, capítulo 9) es un nombre fijo pegado a un commit concreto, como un marcapáginas que no se mueve. La creaste en el capítulo 61, al fusionar la rama <code>interfaz-neon</code>. Comprueba que existe, en tu equipo y en GitHub:</p>
+<pre class="ps">cd $HOME\Proyectos\Totito
+git switch main
+git pull
+git tag
+git ls-remote --tags origin</pre>
+<p><code>git tag</code> lista las etiquetas locales (deberías ver <code>v0.1.0</code> y <code>v1.0.0</code>); <code>git ls-remote --tags origin</code> lista las que hay en GitHub. Si <code>v1.0.0</code> aparece en local pero no en GitHub, súbela:</p>
+<pre class="ps">git push origin v1.0.0</pre>
+<p>Y si no la creaste, créala ahora (anotada, con mensaje) y súbela:</p>
+<pre class="ps">git tag -a v1.0.0 -m "Totito 1.0.0: interfaz neon"
+git push origin v1.0.0</pre>
+<div class="caja consejo"><b>¿Y el icono, que vino después?</b> Si seguiste el plan del libro, el commit «Icono del programa» (capítulo 64) es <b>posterior</b> a la etiqueta <code>v1.0.0</code>. ¿Es un problema? Compruébalo:
+<pre class="ps">git diff v1.0.0 --stat -- src</pre>
+Si no imprime nada, el código del juego (<code>src</code>) es <b>idéntico</b> al de la etiqueta: el icono y el generador solo afectan al empaquetado, no al juego. El instalador que vas a publicar corresponde exactamente al Totito 1.0.0. Lo que <b>no</b> debes hacer es mover o borrar una etiqueta ya publicada para «incluir» el icono: otras personas podrían haberla descargado ya, y las etiquetas son una promesa de que ese nombre siempre significa el mismo código. La lección para tu próximo proyecto: prepara el icono y el empaquetado <b>antes</b> de poner la etiqueta de la versión.</div>
+
+<h2>Preparar los archivos</h2>
+<p>Una publicación se fabrica siempre desde un estado limpio y conocido del código. Lista de comprobación, en orden:</p>
+<ol>
+<li><code>git status</code> dice que no hay cambios pendientes, y estás en <code>main</code> actualizado (<code>git pull</code>).</li>
+<li><i>Clean and Build</i> en NetBeans (o <code>mvn clean package</code>).</li>
+<li>La lista de pruebas manuales del capítulo 62, completa.</li>
+<li>Carpeta portable y ZIP (capítulo 65). Empieza de cero para no mezclar restos de pruebas:
+<pre class="ps">if (Test-Path dist) { Remove-Item -Recurse -Force dist }
+New-Item -ItemType Directory -Force dist\entrada | Out-Null
+Copy-Item target\Totito-1.0-SNAPSHOT.jar dist\entrada\</pre>
+y luego el comando <code>jpackage --type app-image</code> del capítulo 65 y el <code>Compress-Archive</code>.</li>
+<li>Instalador (capítulo 66), con <b>tu</b> UUID.</li>
+<li>Instalar el <code>.exe</code> y abrir el portable una última vez.</li>
+</ol>
+<p>Al final, comprueba que tienes los dos archivos con los nombres exactos:</p>
+<pre class="ps">Get-ChildItem dist\instalador\Totito-1.0.0.exe, dist\Totito-1.0.0-portable.zip</pre>
+<p>La primera línea de la lista anterior, <code>if (Test-Path dist) { ... }</code>, se lee así: «si existe la carpeta <code>dist</code>, bórrala con todo lo que tiene». <code>Test-Path</code> devuelve <code>True</code> o <code>False</code>, y el <code>if</code> de PowerShell funciona como el de Java (capítulo 13).</p>
+
+<h2>Huellas digitales: SHA-256</h2>
+<p>Cuando alguien descarga tu instalador, ¿cómo sabe que es exactamente el que tú publicaste y no uno dañado durante la descarga o, peor, modificado por alguien con malas intenciones que lo subió a otra página? Con una <b>huella digital</b> del archivo.</p>
+<div class="caja concepto"><b>Qué es un hash.</b> Una <b>función hash</b> lee todos los bytes de un archivo y produce un número de tamaño fijo, su <b>hash</b> o <b>suma de comprobación</b> (<i>checksum</i>). <b>SHA-256</b> es una de las más usadas: produce 256 bits, que se escriben como 64 cifras hexadecimales. Tiene dos propiedades que la hacen útil: el mismo archivo da <b>siempre</b> el mismo hash, y si cambia <b>un solo byte</b>, el hash cambia por completo. Además, es imposible en la práctica fabricar otro archivo con el mismo hash. Es como la huella dactilar de una persona: no te dice nada de cómo es, pero sirve para comprobar que es ella.</div>
+<p>PowerShell calcula hashes con <code>Get-FileHash</code> (SHA-256 es el algoritmo que usa si no dices otro):</p>
+<pre class="ps">Get-FileHash dist\instalador\Totito-1.0.0.exe</pre>
+<pre class="salida">Algorithm       Hash                                                                   Path
+---------       ----                                                                   ----
+SHA256          4C1D8E0A9B7F3E2D6A5C4B3A2918F7E6D5C4B3A29180F7E6D5C4B3A2918F7E6D       C:\Users\tu-usuario\...</pre>
+<p>(Ese hash es un ejemplo inventado: el tuyo será otro, y cambiará cada vez que vuelvas a fabricar el instalador, porque incluye fechas y detalles de la compilación.)</p>
+<p>Para publicarlos, lo habitual es un archivo de texto con el hash y el nombre de cada archivo, llamado por costumbre <code>SHA256SUMS.txt</code>. Esta línea lo crea con los dos archivos:</p>
+<pre class="ps">Get-FileHash dist\instalador\Totito-1.0.0.exe, dist\Totito-1.0.0-portable.zip | ForEach-Object { "{0}  {1}" -f $_.Hash.ToLower(), (Split-Path $_.Path -Leaf) } | Set-Content dist\SHA256SUMS.txt</pre>
+<table class="tabla">
+<tr><th>Parte</th><th>Qué hace</th></tr>
+<tr><td><code>Get-FileHash archivo1, archivo2</code></td><td>Calcula el hash de los dos y produce dos objetos con las propiedades <code>Algorithm</code>, <code>Hash</code> y <code>Path</code></td></tr>
+<tr><td><code>|</code></td><td>La <b>tubería</b>: pasa cada resultado al comando siguiente</td></tr>
+<tr><td><code>ForEach-Object { ... }</code></td><td>Repite el bloque por cada objeto; dentro, <code>$_</code> es el objeto de esta vuelta (como la variable de un for-each, capítulo 14)</td></tr>
+<tr><td><code>"{0}  {1}" -f a, b</code></td><td>Arma un texto poniendo <code>a</code> en el lugar <code>{0}</code> y <code>b</code> en <code>{1}</code>, separados por dos espacios (el formato estándar de estos archivos)</td></tr>
+<tr><td><code>$_.Hash.ToLower()</code></td><td>El hash en minúsculas, como lo escriben la mayoría de herramientas</td></tr>
+<tr><td><code>Split-Path $_.Path -Leaf</code></td><td>Del camino completo, solo el nombre del archivo (la «hoja» de la ruta)</td></tr>
+<tr><td><code>Set-Content dist\SHA256SUMS.txt</code></td><td>Guarda las líneas en ese archivo</td></tr>
+</table>
+<p>Mira el resultado con <code>Get-Content dist\SHA256SUMS.txt</code>: dos líneas, cada una con 64 cifras y un nombre. Ese archivo también se publica.</p>
+<p>¿Cómo lo comprueba quien descarga? En su PowerShell, en la carpeta de descargas:</p>
+<pre class="ps">(Get-FileHash .\Totito-1.0.0.exe).Hash -eq "pega-aqui-el-hash-publicado"</pre>
+<p>Si responde <code>True</code>, el archivo es idéntico al tuyo. <code>-eq</code> es el operador de igualdad de PowerShell (el <code>==</code> de Java) y, con textos, no distingue mayúsculas de minúsculas, así que da igual cómo esté escrito el hash.</p>
+
+<h2>Notas de versión que sirven</h2>
+<p>Las <b>notas de versión</b> (<i>release notes</i>) son el texto que acompaña a una publicación. Las leerá gente que no es programadora, así que deben responder, en este orden, a lo que se pregunta quien llega a la página:</p>
+<ol>
+<li><b>¿Qué es esto?</b> Una frase.</li>
+<li><b>¿Qué archivo descargo?</b> Con el nombre exacto y para quién es cada uno.</li>
+<li><b>¿Qué necesito?</b> Sistema operativo, si hace falta Java (¡no!), espacio.</li>
+<li><b>¿Qué hay de nuevo?</b> En una primera versión, qué trae; en las siguientes, qué cambió.</li>
+<li><b>¿Qué puede salir raro?</b> Problemas conocidos, como el aviso de SmartScreen.</li>
+<li><b>¿Cómo compruebo el archivo?</b> Los hashes.</li>
+</ol>
+<p>Escríbelas en un archivo Markdown (el formato del README, capítulo 10) dentro de <code>dist</code>:</p>
+<pre class="ps">notepad dist\notas-1.0.0.md</pre>
+<p>El Bloc de notas te preguntará si quieres crear el archivo: responde que sí. Un ejemplo completo:</p>
+<pre class="texto">El clásico juego del totito (tres en línea) con interfaz neón, para dos
+personas en el mismo equipo o contra una IA que nunca pierde.
+
+## Descarga
+
+| Archivo | Para quién |
+|---|---|
+| **Totito-1.0.0.exe** | La mayoría: instalador con acceso en el escritorio y en el menú Inicio |
+| **Totito-1.0.0-portable.zip** | Sin instalar: descomprime (clic derecho → Extraer todo) y abre `Totito.exe` |
+
+**Requisitos:** Windows 10 u 11 de 64 bits. **No necesitas instalar Java**: el juego trae el suyo.
+
+## Qué trae
+
+- Partidas de 2 jugadores en el mismo equipo o contra la computadora (algoritmo Minimax).
+- Nombres de jugadores, elección de X u O y marcador acumulado.
+- Pantallas de menú, instrucciones, configuración y resultado con estilo neón.
+
+## Aviso de Windows al abrirlo
+
+El instalador no está firmado digitalmente, así que la primera vez Windows
+puede mostrar «Windows protegió su PC». Pulsa **Más información** y luego
+**Ejecutar de todas formas**. Es normal en programas nuevos de autores
+independientes.
+
+## Verificar la descarga (SHA-256)
+
+Los hashes de los dos archivos están en `SHA256SUMS.txt`. En PowerShell:
+`Get-FileHash .\Totito-1.0.0.exe`</pre>
+<p>Fíjate en lo que <b>no</b> lleva: detalles internos («refactoricé PantallaBase»), jerga sin explicar ni la lista de todos los commits. Eso está en el historial de Git para quien lo quiera. Para versiones siguientes se añade una sección «Cambios» con frases como «Corregido: el marcador no sumaba los empates al volver a jugar». Una buena costumbre es pensar en tu tía leyendo la página: si entiende qué descargar y qué hacer cuando salga el aviso, las notas están bien.</p>
+
+<h2>Publicar con gh release create</h2>
+<p>Una <b>Release</b> (publicación) de GitHub es una página asociada a una etiqueta del repositorio, con un título, unas notas y archivos adjuntos para descargar (los <b>assets</b>). Es el lugar correcto para los archivos fabricados que no van en el código (capítulos 63 y 65). Con la GitHub CLI que configuraste en el capítulo 7, se crea con un comando. La forma corta, con las notas en la misma línea:</p>
+<pre class="ps">gh release create v1.0.0 dist\instalador\Totito-1.0.0.exe dist\Totito-1.0.0-portable.zip --title "Totito 1.0.0" --notes "Primera version estable del Totito con interfaz neon. Descarga Totito-1.0.0.exe para instalarlo, o el .zip para usarlo sin instalar. No necesita Java."</pre>
+<p>Y la forma recomendada, con las notas del archivo Markdown, el archivo de hashes y una comprobación extra:</p>
+<pre class="ps">gh release create v1.0.0 dist\instalador\Totito-1.0.0.exe dist\Totito-1.0.0-portable.zip dist\SHA256SUMS.txt --title "Totito 1.0.0" --notes-file dist\notas-1.0.0.md --verify-tag</pre>
+<table class="tabla">
+<tr><th>Parte</th><th>Qué hace</th></tr>
+<tr><td><code>gh release create</code></td><td>Crear una publicación en el repositorio de la carpeta actual (el que configuraste como <code>origin</code>)</td></tr>
+<tr><td><code>v1.0.0</code></td><td>La etiqueta a la que se asocia. Si no existiera en GitHub, <code>gh</code> la crearía desde el último commit de <code>main</code>; por eso conviene la opción <code>--verify-tag</code></td></tr>
+<tr><td>Los archivos</td><td>Se suben como assets, con su nombre de archivo. Puedes poner tantos como quieras</td></tr>
+<tr><td><code>--title "Totito 1.0.0"</code></td><td>El título grande de la página</td></tr>
+<tr><td><code>--notes "..."</code></td><td>Las notas, escritas en la propia línea. Cómodo para un texto corto; incómodo para varios párrafos</td></tr>
+<tr><td><code>--notes-file dist\notas-1.0.0.md</code></td><td>Las notas, leídas de un archivo Markdown. Mejor para textos largos con títulos y tablas</td></tr>
+<tr><td><code>--verify-tag</code></td><td>Abortar si la etiqueta no existe en GitHub, en vez de crearla en un commit que quizá no es el que querías</td></tr>
+</table>
+<p>Subir unas decenas de megas tarda según tu internet. Al terminar, <code>gh</code> escribe la dirección de la publicación:</p>
+<pre class="salida">https://github.com/tu-usuario/totito/releases/tag/v1.0.0</pre>
+<p>Si prefieres revisarla antes de que la vea nadie, añade <code>--draft</code>: se crea como <b>borrador</b>, visible solo para ti. Cuando estés conforme, la publicas desde la página (botón <i>Publish release</i>) o con <code>gh release edit v1.0.0 --draft=false</code>.</p>
+<p>Otras órdenes útiles de la misma familia:</p>
+<table class="tabla">
+<tr><th>Comando</th><th>Para qué</th></tr>
+<tr><td><code>gh release list</code></td><td>Ver todas las publicaciones del repositorio</td></tr>
+<tr><td><code>gh release view v1.0.0</code></td><td>Ver una en la terminal, con sus archivos (<code>--web</code> la abre en el navegador)</td></tr>
+<tr><td><code>gh release edit v1.0.0 --notes-file dist\notas-1.0.0.md</code></td><td>Corregir las notas o el título</td></tr>
+<tr><td><code>gh release upload v1.0.0 dist\SHA256SUMS.txt</code></td><td>Añadir un archivo que olvidaste (con <code>--clobber</code> reemplaza uno del mismo nombre)</td></tr>
+<tr><td><code>gh release delete v1.0.0</code></td><td>Borrar la publicación (la etiqueta se queda). Úsalo solo si te equivocaste justo al publicarla</td></tr>
+</table>
+<div class="caja cuidado"><b>No reemplaces archivos de una versión ya publicada.</b> <code>--clobber</code> existe para corregir un error en los primeros minutos, no para cambiar el instalador de la 1.0.0 una semana después. Si alguien ya lo descargó y anotó su hash, el archivo nuevo no coincidirá y parecerá manipulado. Si hay un error, publica la 1.0.1.</div>
+
+<h3>Si tu repositorio es privado</h3>
+<p>Las publicaciones de un repositorio privado solo las ven quienes tienen acceso a él. Para compartir el Totito con el mundo, el repositorio tiene que ser <b>público</b>. Antes de hacerlo, repasa el capítulo 10: que no haya contraseñas, tokens ni datos personales en ningún commit del historial. Luego, en la página del repositorio: <i>Settings → General</i>, al final, <i>Danger Zone → Change visibility → Make public</i>. O desde PowerShell:</p>
+<pre class="ps">gh repo edit --visibility public --accept-visibility-change-consequences</pre>
+<p>La última opción es la forma de decirle a <code>gh</code> «sé lo que hago»; las versiones más nuevas de <code>gh</code> la exigen y las antiguas no la conocen (si te da error por ella, quítala).</p>
+
+<h2>La página de Releases</h2>
+<p>Abre la publicación con <code>gh release view v1.0.0 --web</code>. Esto es lo que verás, y lo que verá cualquier visitante:</p>
+<ul>
+<li>El <b>título</b> «Totito 1.0.0» y una etiqueta verde <b>Latest</b> («la más reciente»): GitHub la pone sola a la versión más nueva.</li>
+<li>La <b>etiqueta</b> <code>v1.0.0</code> y el commit al que apunta.</li>
+<li>Tus <b>notas</b>, con el Markdown ya convertido: títulos, tabla, negritas.</li>
+<li>La sección <b>Assets</b> con tus tres archivos, su tamaño y, en la interfaz actual de GitHub, también su huella SHA-256. Debajo, dos archivos que GitHub añade solo: <i>Source code (zip)</i> y <i>Source code (tar.gz)</i>, el código fuente del repositorio en el momento de la etiqueta.</li>
+</ul>
+<p>En la página principal del repositorio, en la columna de la derecha, aparece ahora un recuadro <i>Releases</i> con la última versión. Es por ahí por donde entrará la mayoría de la gente.</p>
+
+<h2>El aviso de SmartScreen</h2>
+<p>Ahora haz la prueba que hará cualquier persona: con el navegador, descarga tu propio <code>Totito-1.0.0.exe</code> desde la página de la publicación y ábrelo. Lo más probable es que veas, antes que el asistente de instalación, una ventana azul:</p>
+<pre class="salida">Windows protegió su PC
+
+Microsoft Defender SmartScreen impidió el inicio de una aplicación
+no reconocida. Ejecutar esta aplicación puede poner en riesgo su PC.
+
+Más información
+                                                   [ No ejecutar ]</pre>
+<p>Si pulsas <b>Más información</b>, la ventana muestra el nombre del archivo y «Editor: <b>Editor desconocido</b>», y aparece un botón nuevo, <b>Ejecutar de todas formas</b>. Al pulsarlo, el instalador sigue normalmente. (Los textos exactos pueden variar un poco según tu versión de Windows: «su PC» o «tu PC», por ejemplo.) Puede que el navegador también avise al descargar, diciendo que el archivo «no se descarga habitualmente»; en Edge, desde el menú <i>⋯</i> del aviso puedes elegir <i>Conservar</i>.</p>
+
+<h3>Por qué aparece</h3>
+<p><b>SmartScreen</b> es una protección de Windows contra programas maliciosos descargados de internet. No analiza qué hace tu programa: decide por <b>reputación</b>. Funciona más o menos así:</p>
+<ol>
+<li>Cuando un navegador descarga un archivo, Windows le pega una marca invisible que dice «este archivo vino de internet» (se llama <i>Mark of the Web</i>, «marca de la web»).</li>
+<li>Al abrir un archivo con esa marca, SmartScreen consulta a Microsoft: «¿cuánta gente ha ejecutado este archivo sin problemas?, ¿quién lo publicó?».</li>
+<li>Tu instalador es nuevo (nadie lo ha descargado antes) y no está firmado (no dice quién lo publicó de forma verificable). Sin historial y sin identidad, SmartScreen no puede saber si es de fiar, y prefiere avisar.</li>
+</ol>
+<p>Por eso <b>no lo viste</b> cuando abriste el instalador desde <code>dist</code>: lo fabricaste tú en tu equipo y no tiene la marca de internet. Y por eso aparecerá también con el ZIP portable: al extraerlo, los archivos heredan la marca y <code>Totito.exe</code> producirá el mismo aviso la primera vez.</p>
+<p>No es un error de tu programa ni significa que tenga un virus: le pasa a <b>cualquier</b> programa nuevo de un autor independiente. Pero asusta, y mucha gente cierra la ventana. Por eso lo explicamos en las notas de la versión.</p>
+<div class="caja cuidado"><b>No enseñes a saltarse avisos a ciegas.</b> «Ejecutar de todas formas» es razonable cuando sabes de dónde viene el archivo: de la página oficial de tu repositorio, enlazada por ti. Pide a quien lo descargue que lo haga solo desde ahí, no desde copias en otras páginas, y que, si quiere asegurarse, compare el hash. Esa es la diferencia entre confiar en un programa y confiar en cualquier cosa.</div>
+<p>Con el tiempo, si muchas personas descargan y ejecutan el mismo archivo sin problemas, SmartScreen puede ir dejando de avisar, porque el archivo gana reputación. Pero no hay un número fijo ni garantía, y cada versión nueva es un archivo nuevo que empieza de cero. La forma de llevar la reputación de una versión a la siguiente es la firma de código.</p>
+
+<h2>La firma de código</h2>
+<p><b>Firmar</b> un programa es adjuntarle una firma digital que demuestra dos cosas: <b>quién</b> lo publicó (identidad) y que <b>nadie lo modificó</b> desde que se firmó (integridad). Se hace con un <b>certificado de firma de código</b>, un documento digital que emite una <b>autoridad de certificación</b> (una empresa en la que Windows confía, como DigiCert, Sectigo o Certum) después de comprobar tu identidad con documentos.</p>
+<p>Un programa firmado muestra en el Control de cuentas de usuario y en SmartScreen el nombre verificado del editor en vez de «Editor desconocido». Y como la reputación de SmartScreen se asocia también al certificado, las versiones siguientes firmadas con él no empiezan de cero.</p>
+<table class="tabla">
+<tr><th>Opción</th><th>Para quién</th><th>Costo aproximado</th><th>Notas</th></tr>
+<tr><td>No firmar</td><td>Proyectos personales, de aprendizaje, para amigos</td><td>0</td><td>Lo que haces en este libro. Se compensa con buenas notas de versión y hashes</td></tr>
+<tr><td>Certificado estándar (OV/IV: validación de organización o de individuo)</td><td>Autores independientes y empresas pequeñas</td><td>Del orden de cien a varios cientos de dólares al año</td><td>Desde 2023, la clave privada debe guardarse en un dispositivo seguro (una llave USB especial o un servicio en la nube), lo que suele sumar costo</td></tr>
+<tr><td>Certificado EV (validación extendida)</td><td>Empresas</td><td>Más caro que el estándar</td><td>Verificación más estricta. Antes quitaba el aviso de SmartScreen al instante; Microsoft cambió esa política y hoy también construye reputación con el tiempo (verifica la situación actual)</td></tr>
+<tr><td>Servicios de firma en la nube (por ejemplo, el de Microsoft en Azure)</td><td>Según país y tipo de persona o empresa</td><td>Cuotas mensuales bajas comparadas con un certificado</td><td>Disponibilidad limitada por país; revisa si aplica al tuyo</td></tr>
+<tr><td>Programas para código abierto (SignPath Foundation, certificados especiales de algunas autoridades)</td><td>Proyectos de código abierto activos</td><td>Gratis o reducido</td><td>Exigen requisitos: licencia libre, proyecto con actividad, compilación verificable</td></tr>
+</table>
+<p>Los precios cambian cada año y dependen del proveedor: tómalos como orden de magnitud y compara antes de comprar. Lo importante es la idea: <b>la firma es opcional</b>. Ningún programa necesita estar firmado para funcionar. Es una inversión en confianza que tiene sentido cuando tu programa lo usan desconocidos o lo vendes; para el Totito, no hace falta.</p>
+<p>Si algún día firmas, la herramienta de Windows es <code>signtool.exe</code>, que viene con el kit de desarrollo de Windows (Windows SDK). jpackage no firma en Windows por sí mismo, así que el orden sería: fabricar la carpeta con <code>--type app-image</code>, firmar <code>Totito.exe</code>, fabricar el instalador a partir de esa carpeta ya firmada (jpackage acepta <code>--app-image dist\app\Totito</code> en lugar de <code>--input</code>) y, por último, firmar el instalador. Cada proveedor de certificados explica su comando exacto.</p>
+
+<h2>Compartir el enlace</h2>
+<p>Tu juego ya tiene una dirección en internet. Hay tres enlaces útiles, cada uno para algo distinto (cambia <code>tu-usuario</code> por tu usuario de GitHub):</p>
+<table class="tabla">
+<tr><th>Enlace</th><th>Lleva a</th><th>Úsalo para</th></tr>
+<tr><td><code>https://github.com/tu-usuario/totito/releases/latest</code></td><td>La página de la versión más reciente, sea cual sea</td><td><b>El enlace para compartir</b>: siempre estará al día, aunque publiques la 1.0.1</td></tr>
+<tr><td><code>https://github.com/tu-usuario/totito/releases/tag/v1.0.0</code></td><td>La página de la versión 1.0.0, para siempre</td><td>Hablar de una versión concreta</td></tr>
+<tr><td><code>https://github.com/tu-usuario/totito/releases/download/v1.0.0/Totito-1.0.0.exe</code></td><td>La descarga directa del archivo, sin pasar por la página</td><td>Un botón «Descargar» en una web. Ojo: quien lo use no verá tus notas ni el aviso de SmartScreen explicado</td></tr>
+</table>
+<p>Para la mayoría de los casos, comparte el primero. Y añade una sección al principio de tu README para que quien llegue al repositorio encuentre la descarga sin buscar:</p>
+<pre class="texto">## Descargar
+
+**[Descargar el Totito para Windows](https://github.com/tu-usuario/totito/releases/latest)**
+— instalador o versión portable. No necesita Java.</pre>
+<p>Un mensaje para compartir por WhatsApp o redes podría ser: «Hice un juego del totito en Java, con interfaz neón y una IA que nunca pierde. Se descarga aquí: <i>(enlace)</i>. Si Windows avisa, dale a "Más información" y "Ejecutar de todas formas"; está explicado en la página». Corto, con el enlace y anticipando la única duda que tendrán.</p>
+
+<div class="caja git"><b>Git</b> En este capítulo la acción de Git es la publicación misma: la etiqueta <code>v1.0.0</code> en GitHub y la Release con el instalador. Si añadiste al README la sección «Descargar», súbela con su propio commit:
+<pre class="ps">git add README.md
+git commit -m "README: enlace de descarga de la version 1.0.0"
+git push</pre>
+Para cada versión futura el ciclo completo es: cambios en commits pequeños (en una rama si son grandes, capítulo 9) → pruebas → actualizar la versión en los comandos de empaquetado → etiqueta <code>git tag -a v1.0.1 -m "..."</code> y <code>git push origin v1.0.1</code> → fabricar los archivos → <code>gh release create v1.0.1 ...</code> con sus notas.</div>
+
+<div class="caja hito"><b>Hito</b> El Totito está publicado. Cualquier persona del mundo con Windows puede entrar a tu página de Releases, descargar el instalador o la versión portable, comprobar su huella SHA-256 y jugar, sin saber nada de Java. Empezaste el libro sin haber programado nunca y terminaste con un programa propio publicado.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Versionado semántico: MAYOR.MENOR.PARCHE. Parche para correcciones, menor para funciones compatibles, mayor para cambios que rompen algo; 1.0.0 es la primera versión estable.</li>
+<li>Una versión publicada no se modifica: los errores se corrigen con una versión nueva. Las etiquetas publicadas no se mueven.</li>
+<li>La etiqueta de Git, la versión del instalador y los nombres de los archivos deben coincidir.</li>
+<li><code>Get-FileHash</code> calcula el SHA-256 de un archivo; publicarlo en <code>SHA256SUMS.txt</code> permite comprobar que la descarga es idéntica.</li>
+<li>Las notas de versión responden: qué es, qué descargar, qué se necesita, qué hay de nuevo, qué puede salir raro y cómo verificar.</li>
+<li><code>gh release create v1.0.0 archivos --title ... --notes-file ... --verify-tag</code> crea la publicación con sus archivos; <code>edit</code>, <code>upload</code>, <code>view</code> y <code>delete</code> la gestionan.</li>
+<li>SmartScreen avisa en programas nuevos sin firma descargados de internet: «Más información» → «Ejecutar de todas formas». No es un virus: es falta de reputación.</li>
+<li>La firma de código demuestra identidad e integridad; cuesta dinero, es opcional y tiene sentido para programas de uso público o comercial.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Cualquier programa que entregues a otros</b> (un trabajo de la universidad, una herramienta para tu trabajo): publícalo como Release con su versión, sus notas y sus hashes. Quien lo reciba sabrá exactamente qué versión tiene y podrás decirle «actualiza a la 1.2.0» en vez de «te mando el archivo nuevo por WhatsApp».</li>
+<li><b>Librerías y proyectos de código abierto</b>: el versionado semántico es el contrato con quien usa tu código. Maven, npm y casi todos los gestores de paquetes confían en él para decidir qué actualizaciones son seguras.</li>
+<li><b>Verificar lo que descargas tú</b>: muchas descargas oficiales (el propio JDK de Temurin, distribuciones de Linux, programas de seguridad) publican su SHA-256. Ahora sabes comprobarlo con <code>Get-FileHash</code> antes de instalar.</li>
+<li><b>Un negocio que vende software</b>: el ciclo completo de este capítulo (versión, etiqueta, notas, hashes, firma de código) es exactamente el que siguen las empresas, solo que automatizado con GitHub Actions u otros servicios de integración continua.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Para cada cambio, di qué versión publicarías partiendo de la 1.0.0: (a) corriges una falta de ortografía en las instrucciones; (b) añades sonidos al marcar; (c) añades jugar con el teclado y corriges un error del marcador, en la misma publicación; (d) cambias el formato de un archivo de estadísticas guardado, y los archivos viejos ya no se pueden leer. Pista: cuando hay varios cambios, manda el más importante.</li>
+<li>Calcula el SHA-256 de tu instalador, cambia el nombre de una copia del archivo y vuelve a calcularlo. ¿Cambió el hash? Explica por qué. Pista: el hash depende del contenido, no del nombre.</li>
+<li>Crea una publicación de prueba como borrador: <code>gh release create v0.0.1-prueba dist\SHA256SUMS.txt --title "Prueba" --notes "Borrador de prueba" --draft --target main</code>. Mírala con <code>gh release view v0.0.1-prueba --web</code> y bórrala con <code>gh release delete v0.0.1-prueba --cleanup-tag</code>. Pista: <code>--cleanup-tag</code> borra también la etiqueta que se creó para el borrador; si tu versión de <code>gh</code> no la tiene, borra la etiqueta con <code>git push origin --delete v0.0.1-prueba</code>.</li>
+<li>Escribe las notas de versión de una hipotética 1.1.0 que añade tres niveles de dificultad para la IA y corrige un error de la pantalla de resultado. Sigue los seis puntos de este capítulo y pon la sección «Cambios» al principio.</li>
+<li>Reto: pide a dos personas con Windows que descarguen el Totito desde tu enlace <code>releases/latest</code>, sin ayuda más allá de las notas. Anota en qué paso dudaron (¿el aviso de SmartScreen?, ¿qué archivo elegir?) y mejora las notas con <code>gh release edit</code> según lo que observes.</li>
+</ol></div>
+</section>

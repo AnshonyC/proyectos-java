@@ -1,0 +1,451 @@
+<section class="capitulo" id="cap17">
+<h1><span class="num">Capítulo 17</span>Texto y entrada</h1>
+<p class="entrada">El Totito muestra textos («Turno de Ana», «¡Tres en línea!»), recibe el nombre que escribes en la configuración y lo recorta si no cabe, y convierte sus colores en códigos como <code>#FF3BD4</code>. En este capítulo aprendes a trabajar con texto en Java (la clase <code>String</code>, sus métodos, la forma correcta de comparar, <code>StringBuilder</code> y <code>String.format</code>) y a leer lo que el usuario escribe en el teclado con <code>Scanner</code>, como hace <code>PruebaConsola</code>.</p>
+
+<h2>Qué es un <code>String</code></h2>
+<p>Un <code>String</code> («cadena», de <i>cadena de caracteres</i>) es un texto: una secuencia ordenada de caracteres, como las cuentas de un collar. <code>"Ana"</code> es la cadena formada por <code>'A'</code>, <code>'n'</code> y <code>'a'</code>. Ya sabes tres cosas de ella:</p>
+<ul>
+<li>Se escribe entre <b>comillas dobles</b>; un <code>char</code> suelto, entre simples (capítulo 12).</li>
+<li>No es un tipo primitivo sino una <b>clase</b> (por eso la mayúscula), y cada texto es un <b>objeto</b> con métodos: <code>nombre.length()</code>, <code>nombre.trim()</code>…</li>
+<li>El <code>+</code> pega textos con cualquier cosa.</li>
+</ul>
+<p>Como los arreglos, los caracteres de un <code>String</code> se numeran desde 0: en <code>"Ana"</code>, la posición 0 es <code>'A'</code> y la 2 es <code>'a'</code>. Y como Java usa Unicode, un <code>String</code> puede contener tildes, eñes, signos de apertura (<code>¡</code>, <code>¿</code>) y símbolos como los puntos suspensivos <code>…</code> (un solo carácter) que usa <code>Dibujo.recortar</code>.</p>
+
+<h2>Los <code>String</code> son inmutables</h2>
+<p>Esta es la propiedad más importante de los textos en Java: <b>un <code>String</code> nunca cambia</b> una vez creado. Ningún método modifica el texto original; los que parecen hacerlo (pasar a mayúsculas, quitar espacios, recortar) devuelven un <code>String</code> <b>nuevo</b> y dejan el original intacto.</p>
+<pre class="java">public class Inmutable {
+    public static void main(String[] args) {
+        String nombre = "ana";
+        nombre.toUpperCase();                 // crea "ANA"... y se pierde
+        System.out.println("1) " + nombre);
+        nombre = nombre.toUpperCase();        // guardar el nuevo texto
+        System.out.println("2) " + nombre);
+
+        String original = "Totito";
+        String otro = original;
+        otro = otro + " neón";                // crea un String nuevo
+        System.out.println("3) original: " + original + " | otro: " + otro);
+    }
+}</pre>
+<pre class="salida">1) ana
+2) ANA
+3) original: Totito | otro: Totito neón</pre>
+<ol>
+<li><code>nombre.toUpperCase();</code> fabricó <code>"ANA"</code>, pero nadie lo guardó: se perdió. <code>nombre</code> sigue siendo <code>"ana"</code>. Es el error más común con textos.</li>
+<li>Para «cambiar» una variable de texto hay que <b>asignarle</b> el resultado: <code>nombre = nombre.toUpperCase();</code>. La variable ahora apunta al texto nuevo; el viejo, si nadie más lo usa, lo recoge la memoria.</li>
+<li><code>otro</code> y <code>original</code> apuntaban al mismo <code>String</code> (capítulo 15: referencias). Pero como nadie puede modificar un <code>String</code>, compartirlo es totalmente seguro: <code>otro + " neón"</code> crea uno nuevo y <code>original</code> no se entera. Con un arreglo, compartir era peligroso; con <code>String</code>, no.</li>
+</ol>
+<div class="caja concepto"><b>Analogía: un letrero impreso.</b> Un <code>String</code> es como un letrero impreso: si quieres que diga otra cosa, no lo corriges con marcador, imprimes uno nuevo y lo cuelgas en lugar del viejo. Quien tenía una foto del letrero viejo sigue viendo el viejo. Esa es la razón por la que <code>Jugador</code> puede entregar su <code>nombre</code> con <code>getNombre()</code> sin miedo: nadie podrá alterarlo desde fuera.</div>
+
+<h2>Los métodos más útiles de <code>String</code></h2>
+<pre class="java">public class MetodosString {
+    public static void main(String[] args) {
+        String nombre = "  Ana Lucía  ";
+        System.out.println("[" + nombre + "] mide " + nombre.length());
+
+        String limpio = nombre.trim();
+        System.out.println("[" + limpio + "] mide " + limpio.length());
+        System.out.println("¿Vacío? " + limpio.isEmpty() + "; ¿y \"   \".trim()? " + "   ".trim().isEmpty());
+
+        System.out.println("Primera letra: " + limpio.charAt(0));
+        System.out.println("Última letra: " + limpio.charAt(limpio.length() - 1));
+        System.out.println("substring(0, 3): " + limpio.substring(0, 3));
+        System.out.println("substring(4): " + limpio.substring(4));
+        System.out.println("indexOf(' '): " + limpio.indexOf(' '));
+        System.out.println("contains(\"Luc\"): " + limpio.contains("Luc"));
+        System.out.println("Mayúsculas: " + limpio.toUpperCase());
+        System.out.println("replace: " + limpio.replace("Ana", "Eva"));
+        System.out.println("¿Empieza con \"An\"? " + limpio.startsWith("An"));
+    }
+}</pre>
+<pre class="salida">[  Ana Lucía  ] mide 13
+[Ana Lucía] mide 9
+¿Vacío? false; ¿y "   ".trim()? true
+Primera letra: A
+Última letra: a
+substring(0, 3): Ana
+substring(4): Lucía
+indexOf(' '): 3
+contains("Luc"): true
+Mayúsculas: ANA LUCÍA
+replace: Eva Lucía
+¿Empieza con "An"? true</pre>
+<table class="tabla">
+<tr><th>Método</th><th>Devuelve</th><th>Dónde lo usa el Totito</th></tr>
+<tr><td><code>length()</code></td><td>Cuántos caracteres tiene (con paréntesis, a diferencia de <code>arreglo.length</code>)</td><td><code>CampoTexto</code>: no deja escribir más de <code>MAXIMO</code> (14) caracteres</td></tr>
+<tr><td><code>isEmpty()</code></td><td><code>true</code> si tiene longitud 0</td><td><code>TarjetaJugador.getNombre</code>, <code>BotonNeon</code> (botón sin texto = solo icono)</td></tr>
+<tr><td><code>trim()</code></td><td>Copia sin los espacios del principio y del final (los de en medio se quedan)</td><td><code>TarjetaJugador.getNombre</code></td></tr>
+<tr><td><code>charAt(i)</code></td><td>El <code>char</code> de la posición <code>i</code> (0 a <code>length() - 1</code>)</td><td>Útil para convertir lo que se escribe en una ficha</td></tr>
+<tr><td><code>substring(a, b)</code></td><td>El trozo desde la posición <code>a</code> (incluida) hasta la <code>b</code> (<b>excluida</b>)</td><td><code>Dibujo.recortar</code> y <code>CampoTexto</code></td></tr>
+<tr><td><code>substring(a)</code></td><td>Desde <code>a</code> hasta el final</td><td></td></tr>
+<tr><td><code>indexOf(x)</code></td><td>Posición de la primera aparición, o <code>-1</code> si no está</td><td></td></tr>
+<tr><td><code>contains</code>, <code>startsWith</code>, <code>endsWith</code></td><td><code>boolean</code>: si contiene, empieza o termina con un texto</td><td></td></tr>
+<tr><td><code>toUpperCase()</code>, <code>toLowerCase()</code></td><td>Copia en mayúsculas o minúsculas</td><td></td></tr>
+<tr><td><code>replace(a, b)</code></td><td>Copia con cada <code>a</code> cambiado por <code>b</code></td><td></td></tr>
+</table>
+<p>Dos detalles que confunden al principio:</p>
+<ul>
+<li><b><code>substring(0, 3)</code> da 3 caracteres</b>, las posiciones 0, 1 y 2. El final es exclusivo, como en <code>for (int i = 0; i &lt; 3; i++)</code>. Ventaja: la longitud del trozo es <code>b - a</code>, y <code>substring(0, largo - 1)</code> es «todo menos el último», justo lo que hace <code>Dibujo.recortar</code> en cada vuelta de su <code>while</code> (capítulo 14). Si pides posiciones fuera del texto, obtienes <code>StringIndexOutOfBoundsException</code>, el primo de la excepción de los arreglos.</li>
+<li><b><code>trim()</code> no toca los espacios de en medio</b>: <code>"  Ana Lucía  "</code> queda <code>"Ana Lucía"</code>. Y un texto hecho solo de espacios queda vacío.</li>
+</ul>
+<h3>Cómo el Totito decide el nombre de un jugador</h3>
+<p>En la pantalla de configuración escribes tu nombre. <code>TarjetaJugador</code> lo entrega así:</p>
+<pre class="java">/** El nombre escrito o, si se dejo vacio, el titulo ("Jugador 1"). */
+public String getNombre() {
+    String nombre = campo.getText().trim();
+    return nombre.isEmpty() ? titulo : nombre;
+}</pre>
+<p>Línea a línea: <code>campo.getText()</code> devuelve lo que hay escrito en la caja de texto; <code>.trim()</code> se aplica sobre ese resultado (las llamadas se encadenan de izquierda a derecha: cada punto actúa sobre lo que devolvió lo anterior) y quita espacios sobrantes. Después, el ternario del capítulo 13: si no queda nada, se usa el título de la tarjeta. ¿Por qué el <code>trim()</code>? Porque si alguien escribe solo espacios, sin él el nombre sería «   » y el letrero diría «Turno de    ». Con él, esa persona se llama «Jugador 1». Un método de cinco letras evita un letrero roto.</p>
+<div class="caja consejo">Desde Java 11 existen <code>strip()</code> (como <code>trim()</code>, pero entiende más tipos de espacios de Unicode) e <code>isBlank()</code> («¿está vacío o solo tiene espacios?»). <code>nombre.isBlank()</code> equivale a <code>nombre.trim().isEmpty()</code>. Puedes usarlos en tus proyectos; el Totito usa la forma clásica, que verás en todo el código antiguo.</div>
+
+<h2>Comparar textos: <code>equals</code>, nunca <code>==</code></h2>
+<p>Con <code>int</code> o <code>char</code>, <code>==</code> compara valores. Con objetos, <code>==</code> pregunta otra cosa: «¿son <b>el mismo objeto</b>?», es decir, ¿las dos variables guardan la misma referencia? Dos textos con las mismas letras pueden ser objetos distintos. Para saber si dos textos tienen <b>el mismo contenido</b> se usa el método <code>equals</code>:</p>
+<pre class="java">public class Comparar {
+    public static void main(String[] args) {
+        String a = "Ana";
+        String b = "Ana";
+        String c = "Ana Lucía".substring(0, 3);   // tambien dice "Ana", pero es otro objeto
+
+        System.out.println("c = " + c);
+        System.out.println("a == b      : " + (a == b));
+        System.out.println("a == c      : " + (a == c));
+        System.out.println("a.equals(c) : " + a.equals(c));
+        System.out.println("\"ana\".equals(a)           : " + "ana".equals(a));
+        System.out.println("\"ana\".equalsIgnoreCase(a) : " + "ana".equalsIgnoreCase(a));
+
+        String vacio = null;
+        System.out.println("\"Ana\".equals(null) : " + "Ana".equals(vacio));
+    }
+}</pre>
+<pre class="salida">c = Ana
+a == b      : true
+a == c      : false
+a.equals(c) : true
+"ana".equals(a)           : false
+"ana".equalsIgnoreCase(a) : true
+"Ana".equals(null) : false</pre>
+<p>Lo traicionero es la primera línea: <code>a == b</code> dio <code>true</code>. Java guarda una sola copia de cada texto literal escrito en el código (como los dos <code>"Ana"</code>) y la reutiliza, así que <code>a</code> y <code>b</code> son de verdad el mismo objeto. Pero en cuanto el texto se <i>fabrica</i> durante la ejecución (con <code>substring</code>, con <code>+</code>, al leerlo del teclado o de una caja de texto), es un objeto nuevo y <code>==</code> da <code>false</code> aunque las letras sean idénticas. Por eso un programa que compara con <code>==</code> puede «funcionar» en tus pruebas y fallar con lo que escribe el usuario.</p>
+<div class="caja cuidado"><b>Regla sin excepciones</b>: los textos se comparan con <code>equals</code> (o <code>equalsIgnoreCase</code> si no importan las mayúsculas). Y si uno de los dos es un literal, ponlo delante: <code>"Ana".equals(nombre)</code> funciona aunque <code>nombre</code> sea <code>null</code> (da <code>false</code>), mientras que <code>nombre.equals("Ana")</code> lanzaría <code>NullPointerException</code>. El Totito evita el problema en lo más repetido (las fichas son <code>char</code>, capítulo 12), y donde compara textos usa métodos que llaman a <code>equals</code> por dentro, como <code>instaladas.contains(familia)</code> en <code>Tema</code>.</div>
+<div class="caja concepto"><b>Analogía: dos ejemplares del mismo libro.</b> Tú y tu amiga tienen cada una un ejemplar de «Cien años de soledad». ¿Es el mismo libro? Depende de la pregunta. «¿Tienen el mismo texto?» Sí: eso es <code>equals</code>. «¿Es el mismo objeto físico, el que tienes en la mano?» No: eso es <code>==</code>. Casi siempre quieres la primera pregunta.</div>
+
+<h2>Concatenar: el <code>+</code> y <code>StringBuilder</code></h2>
+<p>El <code>+</code> con un <code>String</code> a un lado convierte lo del otro lado en texto y los pega. Reglas que ya viste en los capítulos 12 y 14, juntas:</p>
+<pre class="java">public class Concatenar {
+    public static void main(String[] args) {
+        String nombre = "Ana";
+        char ficha = 'X';
+        int victorias = 3;
+        System.out.println("Turno de " + nombre);
+        System.out.println(nombre + " (" + ficha + ") lleva " + victorias + " victorias");
+        System.out.println("Total: " + victorias + 2);
+        System.out.println("Total: " + (victorias + 2));
+
+        // Construir el tablero de texto con StringBuilder
+        char[][] casillas = {
+            {'X', 'O', ' '},
+            {' ', 'X', ' '},
+            {'O', ' ', 'X'}
+        };
+        StringBuilder sb = new StringBuilder();
+        for (int fila = 0; fila &lt; 3; fila++) {
+            sb.append(' ').append(casillas[fila][0])
+              .append(" | ").append(casillas[fila][1])
+              .append(" | ").append(casillas[fila][2]).append('\n');
+            if (fila &lt; 2) {
+                sb.append("---+---+---\n");
+            }
+        }
+        String tablero = sb.toString();
+        System.out.print(tablero);
+        System.out.println("El texto mide " + tablero.length() + " caracteres");
+    }
+}</pre>
+<pre class="salida">Turno de Ana
+Ana (X) lleva 3 victorias
+Total: 32
+Total: 5
+ X | O |
+---+---+---
+   | X |
+---+---+---
+ O |   | X
+El texto mide 57 caracteres</pre>
+<p>«Total: 32»: de izquierda a derecha, <code>"Total: " + 3</code> ya es texto, y pegarle un 2 da «32». Con paréntesis se suma primero.</p>
+<h3>Por qué existe <code>StringBuilder</code></h3>
+<p>Como los <code>String</code> son inmutables, cada <code>+</code> fabrica un texto nuevo copiando todos los caracteres anteriores. Para pegar tres o cuatro trozos en una línea da igual (el compilador ya lo optimiza), pero si construyes un texto largo pegando dentro de un bucle de miles de vueltas, estarías copiando y tirando miles de textos cada vez más largos. <code>StringBuilder</code> («constructor de cadenas») es un texto <b>modificable</b>: tiene un espacio interno que va creciendo, y <code>append</code> («añadir al final») escribe ahí sin copiar lo anterior. Al terminar, <code>toString()</code> te da el <code>String</code> definitivo.</p>
+<p>Fíjate en el estilo: <code>sb.append(' ').append(casillas[fila][0]).append(" | ")…</code>. Cada <code>append</code> devuelve el mismo <code>StringBuilder</code>, así que se puede encadenar el siguiente; partir la cadena en varias líneas, con el punto al principio, hace que se lea como una lista. Acepta cualquier tipo: <code>char</code>, <code>String</code>, números. El <code>'\n'</code> es el salto de línea (capítulo 12), que aquí se añade a mano porque estamos fabricando un texto, no imprimiendo con <code>println</code>.</p>
+<div class="caja concepto"><b>Analogía.</b> Concatenar con <code>+</code> en un bucle es como reescribir a mano una carta entera cada vez que quieres añadirle una frase. <code>StringBuilder</code> es un cuaderno donde vas escribiendo al final de lo que ya hay, y solo al terminar lo pasas en limpio.</div>
+<p>Úsalo cuando armes un texto <b>dentro de un bucle</b>: un informe, un archivo CSV, el tablero en consola de un tablero grande. Para una línea suelta, el <code>+</code> es más legible y el Totito lo usa así: <code>"Turno de " + enTurno.getNombre()</code>.</p>
+
+<h2><code>String.format</code>: texto con plantilla</h2>
+<p>Cuando un texto mezcla muchas variables, o necesitas controlar cómo se ven los números (decimales, ceros a la izquierda, anchos), es más claro escribir una <b>plantilla</b> con huecos y rellenarlos: <code>String.format(plantilla, valores…)</code>. Cada hueco empieza con <code>%</code> y una letra que indica qué tipo de dato va ahí; los valores se colocan en orden.</p>
+<pre class="java">public class Formato {
+    public static void main(String[] args) {
+        String nombre = "Ana";
+        int victorias = 3;
+        double porcentaje = 3 * 100.0 / 7;
+
+        System.out.println(String.format("%s lleva %d victorias", nombre, victorias));
+        System.out.println(String.format("Gana el %.1f %% de las veces", porcentaje));
+        System.out.println(String.format("Ficha: %c", 'X'));
+        System.out.println(String.format("[%5d] [%-5d] [%05d]", 42, 42, 42));
+        System.out.println(String.format("[%-10s|%10s]", "Ana", "IA"));
+
+        // Como Tema.hex: el color ROSA (255, 59, 212) en "#RRGGBB"
+        int r = 0xFF, g = 0x3B, b = 0xD4;
+        System.out.println(String.format("#%02X%02X%02X", r, g, b));
+        System.out.println(String.format("con %%X: #%X%X%X", 5, 11, 0));
+        System.out.println(String.format("con %%02X: #%02X%02X%02X", 5, 11, 0));
+        System.out.println(String.format("con %%02x: #%02x%02x%02x", r, g, b));
+
+        System.out.printf("printf: %s juega con %c%n", nombre, 'O');
+        System.out.println("%s tiene %d empates".formatted("Luis", 2));
+    }
+}</pre>
+<pre class="salida">Ana lleva 3 victorias
+Gana el 42.9 % de las veces
+Ficha: X
+[   42] [42   ] [00042]
+[Ana       |        IA]
+#FF3BD4
+con %X: #5B0
+con %02X: #050B00
+con %02x: #ff3bd4
+printf: Ana juega con O
+Luis tiene 2 empates</pre>
+<table class="tabla">
+<tr><th>Especificador</th><th>Para</th><th>Ejemplo → resultado</th></tr>
+<tr><td><code>%s</code></td><td>Texto (o cualquier cosa, convertida a texto)</td><td><code>"Ana"</code> → <code>Ana</code></td></tr>
+<tr><td><code>%d</code></td><td>Entero (<code>int</code>, <code>long</code>)</td><td><code>3</code> → <code>3</code></td></tr>
+<tr><td><code>%c</code></td><td>Un <code>char</code></td><td><code>'X'</code> → <code>X</code></td></tr>
+<tr><td><code>%f</code>, <code>%.1f</code></td><td>Decimal; <code>.1</code> = una cifra decimal (redondeada)</td><td><code>42.857…</code> → <code>42.9</code></td></tr>
+<tr><td><code>%X</code>, <code>%x</code></td><td>Entero en hexadecimal (mayúsculas / minúsculas)</td><td><code>212</code> → <code>D4</code></td></tr>
+<tr><td><code>%5d</code>, <code>%-5d</code></td><td>Ancho mínimo 5, alineado a la derecha / a la izquierda</td><td><code>[   42]</code>, <code>[42   ]</code></td></tr>
+<tr><td><code>%05d</code>, <code>%02X</code></td><td>Ancho mínimo, rellenando con ceros a la izquierda</td><td><code>00042</code>, <code>05</code></td></tr>
+<tr><td><code>%%</code></td><td>Un signo <code>%</code> literal</td><td><code>%</code></td></tr>
+<tr><td><code>%n</code></td><td>Salto de línea (el correcto para cada sistema)</td><td></td></tr>
+</table>
+<p>Los anchos sirven para alinear columnas, por ejemplo un marcador en consola: <code>String.format("%-10s %3d", nombre, victorias)</code> deja todos los números alineados aunque los nombres midan distinto.</p>
+
+<h3><code>Tema.hex</code> y el misterioso <code>"%02X"</code></h3>
+<p>Ahora puedes leer este método de <code>Tema</code> carácter por carácter:</p>
+<pre class="java">/** "#RRGGBB", para usar los colores del tema dentro de texto HTML de un JLabel. */
+public static String hex(Color color) {
+    return String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
+}</pre>
+<ul>
+<li><code>#</code>: un carácter literal; los colores web empiezan así.</li>
+<li><code>%02X</code>, tres veces: un hueco por cada componente del color (rojo, verde, azul, cada uno de 0 a 255, capítulo 35). <code>X</code> lo escribe en hexadecimal con letras mayúsculas; <code>2</code> exige al menos dos caracteres de ancho; <code>0</code> rellena con ceros, no con espacios.</li>
+<li>Para el <code>ROSA</code> (255, 59, 212): 255 → <code>FF</code>, 59 → <code>3B</code>, 212 → <code>D4</code>. Resultado: <code>#FF3BD4</code>, exactamente el código de color del diseño.</li>
+</ul>
+<p>¿Por qué no basta con <code>%X</code>? Mira las líneas «con %X» y «con %02X» de la salida, con un color (5, 11, 0). Sin el relleno, 5 se escribe <code>5</code> y 0 se escribe <code>0</code>: sale <code>#5B0</code>, que no tiene seis cifras y que un navegador interpretaría como otro color (<code>#55BB00</code>, porque los colores de tres cifras se leen duplicando cada una). Con <code>%02X</code> cada componente ocupa siempre sus dos posiciones: <code>#050B00</code>, el color correcto. Dos caracteres en la plantilla evitan un error de color sutil que nadie detectaría a simple vista.</p>
+<p>¿Y para qué quiere el Totito un color como texto? <code>PantallaInstrucciones</code> escribe las instrucciones con un poco de HTML (las etiquetas de JLabel admiten HTML sencillo) y colorea la X de rosa y la O de azul dentro de la frase:</p>
+<pre class="java">String x = "&lt;font color='" + Tema.hex(Tema.ROSA) + "'&gt;&lt;b&gt;X&lt;/b&gt;&lt;/font&gt;";</pre>
+<p>Que se convierte en el texto <code>&lt;font color='#FF3BD4'&gt;&lt;b&gt;X&lt;/b&gt;&lt;/font&gt;</code>. Gracias a <code>hex</code>, el color sale de la misma constante <code>Tema.ROSA</code> que usan las fichas: si algún día cambias el rosa del tema, también cambia en las instrucciones.</p>
+<div class="caja cuidado"><b>Decimales y configuración regional.</b> <code>%.1f</code> usa el separador decimal de la configuración regional de la computadora. En Guatemala y México es el punto (<code>42.9</code>); en una computadora configurada para España saldría <code>42,9</code>. Si un texto debe tener siempre el mismo formato (un archivo que leerá otro programa, por ejemplo), indica la región: <code>String.format(Locale.ROOT, "%.1f", porcentaje)</code>, con <code>import java.util.Locale;</code>. Con <code>%d</code> y <code>%X</code> sin separador de miles, como en <code>hex</code>, no hay diferencia.</div>
+<p>Dos variantes que verás: <code>System.out.printf(…)</code> formatea e imprime de una vez (ojo: no salta de línea solo; pon <code>%n</code> al final), y desde Java 15 <code>"plantilla".formatted(valores)</code> hace lo mismo que <code>String.format</code> escrito al revés.</p>
+
+<h2>Convertir entre texto y números</h2>
+<p>Lo que llega del teclado o de una caja de texto es siempre texto. <code>"2"</code> no es el número 2: <code>"2" + 1</code> da <code>"21"</code>. Para convertir:</p>
+<pre class="java">public class Convertir {
+    public static void main(String[] args) {
+        String texto = "2";
+        int fila = Integer.parseInt(texto);
+        System.out.println("fila + 1 = " + (fila + 1));
+        System.out.println("texto + 1 = " + (texto + 1));
+
+        String deNumero = String.valueOf(450);
+        System.out.println("450 como texto mide " + deNumero.length());
+
+        char ficha = "o".toUpperCase().charAt(0);
+        System.out.println("ficha = " + ficha + ", es char: " + (ficha == 'O'));
+        String deChar = String.valueOf(ficha);
+        System.out.println("como String: \"" + deChar + "\"");
+
+        System.out.println(Integer.parseInt("dos"));
+    }
+}</pre>
+<pre class="salida">fila + 1 = 3
+texto + 1 = 21
+450 como texto mide 3
+ficha = O, es char: true
+como String: "O"
+Exception in thread "main" java.lang.NumberFormatException: For input string: "dos"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Integer.parseInt(Integer.java:662)
+	at java.base/java.lang.Integer.parseInt(Integer.java:778)
+	at Convertir.main(Convertir.java:16)</pre>
+<ul>
+<li><code>Integer.parseInt(texto)</code> (y <code>Double.parseDouble</code>) convierte un texto en número. Si el texto no es un número válido lanza <code>NumberFormatException</code>; observa en la traza que el error salta dentro de la biblioteca de Java (<code>java.base/…</code>) y la última línea, la de <i>tu</i> código, es la que te dice quién le pasó «dos». Cómo atrapar ese error sin que el programa se cierre lo verás en el capítulo 26.</li>
+<li><code>String.valueOf(x)</code> convierte cualquier cosa en texto (igual que <code>"" + x</code>, pero más explícito).</li>
+<li><code>texto.toUpperCase().charAt(0)</code> es la receta para convertir lo que alguien escribió («o», «O», «oso») en una ficha <code>char</code>: a mayúsculas y quedarse con la primera letra.</li>
+</ul>
+
+<h2>Leer del teclado con <code>Scanner</code></h2>
+<p>Hasta ahora tus programas solo hablaban. Para que escuchen, Java ofrece <code>System.in</code>, la <b>entrada estándar</b>: lo que se teclea en la terminal (la pareja de <code>System.out</code>). Pero <code>System.in</code> entrega bytes sueltos, muy incómodos. La clase <code>Scanner</code> (del paquete <code>java.util</code>) los envuelve y te los da ya convertidos: una línea, una palabra, un número.</p>
+<pre class="java">import java.util.Scanner;
+
+public class LeerJugador {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+
+        System.out.print("¿Cómo te llamas? ");
+        String nombre = teclado.nextLine().trim();
+        if (nombre.isEmpty()) {
+            nombre = "Jugador 1";
+        }
+
+        System.out.print("¿Con qué ficha juegas (X u O)? ");
+        char ficha = teclado.next().toUpperCase().charAt(0);
+        char rival = ficha == 'X' ? 'O' : 'X';
+
+        System.out.print("¿Cuántas partidas quieres jugar? ");
+        int partidas = teclado.nextInt();
+
+        System.out.println(String.format("Hola, %s. Juegas con %c contra la %c, %d partida(s).",
+                nombre, ficha, rival, partidas));
+    }
+}</pre>
+<p>Al ejecutarlo, el programa se detiene en cada pregunta hasta que escribes algo y pulsas Enter. Una sesión (lo que escribe el usuario va después de cada signo de interrogación):</p>
+<pre class="salida">¿Cómo te llamas?   Maria
+¿Con qué ficha juegas (X u O)? o
+¿Cuántas partidas quieres jugar? 3
+Hola, Maria. Juegas con O contra la X, 3 partida(s).</pre>
+<ul>
+<li><b><code>import java.util.Scanner;</code></b>: <code>Scanner</code> no está en <code>java.lang</code>, así que hay que importarlo.</li>
+<li><b><code>new Scanner(System.in)</code></b>: crea un lector conectado al teclado. Se crea <b>uno</b> al principio y se reutiliza para todas las lecturas.</li>
+<li><b><code>print</code> en lugar de <code>println</code></b> para las preguntas: así el cursor se queda en la misma línea y la respuesta se escribe al lado.</li>
+<li><b><code>nextLine()</code></b>: lee la línea completa, con sus espacios, hasta el Enter (el Enter no se incluye). Ideal para nombres. Aquí, además, se le aplica <code>trim()</code> y la misma regla que <code>TarjetaJugador</code>: sin nombre, «Jugador 1».</li>
+<li><b><code>next()</code></b>: lee una sola palabra (un <b>token</b>: lo que hay entre espacios). <code>toUpperCase().charAt(0)</code> la convierte en ficha.</li>
+<li><b><code>nextInt()</code></b>: lee una palabra y la convierte a <code>int</code>. Si lo escrito no es un número, lanza <code>InputMismatchException</code>.</li>
+</ul>
+<div class="caja concepto"><b>Cómo lee Scanner.</b> Imagina que todo lo que tecleas cae en una cinta transportadora, letra por letra, incluido el Enter (que es un carácter más, <code>'\n'</code>). Scanner va tomando de la cinta: <code>next()</code> y <code>nextInt()</code> se saltan los espacios y Enters iniciales, toman una palabra y se detienen <i>justo antes</i> del siguiente espacio o Enter, dejándolo en la cinta. <code>nextLine()</code> toma todo hasta el próximo Enter y se lleva el Enter. Si la cinta está vacía, el programa espera a que escribas.</div>
+
+<h3>La trampa de <code>nextInt()</code> seguido de <code>nextLine()</code></h3>
+<p>Esa forma de leer produce el error más famoso de <code>Scanner</code>:</p>
+<pre class="java">import java.util.Scanner;
+
+public class TrampaNextLine {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+        System.out.print("Edad: ");
+        int edad = teclado.nextInt();
+        System.out.print("Nombre: ");
+        String nombre = teclado.nextLine();
+        System.out.println("edad=" + edad + ", nombre=[" + nombre + "]");
+    }
+}</pre>
+<pre class="salida">Edad: 17
+Nombre: edad=17, nombre=[]</pre>
+<p>¡Ni siquiera esperó al nombre! Al escribir <code>17</code> y Enter, la cinta tenía «17» y un Enter. <code>nextInt()</code> se llevó el 17 y <b>dejó el Enter</b>. Luego <code>nextLine()</code> encontró ese Enter y devolvió la línea vacía que había antes de él. Dos soluciones: añadir un <code>teclado.nextLine();</code> suelto después del <code>nextInt()</code> para «tragar» el Enter sobrante, o leer siempre con <code>nextLine()</code> y convertir tú: <code>int edad = Integer.parseInt(teclado.nextLine().trim());</code>. En <code>LeerJugador</code> el problema no aparece porque el <code>nextLine()</code> va primero.</p>
+
+<h3>Validar lo que escribe el usuario: <code>hasNextInt()</code></h3>
+<p>Nunca confíes en que el usuario escriba lo esperado. <code>hasNextInt()</code> mira la cinta <b>sin consumir nada</b> y responde si lo próximo es un número. Con eso se puede pedir una jugada hasta que sea válida, combinando el <code>while</code> y el <code>continue</code> del capítulo 14:</p>
+<pre class="java">import java.util.Scanner;
+
+public class LeerJugada {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+        int fila = -1;
+        int columna = -1;
+        boolean valida = false;
+
+        while (!valida) {
+            System.out.print("Fila y columna (0 a 2): ");
+            if (!teclado.hasNextInt()) {
+                String basura = teclado.next();          // descartar lo que no es numero
+                System.out.println("  \"" + basura + "\" no es un numero.");
+                continue;
+            }
+            fila = teclado.nextInt();
+            columna = teclado.nextInt();
+            valida = fila &gt;= 0 &amp;&amp; fila &lt;= 2 &amp;&amp; columna &gt;= 0 &amp;&amp; columna &lt;= 2;
+            if (!valida) {
+                System.out.println("  (" + fila + ", " + columna + ") esta fuera del tablero.");
+            }
+        }
+        System.out.println("Jugada aceptada: fila " + fila + ", columna " + columna);
+    }
+}</pre>
+<pre class="salida">Fila y columna (0 a 2): dos
+  "dos" no es un numero.
+Fila y columna (0 a 2): 1 5
+  (1, 5) esta fuera del tablero.
+Fila y columna (0 a 2): 1 2
+Jugada aceptada: fila 1, columna 2</pre>
+<p>Si lo próximo no es un número, hay que <b>sacarlo de la cinta</b> con <code>next()</code> antes de volver a preguntar; si no, <code>hasNextInt()</code> seguiría viendo «dos» para siempre: un bucle infinito. Fíjate también en que <code>1 5</code> se escribe en una sola línea: <code>nextInt()</code> lee palabra por palabra, así que da igual escribir los dos números separados por un espacio o en dos líneas.</p>
+
+<h3>Así lee <code>PruebaConsola</code></h3>
+<p>Con todo esto, el corazón de <code>herramientas/PruebaConsola.java</code>, que escribirás en el capítulo 32, se lee de corrido:</p>
+<pre class="java">Scanner teclado = new Scanner(System.in);
+// ...
+while (true) {
+    System.out.print("Tu jugada: ");
+    if (!teclado.hasNextInt()) {
+        return;   // se cerro la entrada: terminar sin error
+    }
+    int fila = teclado.nextInt();
+    int columna = teclado.nextInt();
+    if (!tablero.marcarCasilla(fila, columna, humano.getFicha())) {
+        System.out.println("Esa casilla no se puede usar. Prueba otra.");
+        continue;
+    }
+    // ... imprimir, revisar si termino, jugar la IA ...
+}</pre>
+<p>Hay una diferencia con <code>LeerJugada</code>: si lo próximo no es un número, <code>PruebaConsola</code> no lo descarta, sino que <b>termina</b>. Es una herramienta de prueba, y el caso que le importa es otro: cuando la entrada se <b>cierra</b> (no queda nada más que leer), <code>hasNextInt()</code> devuelve <code>false</code> y el programa sale limpio en lugar de lanzar una excepción. En PowerShell cierras la entrada con <b>Ctrl+Z</b> seguido de Enter. Y la validación de la casilla la delega en <code>Tablero.marcarCasilla</code>, que ya sabe rechazar posiciones fuera de rango u ocupadas: el método que escribiste en el capítulo 29 hace también de guardián de la consola. Una partida empieza así:</p>
+<pre class="salida">Totito en consola. Escribe fila y columna (0 a 2), por ejemplo: 1 1
+
+   |   |
+---+---+---
+   |   |
+---+---+---
+   |   |
+
+Tu jugada: 1 1
+
+   |   |
+---+---+---
+   | X |
+---+---+---
+   |   |
+
+La IA juega en 0 0
+
+ O |   |
+---+---+---
+   | X |
+---+---+---
+   |   |
+
+Tu jugada: </pre>
+<div class="caja cuidado"><b>Tildes al teclear en la consola.</b> En algunas consolas de Windows, las letras con tilde o la ñ que <i>escribes</i> pueden llegarle a Java mal (por ejemplo <code>Mar?a</code>), porque la consola y Java no siempre usan la misma codificación para la entrada. Si te pasa en estos ejercicios, escribe sin tildes; no es un fallo de tu código. La interfaz gráfica del Totito no tiene este problema: las cajas de texto de Swing reciben el texto ya convertido.</div>
+<div class="caja consejo">Un <code>Scanner</code> sobre <code>System.in</code> se crea una vez y no se cierra (cerrarlo cierra también <code>System.in</code>, y ya no podrías volver a leer el teclado en ese programa). NetBeans puede mostrar un aviso amarillo de «resource leak» en esa línea; para el teclado puedes ignorarlo. Cuando un <code>Scanner</code> lee un <b>archivo</b>, en cambio, sí hay que cerrarlo: lo verás con <i>try-with-resources</i> en el capítulo 26. Y si ejecutas desde NetBeans, lo que el programa lee se escribe en la ventana <i>Output</i>, haciendo clic en ella antes de teclear.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Un <code>String</code> es un objeto de texto, con caracteres numerados desde 0, y es <b>inmutable</b>: sus métodos devuelven textos nuevos que hay que guardar (<code>nombre = nombre.trim();</code>).</li>
+<li>Métodos clave: <code>length()</code>, <code>isEmpty()</code>, <code>trim()</code>, <code>charAt(i)</code>, <code>substring(a, b)</code> (con <code>b</code> excluido), <code>indexOf</code>, <code>contains</code>, <code>toUpperCase</code>, <code>replace</code>. El Totito usa <code>trim</code> + <code>isEmpty</code> para el nombre y <code>substring</code> para recortar.</li>
+<li>Los textos se comparan con <code>equals</code> (o <code>equalsIgnoreCase</code>), nunca con <code>==</code>, que solo dice si son el mismo objeto. Literal delante: <code>"Ana".equals(x)</code>.</li>
+<li><code>+</code> pega textos; dentro de bucles largos, usa <code>StringBuilder</code> con <code>append</code> y <code>toString()</code>.</li>
+<li><code>String.format</code> rellena una plantilla: <code>%s</code>, <code>%d</code>, <code>%c</code>, <code>%.1f</code>, anchos y <code>%02X</code>, que en <code>Tema.hex</code> convierte (255, 59, 212) en <code>#FF3BD4</code> con dos cifras por componente.</li>
+<li><code>Integer.parseInt</code> y <code>String.valueOf</code> convierten entre texto y números; <code>texto.toUpperCase().charAt(0)</code>, entre texto y ficha.</li>
+<li><code>Scanner</code> lee el teclado: <code>nextLine()</code> (línea), <code>next()</code> (palabra), <code>nextInt()</code> (número), <code>hasNextInt()</code> (mirar sin consumir). Cuidado con el Enter que deja <code>nextInt()</code> antes de un <code>nextLine()</code>.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Formularios de cualquier aplicación</b>: <code>trim()</code> + <code>isEmpty()</code> antes de aceptar un nombre, <code>equalsIgnoreCase</code> para comparar correos o usuarios, <code>contains("@")</code> como validación mínima de un correo, y <code>substring</code> para limitar la longitud de un campo como hace <code>CampoTexto</code>.</li>
+<li><b>Recibos e informes alineados</b>: <code>String.format("%-20s %8.2f", producto, precio)</code> produce columnas perfectas para un ticket de una tienda; con <code>StringBuilder</code> armas el recibo completo antes de imprimirlo o guardarlo.</li>
+<li><b>Colores para la web o para un editor</b>: el mismo <code>"#%02X%02X%02X"</code> de <code>Tema.hex</code> sirve para exportar una paleta a CSS o mostrar el código de un color elegido en un selector.</li>
+<li><b>Programas de consola interactivos</b>: un menú de un gestor de tareas («1. Agregar, 2. Listar, 3. Salir») leído con <code>Scanner</code> y validado con <code>hasNextInt()</code>, o un juego de adivinar números que repite la pregunta hasta acertar.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>En jshell, con <code>String s = "Totito Neon";</code>, predice y comprueba: <code>s.length()</code>, <code>s.charAt(7)</code>, <code>s.substring(0, 6)</code>, <code>s.substring(7)</code>, <code>s.indexOf("Neon")</code>, <code>s.toLowerCase()</code>, <code>s.replace('o', '0')</code>.</li>
+<li>Escribe un método <code>static String iniciales(String nombreCompleto)</code> que reciba «Ana Lucía Pérez» y devuelva «ALP». Pista: recorre el texto con <code>charAt</code> y toma la primera letra y cada letra que siga a un espacio; usa un <code>StringBuilder</code>.</li>
+<li>Escribe tu propio <code>hex(int r, int g, int b)</code> y pruébalo con los colores del Totito: AZUL (47, 132, 255), MORADO (160, 92, 255) y LAVANDA (200, 188, 246). Comprueba que obtienes <code>#2F84FF</code>, <code>#A05CFF</code> y <code>#C8BCF6</code>.</li>
+<li>Con <code>Scanner</code>, pide al usuario su nombre y su ficha; repite la pregunta de la ficha mientras no escriba X u O (en mayúscula o minúscula). Luego imprime un saludo con <code>String.format</code>.</li>
+<li>Reto: un marcador en consola. Pide los nombres de dos jugadores y luego, en un bucle, pregunta «¿Quién ganó? (1, 2, E para empate, S para salir)». Lleva la cuenta con un <code>int[] victorias</code> y un contador de empates, y al salir imprime una tabla alineada con <code>%-12s %3d</code>.</li>
+</ol></div>
+</section>

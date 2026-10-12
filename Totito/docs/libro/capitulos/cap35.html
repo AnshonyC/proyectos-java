@@ -1,0 +1,492 @@
+<section class="capitulo" id="cap35">
+<h1><span class="num">Capítulo 35</span>Teoría del color para programadores</h1>
+<p class="entrada">Para la computadora, un color es un trío de números. En este capítulo aprendes qué significan esos números, cómo se escriben (RGB, hexadecimal, HSB), qué es la transparencia, cómo se arma una paleta que se vea bien y se lea bien, y cómo se fabrica el brillo de neón del Totito con nada más que capas de color transparente.</p>
+
+<h2>Por qué un programador necesita saber de color</h2>
+<p>En la Parte VII vas a escribir cosas como <code>new Color(0xFF, 0x3B, 0xD4)</code>, <code>Tema.conAlfa(color, 125)</code> o <code>Tema.aclarar(color, 0.6f)</code>. Si no sabes qué significan esos números, solo puedes copiarlos; si lo sabes, puedes <b>inventar los tuyos</b>: cambiar la paleta del juego, crear un modo claro o elegir colores para cualquier otro programa sin que se vea feo ni sea difícil de leer.</p>
+<p>La buena noticia es que el color en pantalla es mucho más sencillo que el color en pintura. Todo se reduce a mezclar tres luces.</p>
+
+<h2>La pantalla mezcla luz: el modelo RGB</h2>
+<p>Si miras la pantalla de tu computadora con una lupa verás que cada punto (cada <b>píxel</b>) está formado por tres lucecitas diminutas: una <b>roja</b>, una <b>verde</b> y una <b>azul</b>. Variando cuánto brilla cada una, el ojo ve millones de colores distintos. Por eso el modelo se llama <b>RGB</b>, por sus iniciales en inglés: <i>Red</i>, <i>Green</i>, <i>Blue</i>.</p>
+<p>Esto es mezcla de <b>luz</b>, llamada <b>mezcla aditiva</b>: cuanta más luz sumas, más claro se vuelve. Es al revés que con las pinturas (mezcla <b>sustractiva</b>), donde cuanto más mezclas, más oscuro y sucio queda. Por eso en la escuela aprendiste que «amarillo + azul = verde», y en la pantalla en cambio:</p>
+<table class="tabla">
+<tr><th>Luces encendidas</th><th>Resultado</th><th>Muestra</th></tr>
+<tr><td>Rojo + verde</td><td>Amarillo</td><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#FFFF00"/></svg></td></tr>
+<tr><td>Verde + azul</td><td>Cian (celeste)</td><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#00FFFF"/></svg></td></tr>
+<tr><td>Rojo + azul</td><td>Magenta (fucsia)</td><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#FF00FF"/></svg></td></tr>
+<tr><td>Las tres a tope</td><td>Blanco</td><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#FFFFFF" stroke="#C8BCF6"/></svg></td></tr>
+<tr><td>Ninguna</td><td>Negro</td><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#000000" stroke="#C8BCF6"/></svg></td></tr>
+</table>
+<p>Fíjate: el rosa del Totito (mucho rojo, un poco de verde, bastante azul) está cerca del magenta, y el blanco del centro del neón aparece cuando las tres luces se acercan al máximo. Ese hecho explica el truco del «centro blanco» que verás al final del capítulo.</p>
+
+<h3>Cada canal va de 0 a 255</h3>
+<p>Cada una de las tres luces se llama <b>canal</b>, y su intensidad se guarda en un número entero entre <b>0</b> (apagada) y <b>255</b> (a tope). ¿Por qué 255 y no 100? Porque cada canal ocupa un <b>byte</b>, es decir, 8 bits, y con 8 bits se pueden escribir 2<sup>8</sup> = 256 valores distintos: del 0 al 255. Con tres canales hay 256 × 256 × 256 = <b>16 777 216</b> colores posibles, más de los que el ojo distingue.</p>
+<p>En Java un color es un objeto de la clase <code>java.awt.Color</code> y se crea con sus tres canales:</p>
+<pre class="java">Color rojo   = new Color(255, 0, 0);
+Color negro  = new Color(0, 0, 0);
+Color blanco = new Color(255, 255, 255);
+Color gris   = new Color(128, 128, 128);   // los tres iguales = gris
+Color rosa   = new Color(255, 59, 212);    // el ROSA del Totito</pre>
+<p>Una regla útil: cuando los tres canales son iguales, el resultado es un <b>gris</b> (más claro cuanto mayor el número). Cuanto más distintos son entre sí, más «colorido» (saturado) es el color.</p>
+
+<h2>Hexadecimal: el mismo color escrito de otra forma</h2>
+<p>En diseño casi nunca verás «255, 59, 212». Verás <b>#FF3BD4</b>. Es exactamente el mismo color, escrito en <b>hexadecimal</b>: un sistema de numeración en base 16.</p>
+<h3>Contar en base 16</h3>
+<p>Nosotros contamos en base 10: diez dígitos (0 a 9) y, al pasar del 9, agregamos una columna (10). En base 16 hay <b>dieciséis</b> dígitos. Como solo tenemos diez símbolos numéricos, se usan letras para los otros seis:</p>
+<table class="tabla">
+<tr><th>Hexadecimal</th><td>0</td><td>1</td><td>…</td><td>9</td><td>A</td><td>B</td><td>C</td><td>D</td><td>E</td><td>F</td></tr>
+<tr><th>Decimal</th><td>0</td><td>1</td><td>…</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td></tr>
+</table>
+<p>Un número hexadecimal de dos dígitos vale <b>(primer dígito × 16) + segundo dígito</b>, igual que en decimal «47» vale 4 × 10 + 7. Con dos dígitos hexadecimales se llega exactamente a FF = 15 × 16 + 15 = 255: <b>un canal cabe justo en dos dígitos hexadecimales</b>. Por eso un color se escribe con seis: dos para el rojo, dos para el verde y dos para el azul.</p>
+<h3>#FF3BD4 paso a paso</h3>
+<ol>
+<li>Quita el <code>#</code> (solo avisa que viene un color) y parte el resto en tres pares: <b>FF</b> | <b>3B</b> | <b>D4</b>.</li>
+<li>Rojo, <b>FF</b>: F vale 15. 15 × 16 + 15 = 240 + 15 = <b>255</b>.</li>
+<li>Verde, <b>3B</b>: 3 vale 3 y B vale 11. 3 × 16 + 11 = 48 + 11 = <b>59</b>.</li>
+<li>Azul, <b>D4</b>: D vale 13 y 4 vale 4. 13 × 16 + 4 = 208 + 4 = <b>212</b>.</li>
+<li>Resultado: <b>(255, 59, 212)</b>, el rosa de la X.</li>
+</ol>
+<p>Y al revés, de decimal a hexadecimal: divide entre 16; el cociente es el primer dígito y el residuo el segundo. Para 212: 212 ÷ 16 = 13, residuo 4 → «D4». Para 59: 59 ÷ 16 = 3, residuo 11 → «3B».</p>
+<h3>Hexadecimal en Java</h3>
+<p>Java entiende números hexadecimales si los escribes con el prefijo <code>0x</code> (cero, equis). Por eso <code>Tema</code> declara sus colores así:</p>
+<pre class="java">public static final Color ROSA = new Color(0xFF, 0x3B, 0xD4);</pre>
+<p>Para Java, <code>0xFF</code> es exactamente el número 255; solo cambia cómo lo escribiste. La ventaja es que puedes copiar los pares tal cual vienen de una herramienta de diseño, sin convertir nada a mano. Hay otras formas equivalentes que te encontrarás:</p>
+<pre class="java">Color a = new Color(0xFF, 0x3B, 0xD4);   // tres canales en hexadecimal
+Color b = new Color(255, 59, 212);       // los mismos en decimal
+Color c = new Color(0xFF3BD4);           // un solo número con los seis dígitos
+Color d = Color.decode("#FF3BD4");       // a partir del texto con almohadilla</pre>
+<p>Las cuatro crean el mismo color. El camino inverso, de un <code>Color</code> a su texto <code>#RRGGBB</code>, lo hace <code>Tema.hex</code> con <code>String.format("#%02X%02X%02X", …)</code>: <code>%02X</code> significa «escribe este entero en hexadecimal con mayúsculas (<code>X</code>), con 2 dígitos y rellenando con 0 a la izquierda». El Totito lo usa para colorear la X y la O dentro del texto HTML de las instrucciones (capítulo 57). Puedes comprobar todo esto en <code>jshell</code>:</p>
+<pre class="salida">jshell&gt; Integer.parseInt("3B", 16)
+$1 ==&gt; 59
+
+jshell&gt; Integer.toHexString(212)
+$2 ==&gt; "d4"
+
+jshell&gt; java.awt.Color.decode("#FF3BD4")
+$3 ==&gt; java.awt.Color[r=255,g=59,b=212]</pre>
+
+<h2>El cuarto canal: alfa y la transparencia</h2>
+<p>Además de rojo, verde y azul, un color puede tener un cuarto número: el canal <b>alfa</b>, que indica cuán <b>opaco</b> es. También va de 0 a 255: <b>0</b> es completamente invisible, <b>255</b> es completamente opaco (tapa lo que hay detrás) y los valores intermedios dejan ver el fondo en parte. En Java se pasa como cuarto argumento:</p>
+<pre class="java">public static final Color SUPERFICIE = new Color(0x2B, 0x23, 0x63, 125);</pre>
+<h3>Cómo se mezcla un color transparente con el fondo</h3>
+<p>Cuando pintas un color con alfa sobre otro, la pantalla calcula una <b>mezcla</b> canal por canal. La fórmula, para cada canal, es:</p>
+<pre class="texto">resultado = color × (alfa ÷ 255) + fondo × (1 − alfa ÷ 255)</pre>
+<p>Es un promedio ponderado: con alfa 255 el resultado es el color; con alfa 0 es el fondo; con alfa 125 (casi la mitad) es casi mitad y mitad. Calculemos la <code>SUPERFICIE</code> de las tarjetas (43, 35, 99, alfa 125) pintada sobre <code>FONDO_ARRIBA</code> (28, 23, 64):</p>
+<table class="tabla">
+<tr><th>Canal</th><th>Cálculo</th><th>Resultado</th></tr>
+<tr><td>Rojo</td><td>(43 × 125 + 28 × 130) ÷ 255 = 9015 ÷ 255</td><td>35</td></tr>
+<tr><td>Verde</td><td>(35 × 125 + 23 × 130) ÷ 255 = 7365 ÷ 255</td><td>29</td></tr>
+<tr><td>Azul</td><td>(99 × 125 + 64 × 130) ÷ 255 = 20695 ÷ 255</td><td>81</td></tr>
+</table>
+<p>(130 es 255 − 125, la parte del fondo). La tarjeta se ve de color (35, 29, 81): un poco más clara que el fondo, pero teñida por él.</p>
+<h3>Por qué la SUPERFICIE tiene alfa 125</h3>
+<p>Mira la captura del menú: a través de la tarjeta se adivinan, muy tenues, la X y la O gigantes del fondo. Ese efecto se llama <b>cristal</b> o, en la jerga del diseño, <i>glassmorphism</i>: superficies semitransparentes que parecen láminas de vidrio esmerilado. Lo consigue el alfa 125, que es aproximadamente el 49 % de opacidad. Con un número mayor (200, por ejemplo) la tarjeta taparía casi del todo el fondo y se perdería la sensación de profundidad; con uno menor (60) el texto encima competiría con los adornos y costaría leerlo. El valor 125 es el equilibrio entre «se ve el fondo» y «se lee lo de encima».</p>
+<p>Otros alfas del <code>Tema</code> siguen la misma lógica:</p>
+<ul>
+<li><code>DECORACION</code>, alfa <b>70</b> (≈ 27 %): las X y O gigantes del fondo deben verse, pero sin llamar la atención.</li>
+<li><code>CASILLA</code>, alfa <b>170</b> (≈ 67 %): las casillas del tablero deben destacar más que la tarjeta para que se vea dónde hacer clic.</li>
+</ul>
+<h3>Cambiar solo la transparencia: <code>conAlfa</code></h3>
+<p>Muy a menudo se necesita «este mismo color, pero más transparente». Para eso <code>Tema</code> tiene un método:</p>
+<pre class="java">public static Color conAlfa(Color color, int alfa) {
+    return new Color(color.getRed(), color.getGreen(), color.getBlue(),
+            Math.max(0, Math.min(255, alfa)));
+}</pre>
+<p>Copia los tres canales y pone el alfa pedido, recortado para que nunca se salga del rango 0–255 (si se saliera, el constructor de <code>Color</code> lanzaría una <code>IllegalArgumentException</code>, capítulo 26). Es probablemente el método más usado de toda la interfaz: el relleno de los botones del menú es <code>conAlfa(color, 65)</code>, el de los adornos de puntos es <code>conAlfa(LAVANDA, 45)</code>, y el halo del neón son seis llamadas a <code>conAlfa</code> con alfas crecientes.</p>
+<div class="caja concepto"><b>Dos maneras de hacer transparencia</b> El alfa de un <code>Color</code> afecta solo a lo que pintes con ese color. En el capítulo 37 verás otra herramienta, <code>AlphaComposite</code>, que vuelve transparente <b>todo</b> lo que se dibuje a continuación, sea del color que sea. El Totito la usa para apagar un botón desactivado (todo al 40 %) y para la ficha «fantasma» del tablero (todo al 28 %).</div>
+
+<h2>HSB: pensar el color como lo piensa una persona</h2>
+<p>RGB es cómo funciona la pantalla, pero no es cómo pensamos las personas. Nadie dice «quiero subir el verde a 80 y bajar el azul a 190». Decimos «quiero este mismo morado, pero más oscuro» o «más apagado». Para eso existe otro modelo: <b>HSB</b>.</p>
+<table class="tabla">
+<tr><th>Letra</th><th>Nombre</th><th>Qué mide</th><th>Rango</th></tr>
+<tr><td><b>H</b> (<i>Hue</i>)</td><td>Matiz o tono</td><td>«Qué color es»: rojo, naranja, verde, azul… Se mide como un ángulo en el círculo cromático.</td><td>0° a 360°</td></tr>
+<tr><td><b>S</b> (<i>Saturation</i>)</td><td>Saturación</td><td>Cuán puro o intenso es. 0 % es un gris; 100 % es el color más vivo posible.</td><td>0 % a 100 %</td></tr>
+<tr><td><b>B</b> (<i>Brightness</i>)</td><td>Brillo</td><td>Cuánta luz tiene. 0 % es negro siempre; 100 % es el color con toda su luz.</td><td>0 % a 100 %</td></tr>
+</table>
+<p>El rosa <code>#FF3BD4</code> en HSB es: matiz <b>313°</b> (entre el magenta, 300°, y el rosa, 330°), saturación <b>77 %</b> y brillo <b>100 %</b>. Java convierte en las dos direcciones, pero con una particularidad: los tres valores van de 0 a 1 en lugar de en grados y porcentajes. El matiz 313° se escribe 313 ÷ 360:</p>
+<pre class="java">float[] hsb = Color.RGBtoHSB(255, 59, 212, null);   // {0.87, 0.77, 1.0}
+Color rosa  = Color.getHSBColor(313 / 360f, 0.77f, 1f); // vuelve a dar (255, 59, 212)</pre>
+<p>(La <code>f</code> de <code>360f</code> indica un número <code>float</code>; sin ella, <code>313 / 360</code> sería una división entera y daría 0.)</p>
+<p>¿Para qué sirve? Para crear <b>variantes coherentes</b> de un color. Si mantienes el matiz y solo mueves la saturación o el brillo, el resultado «es de la misma familia». Mira cómo lo hace la paleta del Totito:</p>
+<table class="tabla">
+<tr><th>Constante</th><th>Matiz</th><th>Saturación</th><th>Brillo</th><th>Lectura</th></tr>
+<tr><td><code>FONDO_ARRIBA</code></td><td>247°</td><td>64 %</td><td>25 %</td><td>Azul violáceo, muy oscuro</td></tr>
+<tr><td><code>FONDO_ABAJO</code></td><td>247°</td><td>69 %</td><td>14 %</td><td>El mismo, más oscuro aún</td></tr>
+<tr><td><code>SUPERFICIE</code></td><td>248°</td><td>65 %</td><td>39 %</td><td>El mismo, algo más claro</td></tr>
+<tr><td><code>CASILLA</code></td><td>247°</td><td>56 %</td><td>35 %</td><td>El mismo, algo más claro y apagado</td></tr>
+<tr><td><code>LAVANDA</code></td><td>252°</td><td>24 %</td><td>96 %</td><td>Casi el mismo matiz, muy claro y poco saturado</td></tr>
+<tr><td><code>TEXTO_SUAVE</code></td><td>251°</td><td>31 %</td><td>89 %</td><td>Ídem, un poco más oscuro</td></tr>
+</table>
+<p>¡Seis colores de la paleta comparten casi el mismo matiz (247°–252°)! Solo cambian saturación y brillo. Por eso el fondo, las tarjetas, las casillas y los textos secundarios combinan tan bien: son el mismo color en distintas intensidades.</p>
+<div class="caja consejo"><b>HSB y HSL no son lo mismo</b> En páginas web verás <b>HSL</b> (<i>Lightness</i>, luminosidad) en lugar de HSB. El matiz y la idea son iguales, pero la tercera medida cambia: en HSL, el 50 % es el color puro y el 100 % es siempre blanco; en HSB, el 100 % es el color puro con toda su luz. Si copias valores de una herramienta, fíjate en cuál de los dos usa. Java trae HSB.</div>
+
+<h2>El círculo cromático</h2>
+<p>Si pones los matices en un círculo, de 0° a 360°, obtienes el <b>círculo cromático</b>. El rojo está en 0°, el amarillo en 60°, el verde en 120°, el cian en 180°, el azul en 240° y el magenta en 300°; luego se vuelve al rojo. Los colores del Totito ocupan un sector bien definido:</p>
+<svg viewBox="0 0 560 340" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="560" height="340" fill="#1C1740"/>
+<circle cx="170" cy="52" r="20" fill="#FF0000"/>
+<text x="170" y="18" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">0°</text>
+<circle cx="229" cy="68" r="20" fill="#FF8000"/>
+<text x="248" y="39" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">30°</text>
+<circle cx="272" cy="111" r="20" fill="#FFFF00"/>
+<text x="305" y="96" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">60°</text>
+<circle cx="288" cy="170" r="20" fill="#80FF00"/>
+<text x="326" y="174" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">90°</text>
+<circle cx="272" cy="229" r="20" fill="#00FF00"/>
+<text x="305" y="252" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">120°</text>
+<circle cx="229" cy="272" r="20" fill="#00FF80"/>
+<text x="248" y="309" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">150°</text>
+<circle cx="170" cy="288" r="20" fill="#00FFFF"/>
+<text x="170" y="330" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">180°</text>
+<circle cx="111" cy="272" r="20" fill="#0080FF"/>
+<text x="92" y="309" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">210°</text>
+<circle cx="68" cy="229" r="20" fill="#0000FF"/>
+<text x="35" y="252" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">240°</text>
+<circle cx="52" cy="170" r="20" fill="#8000FF"/>
+<text x="14" y="174" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">270°</text>
+<circle cx="68" cy="111" r="20" fill="#FF00FF"/>
+<text x="35" y="96" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">300°</text>
+<circle cx="111" cy="68" r="20" fill="#FF0080"/>
+<text x="92" y="39" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">330°</text>
+<path d="M 142 261 A 95 95 0 0 1 136 81" fill="none" stroke="#C8BCF6" stroke-width="3" stroke-dasharray="5 4"/>
+<circle cx="149" cy="239" r="9" fill="#40C8FF" stroke="#FFFFFF"/>
+<circle cx="129" cy="229" r="9" fill="#2F84FF" stroke="#FFFFFF"/>
+<circle cx="98" cy="176" r="9" fill="#A05CFF" stroke="#FFFFFF"/>
+<circle cx="117" cy="121" r="9" fill="#FF3BD4" stroke="#FFFFFF"/>
+<circle cx="144" cy="103" r="9" fill="#FF3D82" stroke="#FFFFFF"/>
+<text x="360" y="60" fill="#FFFFFF" font-family="sans-serif" font-size="15">Colores del Totito</text>
+<circle cx="370" cy="88" r="8" fill="#40C8FF"/><text x="386" y="93" fill="#C8BCF6" font-family="sans-serif" font-size="13">CIAN 197°</text>
+<circle cx="370" cy="114" r="8" fill="#2F84FF"/><text x="386" y="119" fill="#C8BCF6" font-family="sans-serif" font-size="13">AZUL 215°</text>
+<circle cx="370" cy="140" r="8" fill="#A05CFF"/><text x="386" y="145" fill="#C8BCF6" font-family="sans-serif" font-size="13">MORADO 265°</text>
+<circle cx="370" cy="166" r="8" fill="#FF3BD4"/><text x="386" y="171" fill="#C8BCF6" font-family="sans-serif" font-size="13">ROSA 313°</text>
+<circle cx="370" cy="192" r="8" fill="#FF3D82"/><text x="386" y="197" fill="#C8BCF6" font-family="sans-serif" font-size="13">FRESA 339°</text>
+<text x="360" y="232" fill="#C8BCF6" font-family="sans-serif" font-size="13">La línea punteada marca el sector</text>
+<text x="360" y="250" fill="#C8BCF6" font-family="sans-serif" font-size="13">que usa el juego: de 197° a 339°.</text>
+<text x="360" y="268" fill="#C8BCF6" font-family="sans-serif" font-size="13">Amarillos y verdes quedan fuera.</text>
+</svg>
+
+<h2>Armonías: qué colores combinan</h2>
+<p>Las combinaciones de colores que «se ven bien juntas» siguen patrones geométricos sobre el círculo. Los cinco más conocidos:</p>
+<table class="tabla">
+<tr><th>Armonía</th><th>Cómo se elige</th><th>Sensación</th><th>Ejemplo</th></tr>
+<tr><td><b>Monocromática</b></td><td>Un solo matiz con distintas saturaciones y brillos.</td><td>Tranquila, elegante.</td><td>El fondo, las tarjetas y los textos suaves del Totito (247°–252°).</td></tr>
+<tr><td><b>Análoga</b></td><td>Colores vecinos en el círculo, dentro de unos 30°–150°.</td><td>Armoniosa, natural.</td><td>Azul → morado → rosa del Totito.</td></tr>
+<tr><td><b>Complementaria</b></td><td>Dos colores opuestos (a 180°).</td><td>Contraste máximo, enérgica, puede «vibrar».</td><td>Azul y naranja de un cartel de cine.</td></tr>
+<tr><td><b>Complementaria dividida</b></td><td>Un color y los dos vecinos de su opuesto.</td><td>Contraste con menos tensión.</td><td>Azul con amarillo-naranja y rojo-naranja.</td></tr>
+<tr><td><b>Triádica</b></td><td>Tres colores a 120° entre sí.</td><td>Alegre, infantil si se satura mucho.</td><td>Rojo, amarillo y azul de un juguete.</td></tr>
+</table>
+<p>El Totito combina dos: una base <b>monocromática</b> (todo el fondo y las superficies, en violeta oscuro) y unos acentos <b>análogos</b> (cian, azul, morado, rosa y fresa, que van de 197° a 339° sin saltar a la otra mitad del círculo). Esa mezcla es la receta típica de la estética «neón» o <i>synthwave</i>: noche violeta con luces frías y rosadas.</p>
+<p>¿Y los complementarios? El opuesto del rosa (313°) es un verde (133°) y el del azul (215°) es un naranja (35°). El Totito no los usa a propósito: un verde brillante junto al rosa rompería el ambiente. Pero guárdalos en la cabeza: el complementario es la mejor herramienta cuando algo <b>tiene</b> que destacar sobre todo lo demás, como un aviso de error o un botón de compra.</p>
+<div class="caja concepto"><b>¿Cómo se distinguen la X y la O si son «vecinas»?</b> El rosa (313°) y el azul (215°) están a casi 100° de distancia: lo bastante lejos para no confundirse, lo bastante cerca para pertenecer a la misma familia. Y el morado (265°), que está justo en medio, sirve de «puente» entre los dos: por eso es el color de los bordes neutros (tarjetas, tablero, botón «Salir»).</div>
+
+<h2>La paleta del Totito, constante por constante</h2>
+<p>Una <b>paleta</b> es el conjunto cerrado de colores que usa un programa. «Cerrado» es la palabra clave: ningún componente inventa un color; todos los toman de <code>Tema</code>. Esta es la paleta completa, con su valor hexadecimal, sus canales y para qué sirve cada color:</p>
+<table class="tabla">
+<tr><th>Muestra</th><th>Constante</th><th>Hex</th><th>R, G, B (alfa)</th><th>Para qué se usa</th></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#1C1740" stroke="#C8BCF6"/></svg></td><td><code>FONDO_ARRIBA</code></td><td>#1C1740</td><td>28, 23, 64</td><td>Parte superior del degradado de fondo de todas las pantallas; fondo del icono de la ventana.</td></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#0E0B24" stroke="#C8BCF6"/></svg></td><td><code>FONDO_ABAJO</code></td><td>#0E0B24</td><td>14, 11, 36</td><td>Parte inferior del degradado de fondo; con alfa, oscurece el marco del tablero y el relleno de los botones del menú.</td></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#1C1740"/><rect width="48" height="24" rx="4" fill="#5B35C2" fill-opacity="0.27"/></svg></td><td><code>DECORACION</code></td><td>#5B35C2</td><td>91, 53, 194 (70)</td><td>X y O gigantes y desvaídas del fondo.</td></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#FF3BD4"/></svg></td><td><code>ROSA</code></td><td>#FF3BD4</td><td>255, 59, 212</td><td>La X en todo el juego; botón «Jugar»; inicio de las píldoras; botón de cerrar; paso 1.</td></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#FF3D82"/></svg></td><td><code>FRESA</code></td><td>#FF3D82</td><td>255, 61, 130</td><td>Tarjeta del Jugador 1 (un rosa más rojizo, como en el diseño).</td></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#2F84FF"/></svg></td><td><code>AZUL</code></td><td>#2F84FF</td><td>47, 132, 255</td><td>La O en todo el juego; botón «Instrucciones»; tarjeta del Jugador 2; botón «Menú principal»; paso 3.</td></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#40C8FF"/></svg></td><td><code>CIAN</code></td><td>#40C8FF</td><td>64, 200, 255</td><td>Final del degradado de «Totito» en el encabezado; trofeo; confeti.</td></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#A05CFF"/></svg></td><td><code>MORADO</code></td><td>#A05CFF</td><td>160, 92, 255</td><td>Bordes neutros: tarjetas, tablero, botón «Salir», botones de contorno, líneas de los títulos de sección, resplandor del fondo; paso 2.</td></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#C8BCF6"/></svg></td><td><code>LAVANDA</code></td><td>#C8BCF6</td><td>200, 188, 246</td><td>Títulos de sección, logotipo, rejilla del tablero, puntitos del fondo, título del empate.</td></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#FFFFFF"/></svg></td><td><code>TEXTO</code></td><td>#FFFFFF</td><td>255, 255, 255</td><td>Texto principal: títulos, botones, nombres.</td></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#A89BE2"/></svg></td><td><code>TEXTO_SUAVE</code></td><td>#A89BE2</td><td>168, 155, 226</td><td>Texto secundario: lema, subtítulos, «Victorias: 2», descripciones de las opciones.</td></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#1C1740"/><rect width="48" height="24" rx="4" fill="#2B2363" fill-opacity="0.49"/></svg></td><td><code>SUPERFICIE</code></td><td>#2B2363</td><td>43, 35, 99 (125)</td><td>Relleno de cristal de todas las tarjetas.</td></tr>
+<tr><td><svg viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="24" rx="4" fill="#1C1740"/><rect width="48" height="24" rx="4" fill="#2E285A" fill-opacity="0.67"/></svg></td><td><code>CASILLA</code></td><td>#2E285A</td><td>46, 40, 90 (170)</td><td>Fondo de cada casilla del tablero.</td></tr>
+</table>
+<p>(Las muestras con alfa se ven sobre el fondo, como en el juego.) Hay un color más que no está en <code>Tema</code>: el final del degradado del botón «Menú principal» en la pantalla de resultado, <code>new Color(0x3A, 0x3F, 0xC8)</code>, un azul índigo escrito directamente en <code>PantallaResultado</code>. Es la única excepción a la regla; en los ejercicios te propongo corregirla.</p>
+
+<h3>Cómo se construyó esta paleta</h3>
+<ol>
+<li><b>Muestrear</b>: con el cuentagotas (capítulo 34) se tomaron colores del diseño en zonas lisas: el fondo arriba y abajo, el interior de las tarjetas, el centro de los bordes brillantes, los textos.</li>
+<li><b>Agrupar</b>: las muestras parecidas se juntaron en <b>roles</b>. Hubo decenas de rosas ligeramente distintos (la compresión JPG y el halo los alteran); todos eran «el rosa de la X».</li>
+<li><b>Elegir un representante</b> por rol y redondearlo a un valor limpio, a veces subiendo la saturación para que en pantalla brillara tanto como en el diseño.</li>
+<li><b>Comprobar el contraste</b> de los textos sobre los fondos (lo verás enseguida) y corregir si hacía falta.</li>
+<li><b>Ponerle nombre</b> y guardarlo en un solo sitio: la clase <code>Tema</code>.</li>
+</ol>
+<h3>Nombres de color: por apariencia o por función</h3>
+<p>Fíjate en que los nombres de <code>Tema</code> son de dos tipos. Unos describen <b>cómo se ve</b> el color (<code>ROSA</code>, <code>AZUL</code>, <code>LAVANDA</code>); otros, <b>para qué sirve</b> (<code>FONDO_ARRIBA</code>, <code>TEXTO</code>, <code>SUPERFICIE</code>, <code>CASILLA</code>). Los segundos son más robustos: si mañana decides que el texto sea crema en lugar de blanco, <code>TEXTO</code> sigue siendo un buen nombre; si decides que la X sea verde, <code>ROSA</code> se vuelve un nombre mentiroso. Por eso <code>Tema</code> agrega una capa de función encima de los nombres de apariencia:</p>
+<pre class="java">public static Color colorDeFicha(char ficha) {
+    return ficha == 'X' ? ROSA : AZUL;
+}</pre>
+<p>Las pantallas nunca preguntan «¿es rosa?»; preguntan «¿de qué color es esta ficha?». Si un día cambias el color de la X, cambias una línea aquí y el juego entero obedece.</p>
+<div class="caja consejo"><b>La regla 60-30-10</b> Una guía clásica para repartir una paleta: un color <b>dominante</b> en el 60 % de la superficie (en el Totito, el violeta oscuro del fondo), uno <b>secundario</b> en el 30 % (las superficies de cristal y los bordes morados) y los <b>acentos</b> en el 10 % (rosa, azul, cian). Los acentos funcionan precisamente porque son escasos: si todo brilla, nada destaca.</div>
+
+<h2>El color tiene significado</h2>
+<p>Los colores comunican antes que las palabras. Algunas asociaciones son culturales (en muchos países el rojo es peligro o error y el verde es correcto o continuar); otras las crea el propio programa, y una vez creadas <b>hay que respetarlas siempre</b>.</p>
+<h3>La X es rosa, la O es azul</h3>
+<p>Es la regla de color más importante del Totito, y está escrita en el comentario de <code>colorDeFicha</code>: «La X siempre es rosa y la O siempre es azul, la juegue quien la juegue». Se cumple en todas partes:</p>
+<ul>
+<li>En el tablero, las fichas.</li>
+<li>En el marcador, el lado de cada jugador toma el color de <b>su ficha</b>.</li>
+<li>En el letrero de turno y en el título de la victoria, el degradado sale del color de la ficha del ganador: si gana la O, «¡Ganó Luis!» es celeste; si gana la X, rosa.</li>
+<li>En la raya ganadora.</li>
+<li>Incluso en el texto de las instrucciones, donde la letra «X» va en rosa y la «O» en azul.</li>
+</ul>
+<p>Después de una partida, el jugador asocia sin pensarlo «rosa = X». Si en alguna pantalla la X apareciera azul, se confundiría. Esta <b>consistencia</b> es lo que convierte el color en un lenguaje.</p>
+<p>Hay un caso sutil: la tarjeta del Jugador 1 en Configuración es <code>FRESA</code>, no <code>ROSA</code>. ¿Por qué otro color? Porque el Jugador 1 puede elegir jugar con la O. Si su tarjeta fuera del mismo rosa que la X, el color diría «este jugador es la X» aunque no lo sea. El rosa-rojizo de la tarjeta identifica <b>al jugador</b>; el rosa de la X identifica <b>a la ficha</b>. Son conceptos distintos y merecen colores distintos (aunque parecidos, para que la pantalla siga en armonía).</p>
+<h3>Colores neutros para «nadie»</h3>
+<p>Cuando hay empate, el título «¡Empate!» va de lavanda a morado. No es casualidad: el morado es el punto medio entre el rosa y el azul, el color que no pertenece a ningún jugador. Por la misma razón los bordes de las tarjetas genéricas y del tablero son morados.</p>
+<h3>Nunca dependas solo del color</h3>
+<p>Alrededor de un 8 % de los hombres y un 0,5 % de las mujeres tienen alguna forma de <b>daltonismo</b> (dificultad para distinguir ciertos colores). Si la única diferencia entre dos cosas es el color, para esas personas son iguales. El Totito lo resuelve sin esfuerzo: la X y la O se distinguen por su <b>forma</b>, no solo por su color. Y el estado «seleccionado» de las opciones se marca con un circulito relleno además del brillo. Aplica siempre esta regla: el color <b>refuerza</b> un mensaje, pero el mensaje debe entenderse también sin él (con una forma, un icono o una palabra).</p>
+
+<h2>Contraste y accesibilidad: que se pueda leer</h2>
+<p>Un texto bonito que no se lee es un texto inútil. El <b>contraste</b> es la diferencia de luminosidad entre un texto y su fondo. Hay una forma estándar de medirlo, definida por las pautas internacionales de accesibilidad web, <b>WCAG</b> (<i>Web Content Accessibility Guidelines</i>), que se aplica igual a cualquier programa.</p>
+<h3>Luminancia relativa: cuánta luz «ve» el ojo</h3>
+<p>El primer paso es calcular la <b>luminancia relativa</b> de cada color: un número de 0 (negro) a 1 (blanco) que dice cuánta luz percibe el ojo. No basta con promediar los canales, porque el ojo es mucho más sensible al verde que al azul: un verde puro parece mucho más luminoso que un azul puro. La fórmula tiene dos pasos:</p>
+<ol>
+<li>Cada canal se pasa de 0–255 a una escala «lineal» de luz (una pequeña fórmula de la norma sRGB que deshace la corrección que aplican las pantallas).</li>
+<li>Se suman los tres con pesos distintos: <b>L = 0,2126 × R + 0,7152 × G + 0,0722 × B</b>. El verde pesa el 72 %; el azul, apenas el 7 %.</li>
+</ol>
+<h3>La relación de contraste</h3>
+<p>Con las dos luminancias (la del color más claro, L<sub>1</sub>, y la del más oscuro, L<sub>2</sub>):</p>
+<pre class="texto">contraste = (L1 + 0,05) ÷ (L2 + 0,05)</pre>
+<p>El resultado va de <b>1</b> (dos colores iguales, contraste nulo) a <b>21</b> (blanco sobre negro). El 0,05 representa la luz ambiente que siempre se refleja en la pantalla. Las pautas piden:</p>
+<table class="tabla">
+<tr><th>Qué</th><th>Mínimo (nivel AA)</th><th>Recomendado (nivel AAA)</th></tr>
+<tr><td>Texto normal</td><td>4,5 : 1</td><td>7 : 1</td></tr>
+<tr><td>Texto grande (desde unos 24 px, o 19 px en negrita)</td><td>3 : 1</td><td>4,5 : 1</td></tr>
+<tr><td>Bordes de controles, iconos importantes</td><td>3 : 1</td><td>—</td></tr>
+</table>
+<h3>Ejemplo calculado: TEXTO sobre FONDO_ARRIBA</h3>
+<p>El texto blanco tiene luminancia <b>1</b> (es el máximo). Para <code>FONDO_ARRIBA</code> (28, 23, 64):</p>
+<ol>
+<li>Canales lineales: rojo 28 → 0,0116; verde 23 → 0,0086; azul 64 → 0,0513.</li>
+<li>L = 0,2126 × 0,0116 + 0,7152 × 0,0086 + 0,0722 × 0,0513 = 0,0025 + 0,0061 + 0,0037 = <b>0,0123</b>.</li>
+<li>Contraste = (1 + 0,05) ÷ (0,0123 + 0,05) = 1,05 ÷ 0,0623 = <b>16,85 : 1</b>.</li>
+</ol>
+<p>Casi 17 a 1: muy por encima del 7 que pide el nivel más exigente. La tabla completa de la paleta contra el fondo:</p>
+<table class="tabla">
+<tr><th>Color</th><th>Contraste con FONDO_ARRIBA</th><th>¿Para qué alcanza?</th></tr>
+<tr><td><code>TEXTO</code> (blanco)</td><td>16,85</td><td>Todo, con mucha holgura.</td></tr>
+<tr><td><code>LAVANDA</code></td><td>9,61</td><td>Todo (AAA).</td></tr>
+<tr><td><code>CIAN</code></td><td>8,77</td><td>Todo (AAA).</td></tr>
+<tr><td><code>TEXTO_SUAVE</code></td><td>6,78</td><td>Texto normal (AA); por eso se usa en textos secundarios pequeños.</td></tr>
+<tr><td><code>ROSA</code></td><td>5,48</td><td>Texto normal (AA).</td></tr>
+<tr><td><code>FRESA</code></td><td>5,01</td><td>Texto normal (AA).</td></tr>
+<tr><td><code>AZUL</code></td><td>4,71</td><td>Texto normal (AA), justo.</td></tr>
+<tr><td><code>MORADO</code></td><td>4,39</td><td>Texto grande y bordes; no texto pequeño. El Totito lo usa solo en bordes, líneas y halos.</td></tr>
+<tr><td><code>DECORACION</code></td><td>2,19</td><td>Nada que deba leerse. Es a propósito: los adornos no deben competir.</td></tr>
+</table>
+<p>Y sobre las tarjetas de cristal (que, como calculamos antes, se ven de color 35, 29, 81): el blanco da 15,4 y <code>TEXTO_SUAVE</code> da 6,2. Todo el texto del juego se lee bien.</p>
+<div class="caja cuidado"><b>El contraste bajo es una decisión, no un descuido</b> Que <code>DECORACION</code> tenga contraste 2,19 está bien porque es decoración. El error sería usarla para un texto. Cada vez que agregues texto a una interfaz, comprueba su contraste con el fondo real sobre el que se dibuja (no con el fondo «teórico»): un texto encima de una tarjeta transparente se ve sobre la mezcla.</div>
+
+<h3>Un programa para analizar colores</h3>
+<p>No tienes que hacer estas cuentas a mano. Este programa pequeño recibe un color en hexadecimal y te dice sus canales, su HSB, su luminancia y su contraste con el fondo del Totito. Para no mezclarlo con el proyecto, crea una carpeta de prácticas <b>fuera</b> de <code>Totito</code> (así no se cuela en el repositorio ni en el <code>.jar</code>):</p>
+<pre class="ps">New-Item -ItemType Directory -Force $HOME\Proyectos\Practicas | Out-Null
+Set-Location $HOME\Proyectos\Practicas
+notepad Colores.java</pre>
+<p>El Bloc de notas preguntará si quieres crear el archivo: di que sí, pega este código y guarda.</p>
+<pre class="java">import java.awt.Color;
+
+/** Analiza un color: RGB, HSB y contraste contra el fondo del Totito. */
+public class Colores {
+
+    public static void main(String[] args) {
+        String hex = args.length &gt; 0 ? args[0] : "#FF3BD4";
+        Color color = Color.decode(hex);
+        Color fondo = Color.decode("#1C1740");
+
+        System.out.println("Color:  " + hex.toUpperCase());
+        System.out.println("RGB:    " + color.getRed() + ", " + color.getGreen() + ", " + color.getBlue());
+
+        float[] hsb = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
+        System.out.printf("HSB:    matiz %.0f grados, saturacion %.0f %%, brillo %.0f %%%n",
+                hsb[0] * 360, hsb[1] * 100, hsb[2] * 100);
+
+        System.out.printf("Luminancia relativa: %.4f%n", luminancia(color));
+        System.out.printf("Contraste con el fondo #1C1740: %.2f a 1%n", contraste(color, fondo));
+    }
+
+    /** Pasa un canal de 0-255 a luz "lineal" (formula de la norma sRGB). */
+    static double lineal(int canal) {
+        double c = canal / 255.0;
+        return c &lt;= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    }
+
+    /** Cuanta luz percibe el ojo: el verde pesa mucho, el azul muy poco. */
+    static double luminancia(Color c) {
+        return 0.2126 * lineal(c.getRed()) + 0.7152 * lineal(c.getGreen()) + 0.0722 * lineal(c.getBlue());
+    }
+
+    /** Relacion de contraste WCAG: de 1 (igual) a 21 (blanco sobre negro). */
+    static double contraste(Color a, Color b) {
+        double claro = Math.max(luminancia(a), luminancia(b));
+        double oscuro = Math.min(luminancia(a), luminancia(b));
+        return (claro + 0.05) / (oscuro + 0.05);
+    }
+}</pre>
+<p>Lo que hay de nuevo aquí: <code>args</code> son los textos que escribes después del nombre del programa al ejecutarlo (si no escribes ninguno, se usa el rosa); <code>Color.decode</code> convierte el texto en color; <code>printf</code> con <code>%.2f</code> escribe un decimal con dos cifras, <code>%%</code> escribe un signo de porcentaje y <code>%n</code> salta de línea (capítulo 17); y <code>Math.pow(a, b)</code> calcula a elevado a b. Ejecútalo directamente desde el código fuente (Java 11 o superior compila en memoria un programa de un solo archivo, sin <code>javac</code>):</p>
+<pre class="ps">java Colores.java "#FF3BD4"
+java Colores.java "#A89BE2"</pre>
+<pre class="salida">Color:  #FF3BD4
+RGB:    255, 59, 212
+HSB:    matiz 313 grados, saturacion 77 %, brillo 100 %
+Luminancia relativa: 0.2914
+Contraste con el fondo #1C1740: 5.48 a 1
+Color:  #A89BE2
+RGB:    168, 155, 226
+HSB:    matiz 251 grados, saturacion 31 %, brillo 89 %
+Luminancia relativa: 0.3726
+Contraste con el fondo #1C1740: 6.78 a 1</pre>
+<div class="caja cuidado"><b>Las comillas son obligatorias en PowerShell</b> Para PowerShell, un <code>#</code> al principio de una palabra empieza un comentario: <code>java Colores.java #FF3BD4</code> ejecutaría el programa <b>sin</b> argumento (y verías el rosa por defecto, aunque hubieras escrito otro color). Escribe siempre el color entre comillas. Y si tu Windows usa coma decimal, verás <code>5,48</code> en lugar de <code>5.48</code>: <code>printf</code> respeta la configuración regional.</div>
+
+<h2>Modo oscuro</h2>
+<p>El Totito es una interfaz de <b>modo oscuro</b>: fondo oscuro y texto claro. No es solo una moda; para el estilo neón es obligatorio, y tiene sus propias reglas.</p>
+<ul>
+<li><b>El brillo solo existe sobre lo oscuro.</b> Un halo es luz que se suma al fondo. Sobre un fondo blanco no hay luz que sumar: el mismo halo se vería como una mancha borrosa. Por eso el neón y el modo oscuro van juntos.</li>
+<li><b>Nada de negro puro.</b> El fondo más oscuro del Totito es <code>#0E0B24</code>, no <code>#000000</code>. Un negro absoluto junto a colores muy brillantes produce un contraste agresivo que cansa la vista y hace que el texto blanco parezca «sangrar». Un fondo teñido del matiz de la paleta, además, hace que todo combine.</li>
+<li><b>La profundidad se marca con claridad, no con sombras.</b> En un modo claro, una tarjeta «flota» gracias a su sombra. Sobre un fondo casi negro las sombras no se ven. En su lugar, lo que está «más cerca» es <b>más claro</b>: el fondo (brillo 14–25 %) &lt; las tarjetas (≈ 30 %) &lt; las casillas &lt; los bordes brillantes.</li>
+<li><b>Satura con mesura las áreas grandes.</b> Los colores muy saturados funcionan en líneas finas (bordes, letras, fichas), pero en superficies grandes «vibran». Por eso los rellenos del Totito son colores con alfa bajo (<code>conAlfa(color, 30)</code>, <code>conAlfa(color, 65)</code>) y el color puro se reserva para el trazo.</li>
+<li><b>Jerarquía con dos blancos.</b> El texto importante es blanco puro; el secundario, <code>TEXTO_SUAVE</code>. Con un fondo oscuro, bajar el brillo del texto es la forma más elegante de restarle importancia.</li>
+</ul>
+<div class="caja consejo"><b>¿Y un modo claro?</b> Gracias a que todos los colores viven en <code>Tema</code>, un modo claro sería, en principio, cambiar unas pocas constantes: fondos claros, texto oscuro, superficies blancas con alfa. Pero el neón tendría que replantearse (por ejemplo, convertir los halos en sombras suaves). Es un buen ejercicio de diseño para cuando termines el libro.</div>
+
+<h2>Degradados</h2>
+<p>Un <b>degradado</b> es un paso gradual de un color a otro. Java calcula los colores intermedios mezclando los canales, igual que la fórmula del alfa pero a lo largo de una distancia. El Totito usa dos tipos.</p>
+<h3>Degradado lineal: <code>GradientPaint</code></h3>
+<p>Se define con dos puntos y dos colores: en el primer punto el color es el primero, en el segundo es el segundo, y en medio se mezclan. La <b>dirección</b> del degradado es la línea que une los puntos.</p>
+<pre class="java">// Fondo de todas las pantallas (PantallaBase): de arriba (y = 0) hacia abajo (y = alto).
+g2.setPaint(new GradientPaint(0, 0, Tema.FONDO_ARRIBA, 0, alto, Tema.FONDO_ABAJO));
+g2.fillRect(0, 0, ancho, alto);</pre>
+<p>Los dos puntos tienen la misma x (0) y distinta y: el degradado es <b>vertical</b>. Si tuvieran la misma y y distinta x, sería <b>horizontal</b>, como el de la palabra «Totito» del encabezado, que va de <code>ROSA</code> a la izquierda a <code>CIAN</code> a la derecha. Y si los dos colores son el mismo pero con distinto alfa, el resultado es un <b>desvanecido</b>: las líneas a los lados de «JUGADORES» van de morado transparente (alfa 0) a morado visible (alfa 170) y parecen apagarse hacia afuera.</p>
+<svg viewBox="0 0 600 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="c35-vertical" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1C1740"/><stop offset="1" stop-color="#0E0B24"/></linearGradient>
+<linearGradient id="c35-pildora" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FF3BD4"/><stop offset="1" stop-color="#A05CFF"/></linearGradient>
+<linearGradient id="c35-desvanece" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#A05CFF" stop-opacity="0"/><stop offset="1" stop-color="#A05CFF" stop-opacity="0.67"/></linearGradient>
+</defs>
+<rect x="0" y="0" width="600" height="150" fill="#1C1740"/>
+<rect x="20" y="20" width="120" height="100" rx="8" fill="url(#c35-vertical)" stroke="#C8BCF6"/>
+<text x="80" y="140" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">Vertical (fondo)</text>
+<rect x="170" y="45" width="220" height="50" rx="25" fill="url(#c35-pildora)"/>
+<text x="280" y="140" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">Horizontal (píldora ROSA → MORADO)</text>
+<rect x="420" y="68" width="160" height="4" fill="url(#c35-desvanece)"/>
+<text x="500" y="140" fill="#C8BCF6" font-family="sans-serif" font-size="12" text-anchor="middle">Alfa 0 → 170 (línea de sección)</text>
+</svg>
+<p>Las píldoras rellenas de los botones (<code>BotonNeon</code>) llevan además un segundo degradado encima: de blanco con alfa 50 a blanco con alfa 0, solo en la mitad de arriba. Es un <b>reflejo</b> que imita la luz sobre un cristal curvo, y es lo que hace que «Comenzar partida» parezca abultado.</p>
+<h3>Degradado radial: <code>RadialGradientPaint</code></h3>
+<p>En lugar de ir de un punto a otro, va <b>del centro hacia afuera</b> en círculos. Se define con un centro, un radio, una lista de posiciones (de 0 = centro a 1 = borde) y un color para cada posición:</p>
+<pre class="java">// Resplandor morado suave en el centro de cada pantalla (PantallaBase).
+g2.setPaint(new RadialGradientPaint(new Point2D.Float(ancho / 2f, alto * 0.55f), ancho * 0.65f,
+        new float[]{0f, 1f},
+        new Color[]{Tema.conAlfa(Tema.MORADO, 40), Tema.conAlfa(Tema.MORADO, 0)}));
+g2.fillRect(0, 0, ancho, alto);</pre>
+<p>En el centro (un poco por debajo de la mitad de la ventana) hay morado con alfa 40; hacia el borde del círculo, morado con alfa 0. El efecto es una luz difusa que ilumina el centro de la pantalla, justo donde está la tarjeta, como si el neón alumbrara la habitación.</p>
+<svg viewBox="0 0 600 160" width="100%" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialGradient id="c35-radial" cx="0.5" cy="0.55" r="0.65"><stop offset="0" stop-color="#A05CFF" stop-opacity="0.45"/><stop offset="1" stop-color="#A05CFF" stop-opacity="0"/></radialGradient>
+</defs>
+<rect x="0" y="0" width="600" height="160" fill="#0E0B24"/>
+<rect x="150" y="10" width="300" height="140" fill="url(#c35-radial)"/>
+<text x="300" y="84" fill="#C8BCF6" font-family="sans-serif" font-size="13" text-anchor="middle">Resplandor radial (exagerado para que se note)</text>
+</svg>
+<div class="caja consejo"><b>Más de dos colores</b> <code>GradientPaint</code> solo admite dos colores. Si necesitas tres o más (por ejemplo, rosa → morado → azul), usa <code>LinearGradientPaint</code>, que funciona como el radial: una lista de posiciones entre 0 y 1 y un color para cada una.</div>
+
+<h2>Cómo se fabrica el neón</h2>
+<p>Un tubo de neón real es un tubo de vidrio con gas que brilla. Lo que el ojo ve son tres cosas: el <b>centro</b> del tubo, casi blanco de tanta luz; el <b>tubo</b> en sí, del color del gas; y un <b>halo</b> de luz que se difunde en el aire alrededor y se va apagando con la distancia. La pantalla no puede emitir «luz que se difunde», pero se puede <b>imitar</b> con capas. Esta es la idea completa de <code>Dibujo.trazoNeon</code> (su código se explica línea por línea en el capítulo 41):</p>
+<ol>
+<li><b>El halo</b>: se dibuja la misma figura <b>seis veces</b>, de la más gruesa y transparente a la más fina y menos transparente.</li>
+<li><b>El tubo</b>: se dibuja la figura una vez más, con su grosor real y el color casi opaco.</li>
+<li><b>El centro</b>: si el trazo es grueso (5 píxeles o más, como el de las fichas), se dibuja una línea finita en el centro con el color <b>aclarado</b> hacia el blanco.</li>
+</ol>
+<p>Las seis capas del halo, para un trazo de grosor g:</p>
+<table class="tabla">
+<tr><th>Capa (i)</th><th>Grosor</th><th>Alfa</th><th>Opacidad</th></tr>
+<tr><td>6 (la primera que se pinta)</td><td>g + 14,4</td><td>6</td><td>2 %</td></tr>
+<tr><td>5</td><td>g + 12,0</td><td>11</td><td>4 %</td></tr>
+<tr><td>4</td><td>g + 9,6</td><td>16</td><td>6 %</td></tr>
+<tr><td>3</td><td>g + 7,2</td><td>21</td><td>8 %</td></tr>
+<tr><td>2</td><td>g + 4,8</td><td>26</td><td>10 %</td></tr>
+<tr><td>1 (la última)</td><td>g + 2,4</td><td>31</td><td>12 %</td></tr>
+</table>
+<p>Ninguna capa por sí sola es visible: la más opaca apenas llega al 12 %. El truco está en que <b>se acumulan</b>. Un punto del borde exterior del halo solo queda cubierto por la capa 6 (2 %): casi no se nota. Un punto pegado al tubo queda cubierto por las seis capas, y la opacidad acumulada llega a un 37 %. El resultado es un brillo que se va apagando suavemente hacia afuera, que es exactamente lo que el ojo interpreta como luz.</p>
+<svg viewBox="0 0 600 170" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="600" height="170" fill="#1C1740"/>
+<g fill="none" stroke-linecap="round">
+<path d="M 40 70 L 160 70" stroke="#2F84FF" stroke-width="24.4" stroke-opacity="0.024"/>
+<path d="M 40 70 L 160 70" stroke="#2F84FF" stroke-width="22" stroke-opacity="0.043"/>
+<path d="M 40 70 L 160 70" stroke="#2F84FF" stroke-width="19.6" stroke-opacity="0.063"/>
+<path d="M 40 70 L 160 70" stroke="#2F84FF" stroke-width="17.2" stroke-opacity="0.082"/>
+<path d="M 40 70 L 160 70" stroke="#2F84FF" stroke-width="14.8" stroke-opacity="0.102"/>
+<path d="M 40 70 L 160 70" stroke="#2F84FF" stroke-width="12.4" stroke-opacity="0.122"/>
+<path d="M 240 70 L 360 70" stroke="#2F84FF" stroke-width="24.4" stroke-opacity="0.024"/>
+<path d="M 240 70 L 360 70" stroke="#2F84FF" stroke-width="22" stroke-opacity="0.043"/>
+<path d="M 240 70 L 360 70" stroke="#2F84FF" stroke-width="19.6" stroke-opacity="0.063"/>
+<path d="M 240 70 L 360 70" stroke="#2F84FF" stroke-width="17.2" stroke-opacity="0.082"/>
+<path d="M 240 70 L 360 70" stroke="#2F84FF" stroke-width="14.8" stroke-opacity="0.102"/>
+<path d="M 240 70 L 360 70" stroke="#2F84FF" stroke-width="12.4" stroke-opacity="0.122"/>
+<path d="M 240 70 L 360 70" stroke="#2F84FF" stroke-width="10"/>
+<path d="M 440 70 L 560 70" stroke="#2F84FF" stroke-width="24.4" stroke-opacity="0.024"/>
+<path d="M 440 70 L 560 70" stroke="#2F84FF" stroke-width="22" stroke-opacity="0.043"/>
+<path d="M 440 70 L 560 70" stroke="#2F84FF" stroke-width="19.6" stroke-opacity="0.063"/>
+<path d="M 440 70 L 560 70" stroke="#2F84FF" stroke-width="17.2" stroke-opacity="0.082"/>
+<path d="M 440 70 L 560 70" stroke="#2F84FF" stroke-width="14.8" stroke-opacity="0.102"/>
+<path d="M 440 70 L 560 70" stroke="#2F84FF" stroke-width="12.4" stroke-opacity="0.122"/>
+<path d="M 440 70 L 560 70" stroke="#2F84FF" stroke-width="10"/>
+<path d="M 440 70 L 560 70" stroke="#ACCEFF" stroke-width="3.5" stroke-opacity="0.78"/>
+</g>
+<text x="100" y="130" fill="#C8BCF6" font-family="sans-serif" font-size="13" text-anchor="middle">1. Solo el halo</text>
+<text x="300" y="130" fill="#C8BCF6" font-family="sans-serif" font-size="13" text-anchor="middle">2. Halo + tubo</text>
+<text x="500" y="130" fill="#C8BCF6" font-family="sans-serif" font-size="13" text-anchor="middle">3. Halo + tubo + centro</text>
+</svg>
+<p>El método tiene además un parámetro <b>intensidad</b> que escala la opacidad de todas las capas: con 1 el brillo es normal; con 1,5 brilla más (un botón con el ratón encima); con 0,35 se ve apagado (la opción no elegida, el jugador que no tiene el turno). Así, un solo número controla el «encendido» de cualquier elemento del juego. En el capítulo 37 compilarás un programa pequeño que dibuja un círculo con y sin este truco, para que veas la diferencia con tus propios ojos.</p>
+
+<h2>Aclarar un color: mezclar con blanco</h2>
+<p>El centro del tubo de neón necesita «el mismo color, pero casi blanco». Para eso <code>Tema</code> tiene <code>aclarar</code>, que mezcla un color con el blanco:</p>
+<pre class="java">public static Color aclarar(Color color, float factor) {
+    int r = Math.round(color.getRed() + (255 - color.getRed()) * factor);
+    int g = Math.round(color.getGreen() + (255 - color.getGreen()) * factor);
+    int b = Math.round(color.getBlue() + (255 - color.getBlue()) * factor);
+    return new Color(r, g, b, color.getAlpha());
+}</pre>
+<p>Para cada canal, <code>255 - canal</code> es «lo que le falta para llegar al blanco», y el factor dice qué parte de eso se agrega: 0 lo deja igual, 1 lo vuelve blanco, 0,5 lo deja a medio camino. Con el rosa y un factor de 0,6 (el que usa el centro del neón):</p>
+<table class="tabla">
+<tr><th>Canal</th><th>Cálculo</th><th>Resultado</th></tr>
+<tr><td>Rojo</td><td>255 + (255 − 255) × 0,6 = 255 + 0</td><td>255</td></tr>
+<tr><td>Verde</td><td>59 + (255 − 59) × 0,6 = 59 + 117,6</td><td>177</td></tr>
+<tr><td>Azul</td><td>212 + (255 − 212) × 0,6 = 212 + 25,8</td><td>238</td></tr>
+</table>
+<p>El resultado, (255, 177, 238), es un rosa muy pálido: sigue siendo «de la familia» porque conserva el matiz, pero tiene mucha más luz. <svg viewBox="0 0 120 20" width="120" xmlns="http://www.w3.org/2000/svg"><rect width="56" height="20" rx="4" fill="#FF3BD4"/><rect x="64" width="56" height="20" rx="4" fill="#FFB1EE"/></svg></p>
+<p>En el Totito, <code>aclarar</code> aparece con distintos factores según cuánto se quiere aclarar:</p>
+<ul>
+<li><b>0,15–0,2</b>: los iconos y la flechita de los botones del menú y el borde de las píldoras, para que destaquen un poco sobre su propio relleno.</li>
+<li><b>0,35</b>: el inicio del degradado de los títulos «Turno de…» y «¡Ganó…!» (de color aclarado a color puro, un brillo que recorre la palabra).</li>
+<li><b>0,6</b>: el centro del tubo de neón.</li>
+</ul>
+<p>Esta fórmula es un caso particular de una idea general que te encontrarás en cualquier programa gráfico: la <b>interpolación lineal</b> (en inglés, <i>lerp</i>): «ir de A hacia B una fracción t del camino», que se escribe <code>A + (B − A) × t</code>. Aclarar es interpolar hacia el blanco; <b>oscurecer</b> sería interpolar hacia el negro (<code>canal × (1 − t)</code>); un degradado es interpolar entre dos colores a lo largo de una distancia; y una animación es interpolar a lo largo del tiempo.</p>
+
+<h2>Resumen</h2>
+<ul>
+<li>La pantalla mezcla <b>luz</b> (mezcla aditiva): rojo, verde y azul, cada canal de 0 a 255; los tres al máximo dan blanco.</li>
+<li><b>Hexadecimal</b> (#RRGGBB) es la misma información en base 16: dos dígitos por canal. En Java se escribe con el prefijo <code>0x</code>.</li>
+<li>El canal <b>alfa</b> (0–255) controla la opacidad; el resultado es una mezcla ponderada con el fondo. La <code>SUPERFICIE</code> usa alfa 125 para el efecto de cristal.</li>
+<li><b>HSB</b> (matiz, saturación, brillo) sirve para crear variantes coherentes de un color: el Totito tiene seis colores del mismo matiz.</li>
+<li>La paleta combina una base <b>monocromática</b> violeta con acentos <b>análogos</b> (cian, azul, morado, rosa); todos viven en <code>Tema</code> y nadie inventa colores sueltos.</li>
+<li>El color tiene <b>significado</b>: la X siempre rosa, la O siempre azul, morado para lo neutral; y nunca debe ser la única pista.</li>
+<li>El <b>contraste</b> se mide de 1 a 21; el texto normal necesita al menos 4,5. El blanco sobre el fondo del Totito da 16,85.</li>
+<li>El <b>neón</b> son capas: seis trazos cada vez más finos y opacos, el tubo y un centro aclarado hacia el blanco con <code>aclarar</code>.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Una página web o una app</b>: crea desde el primer día un único lugar con los colores (en CSS se llaman «variables»; en Android, un archivo de colores) y nómbralos por su función: <code>fondo</code>, <code>texto</code>, <code>primario</code>, <code>peligro</code>. Así podrás ofrecer modo claro y oscuro cambiando solo ese archivo.</li>
+<li><b>Gráficos y reportes</b> (por ejemplo, las ventas de la tienda del capítulo 68): usa una armonía análoga para las series de datos y reserva un color complementario para lo que debe alarmar, como el stock bajo. Comprueba el contraste de las etiquetas con el programa <code>Colores</code>.</li>
+<li><b>Botones con estados</b>: el patrón de <code>conAlfa</code> (mismo color, distinto alfa) y <code>aclarar</code> sirve para generar los colores de «normal», «ratón encima», «pulsado» y «desactivado» de cualquier botón a partir de un solo color base.</li>
+<li><b>Accesibilidad en cualquier proyecto</b>: antes de entregar, mide el contraste de cada texto con su fondo real y revisa que ningún mensaje dependa solo del color (añade un icono o una palabra).</li>
+</ul>
+</div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Convierte a mano a RGB los colores <code>#2F84FF</code> (AZUL) y <code>#A05CFF</code> (MORADO) y comprueba tu resultado con <code>java Colores.java</code>. Luego convierte a hexadecimal el color (64, 200, 255). Pista: 200 ÷ 16 = 12, residuo 8.</li>
+<li>Calcula a mano cómo se ve <code>CASILLA</code> (46, 40, 90, alfa 170) pintada sobre <code>FONDO_ABAJO</code> (14, 11, 36), con la fórmula del alfa.</li>
+<li>Escribe en <code>jshell</code> un método <code>oscurecer(Color c, float factor)</code> que mezcle con negro, siguiendo el modelo de <code>aclarar</code>. Pruébalo con el rosa y factor 0,5. Pista: con negro, cada canal es <code>canal × (1 − factor)</code>.</li>
+<li>Usa <code>Color.getHSBColor</code> para crear un color con el mismo matiz y saturación que <code>AZUL</code> pero con brillo 40 %. ¿Para qué parte de una interfaz lo usarías? Mide su contraste con el blanco usando <code>Colores</code> (modifica el programa para que compare contra <code>#FFFFFF</code>).</li>
+<li>El color <code>new Color(0x3A, 0x3F, 0xC8)</code> de <code>PantallaResultado</code> es el único que no está en <code>Tema</code>. Propón un nombre de constante para él, explica en qué lugar de <code>Tema</code> lo pondrías y por qué tenerlo ahí es mejor. (Solo en papel: el código lo escribirás en la Parte VII.)</li>
+</ol>
+</div>
+</section>

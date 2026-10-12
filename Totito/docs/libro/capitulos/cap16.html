@@ -1,0 +1,556 @@
+<section class="capitulo" id="cap16">
+<h1><span class="num">Capítulo 16</span>Métodos: funciones, parámetros, retorno y llamadas</h1>
+<p class="entrada">Todo el Totito está hecho de métodos: <code>marcarCasilla</code>, <code>verificarGanador</code>, <code>obtenerCopia</code>, <code>trazoNeon</code>, <code>minimax</code>… En este capítulo aprendes qué es exactamente un método, para qué sirve, cómo se declara, qué ocurre por dentro de la computadora cuando lo llamas (la pila de llamadas), cómo viajan los datos de ida y de vuelta, y cómo un método puede llamarse a sí mismo, que es el truco con el que la IA del Totito piensa.</p>
+
+<h2>Qué es un método y para qué sirve</h2>
+<p>Un <b>método</b> es un bloque de código con nombre que realiza una tarea concreta y que se puede ejecutar cuantas veces quieras, desde donde quieras, escribiendo su nombre. A ejecutarlo se le llama <b>llamar</b> (o invocar) al método.</p>
+<p>En otros lenguajes se les llama <b>funciones</b> o procedimientos. En Java todo vive dentro de una clase, así que todas las funciones son «métodos» (métodos de alguna clase); en la práctica, en este libro las dos palabras significan lo mismo.</p>
+<div class="caja concepto"><b>Analogía: el botón «Palomitas» del microondas.</b> Ese botón esconde una pequeña receta: «potencia alta, 2 minutos y 30 segundos, pitar tres veces». Quien lo pulsa no necesita saber los pasos; solo el nombre del botón. Si el fabricante mejora la receta, todos los que pulsan el botón se benefician sin cambiar nada. Un método es eso: una receta con nombre. Algunos botones piden un dato antes (los minutos: un <b>parámetro</b>) y algunos te dan algo al terminar (la comida caliente: un <b>valor de retorno</b>).</div>
+<p>¿Por qué el Totito está dividido en tantos métodos en lugar de escribirlo todo seguido en <code>main</code>? Cinco razones, todas visibles en el código:</p>
+<ol>
+<li><b>No repetir.</b> La comprobación «¿hay ganador?» se necesita después de cada jugada del humano, después de cada jugada de la IA, y cientos de miles de veces dentro de Minimax. Está escrita <b>una</b> vez, en <code>verificarGanador()</code>, y se llama desde todos esos sitios. Si hubiera un error en ella, se arreglaría en un solo lugar.</li>
+<li><b>Dar nombre a una idea.</b> <code>if (tablero.tableroLleno())</code> se lee como una frase; los dos bucles anidados que hay dentro, no. El nombre del método explica <i>qué</i> se hace; el cuerpo, <i>cómo</i>.</li>
+<li><b>Dividir un problema grande.</b> «Hacer un totito» es abrumador. «Marcar una casilla», «ver si alguien ganó», «ver si el tablero está lleno», «copiar el tablero» son problemas pequeños que se resuelven uno a uno. Es la técnica principal de la programación: <i>divide y vencerás</i>.</li>
+<li><b>Probar por partes.</b> En el capítulo 11 probaste <code>marcarCasilla</code> en jshell sin ventanas ni IA. Un método pequeño se prueba solo.</li>
+<li><b>Ocultar detalles.</b> <code>PantallaJuego</code> llama a <code>partida.jugar(fila, columna)</code> y no sabe ni le importa cómo se guardan las casillas. Si mañana el tablero se guardara de otra forma, la pantalla no cambiaría (capítulo 19).</li>
+</ol>
+
+<h2>Anatomía de un método: la declaración</h2>
+<p>Tomemos un método real de <code>Tablero</code>:</p>
+<pre class="java">public boolean marcarCasilla(int fila, int columna, char ficha) {
+    if (fila &lt; 0 || fila &gt; 2 || columna &lt; 0 || columna &gt; 2) {
+        return false;
+    }
+    if (casillas[fila][columna] != VACIA) {
+        return false;
+    }
+    casillas[fila][columna] = ficha;
+    return true;
+}</pre>
+<table class="tabla">
+<tr><th>Parte</th><th>En el ejemplo</th><th>Qué significa</th></tr>
+<tr><td>Modificador de acceso</td><td><code>public</code></td><td>Quién puede llamarlo. <code>public</code>: cualquier clase (<code>Partida</code>, <code>IA_Minimax</code>…). <code>private</code>: solo la propia clase, como <code>minimax</code> en <code>IA_Minimax</code> (capítulo 19).</td></tr>
+<tr><td>Tipo de retorno</td><td><code>boolean</code></td><td>Qué tipo de dato devuelve al terminar. <code>void</code> si no devuelve nada.</td></tr>
+<tr><td>Nombre</td><td><code>marcarCasilla</code></td><td>En camelCase y, casi siempre, con un <b>verbo</b>: es una acción.</td></tr>
+<tr><td>Lista de parámetros</td><td><code>(int fila, int columna, char ficha)</code></td><td>Los datos que necesita, cada uno con su tipo y su nombre, separados por comas. Paréntesis vacíos si no necesita ninguno: <code>tableroLleno()</code>.</td></tr>
+<tr><td>Cuerpo</td><td><code>{ … }</code></td><td>Las instrucciones que se ejecutan en cada llamada.</td></tr>
+</table>
+<p>A la primera línea (sin el cuerpo) se le llama <b>cabecera</b> o declaración. Y en sentido estricto, la <b>firma</b> de un método es su nombre más los tipos de sus parámetros, en orden: <code>marcarCasilla(int, int, char)</code>. La firma es lo que Java usa para identificar a un método; lo verás importar en la sobrecarga.</p>
+<p>Puede haber más palabras antes del tipo de retorno: <code>static</code> (lo verás al final de este capítulo y en el 20), <code>final</code>, <code>protected</code>, <code>@Override</code> encima (capítulo 23)… Pero tipo, nombre, paréntesis y cuerpo están siempre.</p>
+
+<h2>Tu primer programa dividido en métodos</h2>
+<p>Este programa reproduce tres métodos del Totito como métodos <code>static</code> de una sola clase (para que funcionen sin crear objetos; el porqué, al final del capítulo). Como aquí no hay un objeto <code>Tablero</code> que guarde sus casillas, la matriz se pasa como primer parámetro:</p>
+<pre class="java">public class ConMetodos {
+
+    static final char VACIA = ' ';
+
+    public static void main(String[] args) {
+        char[][] casillas = new char[3][3];
+        reiniciar(casillas);
+
+        boolean ok = marcarCasilla(casillas, 1, 1, 'X');
+        System.out.println("¿Se pudo marcar el centro? " + ok);
+        System.out.println("¿Y otra vez? " + marcarCasilla(casillas, 1, 1, 'O'));
+        System.out.println("¿Y la fila 5? " + marcarCasilla(casillas, 5, 0, 'O'));
+        marcarCasilla(casillas, 0, 2, 'O');
+        imprimir(casillas);
+    }
+
+    /** Deja todas las casillas vacias. */
+    static void reiniciar(char[][] casillas) {
+        for (int fila = 0; fila &lt; 3; fila++) {
+            for (int columna = 0; columna &lt; 3; columna++) {
+                casillas[fila][columna] = VACIA;
+            }
+        }
+    }
+
+    /** Coloca la ficha si la casilla existe y esta libre; dice si pudo. */
+    static boolean marcarCasilla(char[][] casillas, int fila, int columna, char ficha) {
+        if (fila &lt; 0 || fila &gt; 2 || columna &lt; 0 || columna &gt; 2) {
+            return false;
+        }
+        if (casillas[fila][columna] != VACIA) {
+            return false;
+        }
+        casillas[fila][columna] = ficha;
+        return true;
+    }
+
+    /** Dibuja el tablero con caracteres. */
+    static void imprimir(char[][] casillas) {
+        for (int fila = 0; fila &lt; 3; fila++) {
+            System.out.println(" " + casillas[fila][0] + " | " + casillas[fila][1] + " | " + casillas[fila][2]);
+            if (fila &lt; 2) {
+                System.out.println("---+---+---");
+            }
+        }
+    }
+}</pre>
+<pre class="salida">¿Se pudo marcar el centro? true
+¿Y otra vez? false
+¿Y la fila 5? false
+   |   | O
+---+---+---
+   | X |
+---+---+---
+   |   |  </pre>
+<p>Lee <code>main</code>: son seis líneas que cuentan una historia («reinicia, marca, intenta otra vez, intenta fuera, marca otra, imprime») sin un solo bucle a la vista. Los detalles están en los métodos. El orden en que se escriben los métodos dentro de la clase no importa: <code>main</code> puede llamar a <code>imprimir</code> aunque esté escrito más abajo.</p>
+
+<h2>Parámetros y argumentos</h2>
+<p>Dos palabras que se confunden y conviene separar:</p>
+<ul>
+<li>Un <b>parámetro</b> es la variable que aparece en la <b>declaración</b> del método: <code>int fila</code>, <code>int columna</code>, <code>char ficha</code>. Es un hueco con nombre que espera un valor.</li>
+<li>Un <b>argumento</b> es el valor concreto que se pone en la <b>llamada</b>: en <code>marcarCasilla(casillas, 1, 1, 'X')</code> los argumentos son <code>casillas</code>, <code>1</code>, <code>1</code> y <code>'X'</code>.</li>
+</ul>
+<p>Analogía: un formulario tiene casillas con rótulo («Nombre: ____», «Edad: ____»); eso son los parámetros. Lo que escribes en ellas («Ana», «17») son los argumentos. El mismo formulario se llena miles de veces con argumentos distintos.</p>
+<p>Al llamar, los argumentos se asignan a los parámetros <b>por posición</b>: el primero al primero, el segundo al segundo. Los nombres no importan: en <code>Partida.jugar</code> se llama <code>tablero.marcarCasilla(fila, columna, jugadores[turno].getFicha())</code>, y en <code>IA_Minimax</code>, <code>copia.marcarCasilla(fila, columna, fichaIA)</code>; el tercer argumento se llama distinto en cada caso, pero los dos acaban en el parámetro <code>ficha</code>. Un argumento puede ser cualquier expresión: un literal (<code>1</code>), una variable, una cuenta (<code>profundidad + 1</code>) o incluso otra llamada (<code>jugadores[turno].getFicha()</code>, que se ejecuta primero y entrega su resultado).</p>
+<p>El compilador comprueba que la cantidad y los tipos encajen:</p>
+<pre class="salida">Argumentos.java:4: error: method marcarCasilla in class Argumentos cannot be applied to given types;
+        marcarCasilla(casillas, 1, 'X');
+        ^
+  required: char[][],int,int,char
+  found:    char[][],int,char
+  reason: actual and formal argument lists differ in length</pre>
+<p>«Requerido: matriz, int, int, char. Encontrado: matriz, int, char». Faltó la columna. Los <i>formal arguments</i> del mensaje son los parámetros y los <i>actual arguments</i>, los argumentos.</p>
+<div class="caja cuidado"><b>El orden importa, y el compilador no siempre te salva.</b> Si escribes <code>marcarCasilla(casillas, 'X', 1, 1)</code>, el compilador protesta, pero no por la <code>'X'</code>: protesta porque el último <code>1</code> no cabe en el parámetro <code>char ficha</code> (<code>possible lossy conversion from int to char</code>). La <code>'X'</code> en el parámetro <code>int fila</code> la habría aceptado sin rechistar, convertida a su código, 88 (capítulo 12). Si los dos parámetros fueran <code>int</code>, como <code>fila</code> y <code>columna</code>, intercambiarlos compilaría siempre y pondría la ficha en la casilla simétrica. Por eso los parámetros llevan nombres claros y NetBeans te los muestra mientras escribes la llamada.</div>
+
+<h2><code>return</code> y el tipo de retorno</h2>
+<p><code>return</code> hace dos cosas a la vez: <b>termina</b> el método en ese instante y <b>entrega</b> un valor a quien lo llamó. Ese valor ocupa el lugar de la llamada, como si la expresión <code>marcarCasilla(casillas, 1, 1, 'X')</code> se sustituyera por <code>true</code>. Por eso se puede guardar (<code>boolean ok = …</code>), imprimir, usar en un <code>if</code> o pasar a otro método.</p>
+<ul>
+<li>El valor devuelto tiene que ser del tipo declarado: un método <code>boolean</code> devuelve <code>true</code> o <code>false</code>; <code>verificarGanador()</code>, declarado <code>char</code>, devuelve <code>casillas[i][0]</code> o <code>VACIA</code>; <code>obtenerCopia()</code>, declarado <code>Tablero</code>, devuelve un objeto <code>Tablero</code>; <code>calcularMejorJugada</code>, declarado <code>int[]</code>, devuelve un arreglo.</li>
+<li>Un método puede tener varios <code>return</code>; se ejecuta el primero al que se llegue. <code>marcarCasilla</code> tiene tres: dos para rechazar (las cláusulas de guarda del capítulo 13) y uno al final para aceptar.</li>
+<li><b>Todos los caminos</b> deben terminar en un <code>return</code>. Si hay alguna forma de llegar al final sin devolver nada, no compila:
+<pre class="salida">SinReturn.java:6: error: missing return statement
+    }
+    ^</pre>
+Ese método decía <code>if (dentro) { return true; }</code> pero no qué devolver si no. Java no adivina.</li>
+</ul>
+<h3>Métodos <code>void</code></h3>
+<p>Un método <code>void</code> hace algo pero no devuelve nada: <code>reiniciar()</code> limpia el tablero, <code>imprimir</code> escribe en pantalla, <code>trazoNeon</code> dibuja. No se puede guardar su resultado (<code>boolean x = tablero.reiniciar();</code> no compila: no hay resultado). Puede usar <code>return;</code> sin valor para salir antes; así empieza <code>Partida.jugarTurnoIA</code>:</p>
+<pre class="java">public void jugarTurnoIA() {
+    if (!esTurnoDeIA()) {
+        return;
+    }
+    int[] jugada = ia.calcularMejorJugada(tablero);
+    jugar(jugada[0], jugada[1]);
+}</pre>
+<p>«Si no le toca a la IA, no hagas nada». Otra cláusula de guarda.</p>
+<h3>Usar o ignorar lo que se devuelve</h3>
+<p>Nada obliga a usar el valor de retorno. En <code>IA_Minimax</code>, <code>copia.marcarCasilla(fila, columna, fichaIA);</code> descarta el <code>boolean</code>: la IA ya comprobó en la línea anterior que la casilla estaba vacía, así que sabe que saldrá <code>true</code>. En cambio <code>Partida.jugar</code> sí lo usa, porque ahí la jugada viene de un clic y podría ser inválida. Ignorar un resultado debe ser una decisión consciente, no un descuido.</p>
+
+<h2>Qué pasa exactamente en una LLAMADA</h2>
+<p>Este es el corazón del capítulo. Cuando Java encuentra una llamada como <code>jugar(1, 1)</code>, hace esto, siempre en este orden:</p>
+<ol>
+<li><b>Evalúa los argumentos</b>, de izquierda a derecha, hasta tener valores concretos (si un argumento es <code>profundidad + 1</code>, calcula la suma).</li>
+<li><b>Crea un marco</b> (<i>stack frame</i>) nuevo: un espacio de memoria propio de <i>esta</i> llamada, donde vivirán sus parámetros y sus variables locales. Los parámetros nacen inicializados con <b>copias</b> de los argumentos.</li>
+<li><b>Apila el marco</b> encima del marco de quien llamó, en una zona de memoria llamada <b>pila de llamadas</b> (<i>call stack</i>). Además anota «cuando termines, vuelve a tal línea de tal método».</li>
+<li><b>Salta</b> a la primera línea del cuerpo del método y la ejecuta. Mientras tanto, el método que llamó está en pausa, esperando, con todas sus variables intactas en su propio marco.</li>
+<li>Al llegar a un <code>return</code> (o a la llave final de un <code>void</code>), <b>desapila</b> el marco: sus parámetros y variables locales desaparecen.</li>
+<li><b>Vuelve</b> exactamente al punto donde se hizo la llamada; el valor devuelto ocupa el lugar de la llamada y la ejecución continúa.</li>
+</ol>
+<div class="caja concepto"><b>Analogía: la pila de platos (o de encargos).</b> Estás cocinando (main) y te falta azúcar: dejas la receta a medias y vas a la tienda (llamada a <code>jugar</code>). En la tienda te piden la cédula: buscas en tu cartera (llamada a <code>dentroDelTablero</code>). Al encontrarla, vuelves a la tienda justo donde lo dejaste, compras, y vuelves a la cocina, a la línea exacta de la receta donde te habías quedado. Cada encargo nuevo se pone <i>encima</i> de la pila; solo se puede trabajar en el de arriba; al terminarlo se quita y se retoma el de abajo. «El último en entrar es el primero en salir».</div>
+<p>Este programa lo hace visible: cada método anuncia cuándo empieza y qué recibe.</p>
+<pre class="java">public class Pila {
+    public static void main(String[] args) {
+        System.out.println("main: empiezo");
+        boolean valida = jugar(1, 1);
+        System.out.println("main: jugar devolvio " + valida);
+        System.out.println("main: termino");
+    }
+
+    static boolean jugar(int fila, int columna) {
+        System.out.println("  jugar(" + fila + ", " + columna + "): empiezo");
+        boolean ok = dentroDelTablero(fila, columna);
+        System.out.println("  jugar: dentroDelTablero devolvio " + ok);
+        return ok;
+    }
+
+    static boolean dentroDelTablero(int fila, int columna) {
+        System.out.println("    dentroDelTablero(" + fila + ", " + columna + "): calculo y vuelvo");
+        return fila &gt;= 0 &amp;&amp; fila &lt; 3 &amp;&amp; columna &gt;= 0 &amp;&amp; columna &lt; 3;
+    }
+}</pre>
+<pre class="salida">main: empiezo
+  jugar(1, 1): empiezo
+    dentroDelTablero(1, 1): calculo y vuelvo
+  jugar: dentroDelTablero devolvio true
+main: jugar devolvio true
+main: termino</pre>
+<p>Así está la pila en el momento más profundo, mientras se ejecuta <code>dentroDelTablero</code>:</p>
+<svg viewBox="0 0 720 300" width="100%" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="720" height="300" rx="14" fill="#1C1740"/>
+<text x="30" y="34" fill="#C8BCF6" font-size="15">Pila de llamadas (crece hacia arriba)</text>
+<rect x="30" y="55" width="340" height="62" rx="8" fill="none" stroke="#FF3BD4" stroke-width="3"/>
+<text x="45" y="80" fill="#FFFFFF" font-size="15">dentroDelTablero</text>
+<text x="45" y="104" fill="#C8BCF6" font-size="13">fila = 1, columna = 1   ← se ejecuta AHORA</text>
+<rect x="30" y="127" width="340" height="62" rx="8" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="45" y="152" fill="#FFFFFF" font-size="15">jugar</text>
+<text x="45" y="176" fill="#C8BCF6" font-size="13">fila = 1, columna = 1, ok = (aún nada)</text>
+<rect x="30" y="199" width="340" height="62" rx="8" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="45" y="224" fill="#FFFFFF" font-size="15">main</text>
+<text x="45" y="248" fill="#C8BCF6" font-size="13">args, valida = (aún nada)</text>
+<line x1="400" y1="86" x2="440" y2="86" stroke="#FF3BD4" stroke-width="2"/>
+<text x="450" y="80" fill="#FFFFFF" font-size="13">Al hacer return true, este marco</text>
+<text x="450" y="98" fill="#FFFFFF" font-size="13">se quita y jugar continúa.</text>
+<line x1="400" y1="158" x2="440" y2="158" stroke="#A05CFF" stroke-width="2"/>
+<text x="450" y="152" fill="#FFFFFF" font-size="13">En pausa en la línea</text>
+<text x="450" y="170" fill="#FFFFFF" font-size="13">boolean ok = dentroDelTablero(…)</text>
+<line x1="400" y1="230" x2="440" y2="230" stroke="#2F84FF" stroke-width="2"/>
+<text x="450" y="224" fill="#FFFFFF" font-size="13">En pausa en la línea</text>
+<text x="450" y="242" fill="#FFFFFF" font-size="13">boolean valida = jugar(1, 1)</text>
+</svg>
+<p>Fíjate en un detalle: hay <b>dos</b> variables llamadas <code>fila</code> al mismo tiempo, una en el marco de <code>jugar</code> y otra en el de <code>dentroDelTablero</code>. No chocan, porque cada una vive en su marco. Es lo mismo que pasa en el Totito, donde una docena de métodos tienen su propia <code>fila</code>.</p>
+
+<h3>La traza de la pila, otra vez</h3>
+<p>Ahora entiendes por completo el mensaje de una excepción. Si un error ocurre dentro de un método llamado por otro, Java imprime la pila entera tal como estaba en ese momento:</p>
+<pre class="java">public class PilaError {
+    public static void main(String[] args) {
+        jugar(3, 0);
+    }
+
+    static void jugar(int fila, int columna) {
+        marcar(fila, columna);
+    }
+
+    static void marcar(int fila, int columna) {
+        char[][] casillas = new char[3][3];
+        casillas[fila][columna] = 'X';
+    }
+}</pre>
+<pre class="salida">Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3
+	at PilaError.marcar(PilaError.java:12)
+	at PilaError.jugar(PilaError.java:7)
+	at PilaError.main(PilaError.java:3)</pre>
+<p>Se lee de arriba abajo como la pila del dibujo: el error ocurrió en <code>marcar</code> (línea 12), que había sido llamado desde <code>jugar</code> (línea 7), que había sido llamado desde <code>main</code> (línea 3). La primera línea dice <i>dónde</i> explotó; las de abajo, <i>cómo se llegó</i> ahí. Muchas veces el error de verdad no está en la línea que explotó sino más abajo: aquí, <code>marcar</code> está bien; el problema es que <code>main</code> le pasó un 3. En un programa con ventanas la traza será larga, con muchas líneas de <code>javax.swing</code>; busca las primeras que mencionen tus archivos.</p>
+
+<h2>Paso por valor: qué recibe exactamente un método</h2>
+<p>En el paso 2 de la llamada dijimos que los parámetros reciben <b>copias</b> de los argumentos. Java siempre funciona así; se llama <b>paso por valor</b>. Pero «copia» significa cosas distintas según el tipo, y aquí está una de las ideas más importantes (y más malentendidas) de Java:</p>
+<pre class="java">import java.util.Arrays;
+
+public class PasoPorValor {
+    public static void main(String[] args) {
+        int turno = 0;
+        cambiarTurno(turno);
+        System.out.println("1) turno sigue valiendo " + turno);
+        turno = turnoSiguiente(turno);
+        System.out.println("2) con return, turno vale " + turno);
+
+        char[] fila = {' ', ' ', ' '};
+        ponerX(fila);
+        System.out.println("3) fila despues de ponerX: " + Arrays.toString(fila));
+
+        reemplazar(fila);
+        System.out.println("4) fila despues de reemplazar: " + Arrays.toString(fila));
+    }
+
+    static void cambiarTurno(int turno) {
+        turno = 1 - turno;   // cambia SU copia
+    }
+
+    static int turnoSiguiente(int turno) {
+        return 1 - turno;
+    }
+
+    static void ponerX(char[] casillas) {
+        casillas[0] = 'X';   // modifica el arreglo al que apunta la copia de la referencia
+    }
+
+    static void reemplazar(char[] casillas) {
+        casillas = new char[]{'O', 'O', 'O'};   // la copia apunta a otro arreglo; el original no se entera
+    }
+}</pre>
+<pre class="salida">1) turno sigue valiendo 0
+2) con return, turno vale 1
+3) fila despues de ponerX: [X,  ,  ]
+4) fila despues de reemplazar: [X,  ,  ]</pre>
+<ol>
+<li><b>Con un primitivo</b> (<code>int</code>, <code>char</code>, <code>boolean</code>…) el método recibe una copia del número. Cambiar su copia no toca la variable de <code>main</code>: <code>turno</code> sigue en 0. Es como darle a alguien una fotocopia de tu examen: puede tacharla entera y tu original sigue igual.</li>
+<li>La forma correcta de que un método «cambie» un primitivo es que <b>devuelva</b> el nuevo valor y que quien llama lo asigne: <code>turno = turnoSiguiente(turno)</code>.</li>
+<li><b>Con un arreglo u objeto</b>, la variable no contiene el arreglo sino su <b>referencia</b> (su dirección, capítulo 15). El método recibe una copia de la <i>dirección</i>. Con esa dirección llega al mismo arreglo y puede cambiar su contenido: la X aparece en <code>main</code>. Es como darle a alguien una copia de la llave de tu casa: la llave es otra, pero la casa es la misma.</li>
+<li>Pero si el método hace que <i>su</i> copia de la dirección apunte a otro arreglo (<code>casillas = new char[]…</code>), solo cambia su llave; la variable de <code>main</code> sigue apuntando al arreglo de siempre.</li>
+</ol>
+<p>Esto explica dos decisiones del Totito:</p>
+<ul>
+<li><code>calcularMejorJugada(Tablero tablero)</code> recibe la <b>referencia</b> al tablero real de la partida. Si la IA hiciera <code>tablero.marcarCasilla(…)</code> para probar jugadas, las marcaría en la partida de verdad. Por eso siempre trabaja sobre <code>tablero.obtenerCopia()</code>.</li>
+<li><code>PanelTablero.mostrar(Tablero tablero)</code> no guarda la referencia que recibe, sino que copia las casillas a su propia matriz <code>fichas</code>: lo que se dibuja no puede cambiar a espaldas del panel.</li>
+</ul>
+<div class="caja cuidado">Escucharás decir «en Java los objetos se pasan por referencia». No es exacto, y la línea 4 lo demuestra: si fuera paso por referencia, <code>reemplazar</code> habría cambiado la variable de <code>main</code>. Java pasa <b>siempre por valor</b>; lo que pasa, en el caso de los objetos, es el valor de la referencia. La consecuencia práctica: un método <b>puede modificar</b> el objeto que recibe, pero <b>no puede cambiar</b> qué objeto tiene la variable de quien llamó.</div>
+
+<h2>Alcance: dónde existe cada variable</h2>
+<p>El <b>alcance</b> (<i>scope</i>) de una variable es la zona del código donde existe y se puede usar. La regla general: una variable vive desde que se declara hasta la llave <code>}</code> que cierra el bloque donde se declaró.</p>
+<ul>
+<li><b>Variables locales</b>: declaradas dentro de un método. Solo existen en ese método, y solo mientras se ejecuta (viven en su marco de la pila). <code>mejorValor</code> y <code>mejorJugada</code> son locales de <code>calcularMejorJugada</code>.</li>
+<li><b>Parámetros</b>: son variables locales que nacen con el valor del argumento.</li>
+<li><b>Variables de bloque</b>: declaradas dentro de un <code>for</code>, un <code>if</code> o cualquier par de llaves. Solo existen ahí. La <code>fila</code> de un <code>for</code> muere al terminar el bucle.</li>
+<li><b>Campos</b> (o atributos): declarados en la clase, fuera de todo método, como <code>casillas</code> en <code>Tablero</code> o <code>turno</code> en <code>Partida</code>. Los ven todos los métodos de la clase y viven tanto como el objeto (capítulo 18). Por eso <code>marcarCasilla</code> puede usar <code>casillas</code> sin recibirla como parámetro.</li>
+</ul>
+<pre class="java">public class Alcance {
+    static int empates = 0;          // campo: vive mientras viva el programa
+
+    public static void main(String[] args) {
+        int victorias = 2;           // local de main
+        for (int i = 0; i &lt; 2; i++) {
+            int doble = i * 2;       // local del bloque del for
+            System.out.println("i = " + i + ", doble = " + doble);
+        }
+        sumarEmpate();
+        sumarEmpate();
+        System.out.println("victorias = " + victorias + ", empates = " + empates);
+    }
+
+    static void sumarEmpate() {
+        empates++;                   // el campo SI se ve desde aqui
+        // victorias++;              // no compilaria: victorias es de main
+    }
+}</pre>
+<pre class="salida">i = 0, doble = 0
+i = 1, doble = 2
+victorias = 2, empates = 2</pre>
+<p>Si intentas usar una variable fuera de su bloque, el compilador no la encuentra:</p>
+<pre class="salida">FueraDeAlcance.java:6: error: cannot find symbol
+        System.out.println(doble);
+                           ^
+  symbol:   variable doble
+  location: class FueraDeAlcance</pre>
+<p>El mismo «cannot find symbol» del capítulo 11: para el compilador, fuera de su bloque esa variable no existe. Si la necesitas después, declárala antes del bloque (como <code>fila</code> y <code>columna</code> antes del <code>do</code> en el capítulo 14).</p>
+<div class="caja consejo"><b>Declara cada variable en el alcance más pequeño posible</b>, justo donde la necesitas. El Totito declara <code>Tablero copia</code> dentro del <code>if</code> que la usa, no al principio del método. Cuanto más pequeño el alcance, menos sitios donde algo puede salir mal y menos cosas que tener en la cabeza al leer.</div>
+<h3>Cuando un parámetro y un campo se llaman igual: <code>this</code></h3>
+<p>En el constructor de <code>Jugador</code>:</p>
+<pre class="java">public Jugador(String nombre, char ficha) {
+    this.nombre = nombre;
+    this.ficha = ficha;
+}</pre>
+<p>Hay un campo <code>nombre</code> y un parámetro <code>nombre</code>. Dentro del método, el nombre suelto se refiere al <b>más cercano</b>: el parámetro (se dice que el parámetro <i>oculta</i> o «hace sombra» al campo). Para llegar al campo se escribe <code>this.nombre</code>, «el <code>nombre</code> de este objeto». La línea se lee: «guarda en mi campo <code>nombre</code> el valor que me pasaron en el parámetro <code>nombre</code>». Si escribieras <code>nombre = nombre;</code>, asignarías el parámetro a sí mismo y el campo quedaría vacío para siempre. Lo verás a fondo en el capítulo 20.</p>
+
+<h2>Sobrecarga: mismo nombre, distintos parámetros</h2>
+<p>En una clase puede haber varios métodos con el <b>mismo nombre</b> si tienen <b>distintos parámetros</b> (en cantidad, tipo u orden). Se llama <b>sobrecarga</b> (<i>overloading</i>). Java elige cuál ejecutar mirando los argumentos de cada llamada. En <code>Dibujo</code> hay dos <code>trazoNeon</code>:</p>
+<pre class="java">public static void trazoNeon(Graphics2D g, Shape figura, Color color, float grosor) {
+    trazoNeon(g, figura, color, grosor, 1f);
+}
+
+public static void trazoNeon(Graphics2D g, Shape figura, Color color, float grosor, float intensidad) {
+    // ... el dibujo de verdad: halo, linea principal y centro blanco ...
+}</pre>
+<p>La versión de cuatro parámetros es un atajo: la mayoría de los trazos se dibujan con intensidad normal, así que en lugar de escribir <code>1f</code> en cada llamada, existe una versión que no la pide y que se limita a llamar a la completa con <code>1f</code>. Las fichas X y O y varios iconos usan la corta; el marco del tablero (<code>0.8f</code>, algo apagado), las rejillas (<code>0.4f</code>) o un botón con el ratón encima (<code>1.5f</code>) usan la larga. Así el código del dibujo vive en un solo lugar y las llamadas quedan cortas. Este programa imita lo mismo en consola (sin el <code>Graphics2D</code>, para poder ejecutarlo sin ventana):</p>
+<pre class="java">public class Sobrecarga {
+    public static void main(String[] args) {
+        trazoNeon("marco", "MORADO", 1.5f, 0.8f);   // 4 argumentos
+        trazoNeon("ficha X", "ROSA", 8.5f);          // 3 argumentos: intensidad normal
+
+        System.out.println(42);      // println(int)
+        System.out.println('X');     // println(char)
+        System.out.println(2.5);     // println(double)
+        System.out.println("hola");  // println(String)
+    }
+
+    /** Version corta: sin intensidad, usa 1 (como Dibujo.trazoNeon de 4 parametros). */
+    static void trazoNeon(String figura, String color, float grosor) {
+        trazoNeon(figura, color, grosor, 1f);
+    }
+
+    /** Version completa (como Dibujo.trazoNeon de 5 parametros). */
+    static void trazoNeon(String figura, String color, float grosor, float intensidad) {
+        System.out.println("Trazo " + figura + " en " + color + ", grosor " + grosor + ", intensidad " + intensidad);
+    }
+}</pre>
+<pre class="salida">Trazo marco en MORADO, grosor 1.5, intensidad 0.8
+Trazo ficha X en ROSA, grosor 8.5, intensidad 1.0
+42
+X
+2.5
+hola</pre>
+<p>El propio <code>println</code> que llevas usando desde el capítulo 11 está sobrecargado: hay un <code>println(int)</code>, un <code>println(char)</code>, un <code>println(double)</code>, un <code>println(String)</code>… Por eso imprime bien cualquier cosa que le des.</p>
+<div class="caja cuidado">La sobrecarga se decide <b>solo por los parámetros</b>. Dos métodos que se diferencian únicamente en el tipo de retorno (<code>int calcular()</code> y <code>double calcular()</code>) no pueden convivir: en la llamada <code>calcular()</code> Java no sabría cuál elegir. Y no abuses: si dos métodos hacen cosas distintas, merecen nombres distintos. Sobrecarga solo variantes de la misma acción, como hace <code>trazoNeon</code>.</div>
+
+<h2>Métodos estáticos y métodos de instancia (introducción)</h2>
+<p>Habrás notado dos formas de llamar a los métodos en el Totito:</p>
+<ul>
+<li><code>Tema.colorDeFicha('X')</code>, <code>Dibujo.trazoNeon(…)</code>, <code>Math.max(3, tam * 0.085)</code>, <code>Partida.buscarLineaGanadora(tablero)</code>: <b>nombre de la clase</b>, punto, método.</li>
+<li><code>tablero.marcarCasilla(…)</code>, <code>partida.jugar(…)</code>, <code>jugador.getFicha()</code>: <b>un objeto concreto</b> (una variable), punto, método.</li>
+</ul>
+<p>Los primeros son métodos <b><code>static</code></b> (de clase): pertenecen a la clase como un todo y trabajan solo con lo que reciben por parámetro. <code>Math.max</code> no necesita «un Math concreto» para decirte cuál de dos números es mayor. Los segundos son <b>métodos de instancia</b>: pertenecen a cada objeto y trabajan con <i>sus</i> datos. <code>tableroLleno()</code> no tiene sentido sin decir <i>qué</i> tablero: el de la partida, o una de las miles de copias de la IA.</p>
+<pre class="java">public class EstaticoVsInstancia {
+    public static void main(String[] args) {
+        // Metodo estatico: se llama con el nombre de la CLASE
+        System.out.println("Color de la X: " + Colores.colorDeFicha('X'));
+        System.out.println("Mayor de 3 y 8.5: " + Math.max(3, 8.5));
+
+        // Metodo de instancia: se llama sobre un OBJETO concreto
+        Contador ana = new Contador();
+        Contador luis = new Contador();
+        ana.sumar();
+        ana.sumar();
+        luis.sumar();
+        System.out.println("Ana: " + ana.getVictorias() + ", Luis: " + luis.getVictorias());
+    }
+}
+
+class Colores {
+    static String colorDeFicha(char ficha) {
+        return ficha == 'X' ? "rosa" : "azul";
+    }
+}
+
+class Contador {
+    private int victorias;
+
+    void sumar() {
+        victorias++;
+    }
+
+    int getVictorias() {
+        return victorias;
+    }
+}</pre>
+<pre class="salida">Color de la X: rosa
+Mayor de 3 y 8.5: 8.5
+Ana: 2, Luis: 1</pre>
+<p>(Un archivo puede tener varias clases si solo una es <code>public</code>; aquí <code>Colores</code> y <code>Contador</code> son auxiliares. En el Totito cada clase va en su archivo.) <code>ana</code> y <code>luis</code> son dos objetos <code>Contador</code>, cada uno con su propio campo <code>victorias</code>; <code>sumar()</code> aumenta el del objeto sobre el que se llamó. Eso es imposible con un método estático, que no tiene «su» objeto.</p>
+<p>Por la misma razón, un método estático no puede usar directamente los campos de instancia:</p>
+<pre class="salida">Estatico.java:5: error: non-static variable victorias cannot be referenced from a static context
+        victorias++;
+        ^</pre>
+<p>«No puedo usar <code>victorias</code> desde un contexto estático»: ¿las victorias de quién? Es el error que verás si desde <code>main</code> intentas usar un campo de la clase sin crear antes un objeto. Por eso en este capítulo todos los métodos de ejemplo son <code>static</code>: los llamamos desde <code>main</code>, que es estático, sin fabricar objetos. En el Totito, <code>Tema</code> y <code>Dibujo</code> son <i>clases de utilidades</i>, todas estáticas, porque no guardan estado: son cajas de herramientas. <code>Tablero</code>, <code>Partida</code> y <code>Jugador</code> son de instancia, porque cada objeto tiene sus propios datos. El capítulo 18 explica los objetos y el 20 profundiza en <code>static</code>.</p>
+
+<h2>Recursión: un método que se llama a sí mismo</h2>
+<p>Un método puede llamar a cualquier método… incluido él mismo. A eso se le llama <b>recursión</b>. Parece un truco de magia, pero con lo que sabes de la pila de llamadas es perfectamente lógico: cada llamada crea su propio marco, con sus propios parámetros, así que una llamada a <code>factorial(3)</code> que hace dentro una llamada a <code>factorial(2)</code> no se pisa con ella.</p>
+<p>El ejemplo clásico es el <b>factorial</b>: 4! (se lee «cuatro factorial») es 4 × 3 × 2 × 1 = 24. Observa que 4! = 4 × 3!, y 3! = 3 × 2!, y así hasta 1! = 1. Es decir, el problema se define en función de una versión más pequeña de sí mismo. Eso se traduce directamente:</p>
+<pre class="java">public class Factorial {
+    public static void main(String[] args) {
+        System.out.println("Resultado: 4! = " + factorial(4, ""));
+    }
+
+    static long factorial(int n, String sangria) {
+        System.out.println(sangria + "factorial(" + n + ") empieza");
+        if (n &lt;= 1) {                                    // caso base
+            System.out.println(sangria + "factorial(" + n + ") devuelve 1");
+            return 1;
+        }
+        long resultado = n * factorial(n - 1, sangria + "   ");   // caso recursivo
+        System.out.println(sangria + "factorial(" + n + ") devuelve " + resultado);
+        return resultado;
+    }
+}</pre>
+<pre class="salida">factorial(4) empieza
+   factorial(3) empieza
+      factorial(2) empieza
+         factorial(1) empieza
+         factorial(1) devuelve 1
+      factorial(2) devuelve 2
+   factorial(3) devuelve 6
+factorial(4) devuelve 24
+Resultado: 4! = 24</pre>
+<p>El parámetro <code>sangria</code> solo sirve para dibujar la profundidad: cada nivel añade tres espacios. Lee la salida como la pila: las llamadas <b>bajan</b> (4, 3, 2, 1) apilando marcos, cada una en pausa en la línea de la multiplicación, esperando el resultado de la de abajo. Cuando <code>factorial(1)</code> devuelve 1 sin llamar a nadie, los marcos se van <b>desapilando</b> hacia arriba, y cada uno completa su multiplicación: 2 × 1 = 2, 3 × 2 = 6, 4 × 6 = 24.</p>
+<p>Todo método recursivo necesita dos partes:</p>
+<ol>
+<li><b>Caso base</b>: una situación tan simple que se responde sin volver a llamarse (<code>n &lt;= 1</code> → 1). Es el freno.</li>
+<li><b>Caso recursivo</b>: se llama a sí mismo con un problema <b>más pequeño</b>, que acerque al caso base (<code>n - 1</code>).</li>
+</ol>
+<p>Sin caso base, el método se llama a sí mismo sin fin, apilando marcos hasta llenar la memoria reservada para la pila:</p>
+<pre class="java">static long factorial(int n) {
+    return n * factorial(n - 1);   // falta el caso base
+}</pre>
+<pre class="salida">Exception in thread "main" java.lang.StackOverflowError
+	at SinCasoBase.factorial(SinCasoBase.java:7)
+	at SinCasoBase.factorial(SinCasoBase.java:7)
+	at SinCasoBase.factorial(SinCasoBase.java:7)
+	at SinCasoBase.factorial(SinCasoBase.java:7)
+	...</pre>
+<p><b>Desbordamiento de pila</b>: es el bucle infinito de la recursión (y el que dio nombre al famoso sitio de preguntas de programadores). La traza muestra miles de líneas iguales: la pila llena de marcos de <code>factorial</code>.</p>
+<div class="caja concepto"><b>Analogía: las muñecas rusas.</b> Para contar cuántas muñecas hay, abres la primera: «una, más las que haya dentro». Para saber cuántas hay dentro, abres la siguiente con la misma regla. Cuando abres una que ya no se abre (el caso base), respondes «una» y vas cerrando hacia fuera, sumando. La recursión es eso: resolver un problema confiando en que la misma receta resolverá el problema de dentro, que es más pequeño.</div>
+
+<h3>Cómo usa la recursión el Totito: <code>minimax</code></h3>
+<p>La IA del Totito tiene que responder a «¿cuánto vale esta jugada?». Y la respuesta es recursiva: una jugada vale lo que vale la <i>mejor respuesta del rival</i> a ella, que a su vez vale lo que vale mi mejor respuesta a esa respuesta… hasta llegar a un tablero donde la partida terminó (el caso base). Este es el esqueleto de <code>IA_Minimax.minimax</code>, sin los detalles que verás en el capítulo 31:</p>
+<pre class="java">private int minimax(Tablero tablero, int profundidad, boolean esMax) {
+    char ganador = tablero.verificarGanador();
+    if (ganador == fichaIA) {               // caso base: gano la IA
+        return 10 - profundidad;
+    }
+    if (ganador == fichaJugador) {          // caso base: gano el humano
+        return profundidad - 10;
+    }
+    if (tablero.tableroLleno()) {           // caso base: empate
+        return 0;
+    }
+    // caso recursivo: para cada casilla vacia, simular la jugada en una copia
+    // y llamar a minimax(copia, profundidad + 1, !esMax) con el turno contrario
+    ...
+}</pre>
+<p>Las piezas son las mismas que en el factorial: tres casos base (alguien ganó o hubo empate: la partida terminó y se sabe su puntaje) y un caso recursivo que se llama con un problema más pequeño (un tablero con <b>una casilla vacía menos</b>; como solo hay nueve, la recursión siempre llega al fondo). Cada llamada recibe su propia copia del tablero y su propia <code>profundidad</code>, que vive en su marco; por eso pueden coexistir nueve niveles de «y si…» sin mezclarse.</p>
+<p>¿Cuántas llamadas son? Este programa usa el <code>Tablero</code> real y un método recursivo con la misma estructura de <code>minimax</code>, pero que en lugar de puntuar <b>cuenta</b> todas las partidas posibles del totito. Necesita el <code>Tablero</code> ya compilado: guárdalo y ejecútalo cuando llegues al capítulo 29 (o léelo ahora y vuelve después):</p>
+<pre class="java">public class ContarPartidas {
+    static long llamadas = 0;
+
+    public static void main(String[] args) {
+        Tablero vacio = new Tablero();
+        long partidas = contar(vacio, 'X');
+        System.out.println("Partidas distintas posibles: " + partidas);
+        System.out.println("Llamadas a contar(): " + llamadas);
+    }
+
+    /** Cuenta todas las partidas que pueden jugarse a partir de este tablero. */
+    static long contar(Tablero tablero, char turno) {
+        llamadas++;
+        if (tablero.verificarGanador() != Tablero.VACIA || tablero.tableroLleno()) {
+            return 1;                                   // caso base: la partida termino
+        }
+        long total = 0;
+        char siguiente = turno == 'X' ? 'O' : 'X';
+        for (int fila = 0; fila &lt; 3; fila++) {
+            for (int columna = 0; columna &lt; 3; columna++) {
+                if (tablero.obtenerCasilla(fila, columna) == Tablero.VACIA) {
+                    Tablero copia = tablero.obtenerCopia();
+                    copia.marcarCasilla(fila, columna, turno);
+                    total += contar(copia, siguiente);  // caso recursivo
+                }
+            }
+        }
+        return total;
+    }
+}</pre>
+<pre class="ps">cd $HOME\Proyectos\Practicas
+java -cp $HOME\Proyectos\Totito\target\classes ContarPartidas.java</pre>
+<pre class="salida">Partidas distintas posibles: 255168
+Llamadas a contar(): 549946</pre>
+<p>Hay 255 168 partidas de totito distintas, y recorrerlas todas exige casi 550 000 llamadas. Es aproximadamente el trabajo que hace la IA antes de su primera jugada en un tablero vacío, y en tu computadora tarda una fracción de segundo. Con unas veinte líneas recursivas, la IA «imagina» todas las partidas posibles y por eso nunca pierde. El capítulo 31 explica cómo se convierte este recorrido en una decisión.</p>
+<div class="caja consejo"><b>Cuándo usar recursión.</b> Cuando el problema contiene versiones más pequeñas de sí mismo: recorrer carpetas que contienen carpetas, árboles de decisiones de un juego, menús con submenús, fractales. Si el problema es una simple repetición (sumar una lista), un bucle es más claro y no arriesga desbordar la pila.</div>
+
+<h2>Buenas costumbres al escribir métodos</h2>
+<ul>
+<li><b>Nombre con verbo</b> para acciones (<code>marcarCasilla</code>, <code>reiniciar</code>, <code>calcularMejorJugada</code>); <b>forma de pregunta</b> para los que devuelven <code>boolean</code> (<code>esTurnoDeIA</code>, <code>esComputadora</code>, <code>tableroLleno</code>); <code>get…</code> para los que solo devuelven un dato (<code>getNombre</code>, <code>getFicha</code>).</li>
+<li><b>Una sola tarea</b> por método. Si para describirlo necesitas «y», probablemente son dos. <code>PantallaJuego</code> separa <code>alPulsarCasilla</code>, <code>despuesDeJugada</code>, <code>programarTurnoIA</code> y <code>actualizar</code>.</li>
+<li><b>Cortos</b>: que quepan en la pantalla sin desplazarte. Ningún método de <code>Tablero</code> pasa de veinte líneas.</li>
+<li><b>Pocos parámetros</b>: más de 4 o 5 es señal de que quizás falte una clase que los agrupe (capítulo 21).</li>
+<li><b>Javadoc</b> encima de cada método público: qué hace, qué devuelve y en qué casos especiales (<code>/** Retorna true si ya no quedan casillas vacias. */</code>).</li>
+</ul>
+
+<h2>Resumen</h2>
+<ul>
+<li>Un método es un bloque de código con nombre que se ejecuta al llamarlo; sirve para no repetir, nombrar ideas, dividir problemas, probar por partes y ocultar detalles.</li>
+<li>Su declaración tiene acceso, tipo de retorno, nombre, parámetros y cuerpo; la firma es el nombre más los tipos de los parámetros.</li>
+<li>Los <b>parámetros</b> están en la declaración; los <b>argumentos</b>, en la llamada; se emparejan por posición y el compilador revisa cantidad y tipos.</li>
+<li><code>return</code> termina el método y entrega un valor del tipo declarado; todos los caminos deben devolver algo; los métodos <code>void</code> no devuelven nada y pueden salir con <code>return;</code>.</li>
+<li>Cada llamada crea un marco en la <b>pila de llamadas</b>, con sus propios parámetros y variables; al terminar se desapila y se vuelve al punto exacto de la llamada. La traza de una excepción es una foto de esa pila.</li>
+<li>Java pasa todo <b>por valor</b>: copias de los primitivos y copias de las referencias. Un método puede modificar el objeto recibido, pero no cambiar la variable de quien llamó; por eso la IA trabaja con <code>obtenerCopia()</code>.</li>
+<li>El alcance de una variable termina en la llave que cierra su bloque; <code>this.campo</code> distingue un campo de un parámetro con el mismo nombre.</li>
+<li>Sobrecarga: mismo nombre, distintos parámetros (<code>trazoNeon</code> de 4 y de 5). Estáticos (<code>Tema.colorDeFicha</code>) frente a de instancia (<code>tablero.tableroLleno()</code>). Recursión: caso base + caso recursivo más pequeño; así piensa <code>minimax</code>.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Una calculadora de préstamos</b>: métodos <code>calcularCuota(monto, tasa, meses)</code>, <code>calcularInteresTotal(…)</code> e <code>imprimirTabla(…)</code>; <code>main</code> solo los llama en orden. Cada uno se prueba por separado en jshell.</li>
+<li><b>Validaciones reutilizables</b>: <code>boolean esCorreoValido(String correo)</code> o <code>boolean esNitValido(String nit)</code>, escritos una vez y llamados desde el formulario de registro, el de edición y la importación desde Excel.</li>
+<li><b>Sobrecarga práctica</b>: <code>formatearPrecio(long centavos)</code> y <code>formatearPrecio(long centavos, String moneda)</code>, donde la corta llama a la larga con <code>"Q"</code>, igual que <code>trazoNeon</code> con <code>1f</code>.</li>
+<li><b>Recursión en la vida real</b>: calcular cuánto ocupa una carpeta sumando sus archivos y, recursivamente, sus subcarpetas; recorrer un menú con submenús; o la IA de otros juegos por turnos (Conecta 4, damas) con la misma estructura de <code>minimax</code>.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Escribe un método <code>static boolean esEsquina(int fila, int columna)</code> y otro <code>static boolean esCentro(int fila, int columna)</code>. Llámalos desde <code>main</code> para las nueve casillas (con dos bucles) e imprime el tipo de cada una.</li>
+<li>Añade a <code>ConMetodos</code> un método <code>static boolean tableroLleno(char[][] casillas)</code> y otro <code>static char verificarGanador(char[][] casillas)</code> copiando la lógica de <code>Tablero</code>. Úsalos para anunciar el resultado de un tablero literal.</li>
+<li>Predice la salida y luego compruébala: un método <code>static void duplicar(int[] numeros, int extra)</code> que multiplica por 2 cada elemento del arreglo y también hace <code>extra = extra * 2</code>. ¿Qué cambia en <code>main</code> y qué no? Explícalo con «copia de la llave».</li>
+<li>Crea dos versiones sobrecargadas de <code>saludar</code>: <code>saludar(String nombre)</code>, que imprime «¡Hola, Ana! Juegas con la X», y <code>saludar(String nombre, char ficha)</code>. Haz que la primera llame a la segunda con <code>'X'</code>.</li>
+<li>Reto: escribe un método recursivo <code>static int cuentaRegresiva(int n)</code> que imprima n, n-1, … 1, «¡Ya!», y devuelva cuántos números imprimió. Luego modifica <code>ContarPartidas</code> para que cuente por separado cuántas partidas gana la X, cuántas la O y cuántas acaban en empate. Pista: usa tres campos <code>static long</code> y súmalos en el caso base según quién ganó.</li>
+</ol></div>
+</section>

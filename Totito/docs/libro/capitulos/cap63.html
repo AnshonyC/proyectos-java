@@ -1,0 +1,239 @@
+<section class="capitulo" id="cap63">
+<h1><span class="num">Capítulo 63</span>El archivo .jar</h1>
+<p class="entrada">Hasta ahora el Totito vive repartido en 42 archivos <code>.class</code> dentro de <code>target\classes</code>. En este capítulo descubres cómo NetBeans los empaqueta en un único archivo, <code>Totito-1.0-SNAPSHOT.jar</code>, qué lleva dentro, cómo sabe Java por dónde arrancarlo y por qué, aun así, no basta para compartir el juego con cualquier persona.</p>
+
+<h2>El problema: un programa hecho de muchas piezas</h2>
+<p>En el capítulo 11 viste el camino de un programa Java: escribes código fuente (<code>.java</code>), el compilador <code>javac</code> lo traduce a <b>bytecode</b> (<code>.class</code>) y la <b>máquina virtual de Java</b> (JVM) ejecuta ese bytecode. Cada clase produce su propio <code>.class</code>, y algunas producen varios: el Totito tiene 29 archivos <code>.java</code> pero genera 42 archivos <code>.class</code>. Más abajo verás por qué.</p>
+<p>Imagina que quieres pasarle el juego a un amigo. ¿Le mandas 42 archivos sueltos y le explicas que tiene que escribir <code>java -cp carpeta TotitoApp</code> sabiendo de memoria que la clase de arranque se llama <code>TotitoApp</code>? Es como regalar un rompecabezas sin la caja y sin la foto de cómo queda. Hace falta <b>una sola pieza</b> que contenga todo y que diga por dónde se empieza. Esa pieza es el <code>.jar</code>.</p>
+
+<h2>Qué es un .jar</h2>
+<div class="caja concepto"><b>Un .jar es un .zip con otro nombre.</b> <i>JAR</i> significa <i>Java ARchive</i>, «archivo de Java». Por dentro es exactamente un archivo comprimido ZIP, el mismo formato que usas para mandar fotos por correo. Lleva tus <code>.class</code> (y, si los tuviera, imágenes, sonidos o textos) más una carpeta especial, <code>META-INF</code>, con un archivo de instrucciones llamado <b>manifiesto</b>.</div>
+<p>Que sea un ZIP tiene ventajas muy prácticas: ocupa menos (está comprimido), viaja como un solo archivo y cualquier programa que abra ZIP puede mirar su contenido. Java, además, sabe leer clases directamente desde dentro del <code>.jar</code>, sin descomprimirlo en el disco.</p>
+<p>Una analogía: el <code>.jar</code> es una lonchera. Dentro van todos los alimentos (las clases) y pegada en la tapa va una nota (el manifiesto) que dice «empieza por el sándwich». Quien abre la lonchera no tiene que adivinar.</p>
+
+<h2>Cómo se crea: Clean and Build</h2>
+<p>No tienes que hacer nada nuevo: llevas todo el libro creando el <code>.jar</code> sin saberlo. Cada vez que usaste <i>Run → Clean and Build Project</i> (Shift+F11) en NetBeans, Maven lo fabricó. Hazlo ahora y mira la ventana <i>Output</i>. Verás algo parecido a esto (las versiones de los plugins y el formato exacto dependen del Maven que traiga tu NetBeans):</p>
+<pre class="salida">------------------------&lt; com.mycompany:Totito &gt;------------------------
+Building Totito 1.0-SNAPSHOT
+--------------------------------[ jar ]---------------------------------
+--- clean (default-clean) @ Totito ---
+Deleting C:\Users\tu-usuario\Proyectos\Totito\target
+--- resources (default-resources) @ Totito ---
+--- compiler:3.13.0:compile (default-compile) @ Totito ---
+Compiling 29 source files with javac [debug release 17] to target\classes
+--- surefire (default-test) @ Totito ---
+No tests to run.
+--- jar:3.4.2:jar (default-jar) @ Totito ---
+Building jar: C:\Users\tu-usuario\Proyectos\Totito\target\Totito-1.0-SNAPSHOT.jar
+------------------------------------------------------------------------
+BUILD SUCCESS
+------------------------------------------------------------------------</pre>
+<p>Cada línea <code>--- algo ---</code> es una <b>fase</b> del ciclo de Maven. Léelas como una receta que siempre se sigue en el mismo orden:</p>
+<table class="tabla">
+<tr><th>Fase</th><th>Qué hace</th><th>Por qué</th></tr>
+<tr><td><code>clean</code></td><td>Borra la carpeta <code>target</code> entera</td><td>Para no mezclar restos de compilaciones viejas (por ejemplo, el <code>.class</code> de una clase que ya borraste). Es la parte «Clean» de <i>Clean and Build</i></td></tr>
+<tr><td><code>resources</code></td><td>Copia recursos (imágenes, textos) a <code>target\classes</code></td><td>El Totito no tiene: todo se dibuja con código. Por eso no hace nada</td></tr>
+<tr><td><code>compile</code></td><td>Ejecuta <code>javac</code> sobre los 29 archivos de <code>src</code></td><td>Genera los <code>.class</code> en <code>target\classes</code>. <code>release 17</code> viene del <code>pom.xml</code>: el bytecode sirve para Java 17 o más nuevo</td></tr>
+<tr><td><code>test</code> (surefire)</td><td>Ejecuta las pruebas automáticas</td><td>No hay pruebas JUnit todavía (capítulo 69): «No tests to run»</td></tr>
+<tr><td><code>jar</code></td><td>Mete todo <code>target\classes</code> en un ZIP con su manifiesto</td><td>Es la fase <code>package</code>: el resultado final</td></tr>
+</table>
+<p>El resultado queda en <code>target\Totito-1.0-SNAPSHOT.jar</code>. Compruébalo en PowerShell:</p>
+<pre class="ps">cd $HOME\Proyectos\Totito
+Get-ChildItem target\*.jar</pre>
+<pre class="salida">    Directorio: C:\Users\tu-usuario\Proyectos\Totito\target
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a----        12/10/2026     14:43          78759 Totito-1.0-SNAPSHOT.jar</pre>
+<p>Unos <b>77 KB</b>. Todo el juego, con sus pantallas, su IA y su neón, cabe en menos espacio que una foto de teléfono. Tu número puede variar un poco.</p>
+<div class="caja consejo"><b>Sin NetBeans.</b> Si tienes Maven instalado aparte, el mismo resultado se obtiene con <code>mvn clean package</code> desde la carpeta del proyecto. NetBeans, en el fondo, ejecuta exactamente eso con el Maven que trae dentro.</div>
+
+<h3>¿De dónde sale el nombre?</h3>
+<p>Maven arma el nombre con dos datos del <code>pom.xml</code> (capítulo 5): <code>&lt;artifactId&gt;Totito&lt;/artifactId&gt;</code> y <code>&lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;</code>, unidos por un guion. <b>SNAPSHOT</b> («instantánea») es la forma en que Maven dice «versión en desarrollo, todavía puede cambiar». No te preocupes por ese nombre feo: quien use tu programa nunca lo verá. En los capítulos 65 y 66 jpackage le pondrá al programa la versión pública, <code>1.0.0</code>, con la opción <code>--app-version</code>, y en el capítulo 67 verás qué significa cada número.</p>
+
+<h2>Mirar dentro del .jar</h2>
+<p>Como es un ZIP, hay dos formas de abrirlo.</p>
+<h3>Forma 1: con el Explorador de Windows</h3>
+<p>Haz una <b>copia</b> con extensión <code>.zip</code> y ábrela con doble clic. La copia va a <code>dist\</code>, una carpeta que el <code>.gitignore</code> ya ignora (capítulo 5), así no ensucias el proyecto:</p>
+<pre class="ps">New-Item -ItemType Directory -Force dist | Out-Null
+Copy-Item target\Totito-1.0-SNAPSHOT.jar dist\mirar.zip
+explorer dist\mirar.zip</pre>
+<p>Se abre como cualquier ZIP. Verás la carpeta <code>META-INF</code> y todos los <code>.class</code>.</p>
+<h3>Forma 2: con la herramienta jar del JDK</h3>
+<p>El JDK trae un programa llamado <code>jar</code> que crea y lista estos archivos. La opción <code>tf</code> significa «<b>t</b>abla de contenido del <b>f</b>ichero que te indico»:</p>
+<pre class="ps">jar tf target\Totito-1.0-SNAPSHOT.jar</pre>
+<pre class="salida">META-INF/
+META-INF/MANIFEST.MF
+META-INF/maven/
+META-INF/maven/com.mycompany/
+META-INF/maven/com.mycompany/Totito/
+PantallaJuego$1.class
+Iconos.class
+PantallaResultado$TarjetaConConfeti.class
+PanelMarcador.class
+IA_Minimax.class
+...
+BotonNeon$Estilo.class
+Iconos$Icono.class
+...
+Partida$Modo.class
+Partida$Estado.class
+TotitoApp.class
+JuegoMain.class
+...
+META-INF/maven/com.mycompany/Totito/pom.xml
+META-INF/maven/com.mycompany/Totito/pom.properties</pre>
+<p>Son 49 entradas en total: 42 clases y 7 de la carpeta <code>META-INF</code>. Fíjate en tres cosas:</p>
+<ul>
+<li><b>Las clases con <code>$</code>.</b> <code>Partida$Modo.class</code> es el <code>enum Modo</code> que vive <i>dentro</i> de <code>Partida</code> (capítulo 26); <code>Iconos$Icono.class</code> es la interfaz interna <code>Icono</code>; <code>PanelTablero$1.class</code> es una clase anónima, el <code>MouseAdapter</code> que se creó con <code>new MouseAdapter() { ... }</code> (capítulo 25). Java guarda cada clase interna en su propio archivo con el nombre <code>Externa$Interna</code>, y a las anónimas les pone números. Por eso 29 archivos fuente se convierten en 42 <code>.class</code> (29 + 13 con <code>$</code>).</li>
+<li><b>Está también <code>JuegoMain.class</code></b>, la ventana sencilla del capítulo 33. El <code>.jar</code> lleva <i>todo</i> lo que hay en <code>src</code>.</li>
+<li><b>No están las carpetas <code>herramientas</code> ni <code>recursos</code></b>: Maven solo empaqueta lo que hay en <code>src</code> (lo dice <code>&lt;sourceDirectory&gt;src&lt;/sourceDirectory&gt;</code> del <code>pom.xml</code>). Las herramientas son para ti, no para quien juega.</li>
+</ul>
+<p>La carpeta <code>META-INF/maven/</code> la añade Maven con una copia del <code>pom.xml</code> y un <code>pom.properties</code> con el grupo, el nombre y la versión. Sirve para que otras herramientas sepan de qué proyecto salió ese <code>.jar</code>. Al juego no le afecta.</p>
+
+<h2>El manifiesto: la nota en la tapa</h2>
+<p>El archivo más importante del <code>.jar</code> es <code>META-INF/MANIFEST.MF</code>. Para leerlo, extráelo a una carpeta de usar y tirar dentro de <code>dist</code>. La opción <code>xf</code> del programa <code>jar</code> significa «e<b>x</b>traer del <b>f</b>ichero» y extrae en la carpeta actual, por eso primero entramos a <code>dist\mirar</code>:</p>
+<pre class="ps">New-Item -ItemType Directory -Force dist\mirar | Out-Null
+cd dist\mirar
+jar xf ..\..\target\Totito-1.0-SNAPSHOT.jar META-INF/MANIFEST.MF
+Get-Content META-INF\MANIFEST.MF
+cd ..\..</pre>
+<p>Este es el manifiesto real del Totito, compilado con el JDK 21:</p>
+<pre class="texto">Manifest-Version: 1.0
+Created-By: Maven JAR Plugin 3.4.2
+Build-Jdk-Spec: 21
+Main-Class: TotitoApp
+</pre>
+<p>Cuatro líneas, cada una con la forma <code>Nombre: valor</code>:</p>
+<table class="tabla">
+<tr><th>Línea</th><th>Qué significa</th><th>¿Importa?</th></tr>
+<tr><td><code>Manifest-Version: 1.0</code></td><td>La versión del formato del manifiesto. Siempre es 1.0</td><td>Obligatoria, pero nunca cambia</td></tr>
+<tr><td><code>Created-By: Maven JAR Plugin 3.4.2</code></td><td>Quién fabricó el <code>.jar</code></td><td>Solo informativa</td></tr>
+<tr><td><code>Build-Jdk-Spec: 21</code></td><td>La versión del JDK con que se compiló (el tuyo, el 21)</td><td>Solo informativa: el bytecode es para Java 17, por el <code>release 17</code> del <code>pom.xml</code></td></tr>
+<tr><td><code>Main-Class: TotitoApp</code></td><td>La clase cuyo <code>main</code> se ejecuta al arrancar el <code>.jar</code></td><td><b>La clave de todo</b></td></tr>
+</table>
+<p>La línea <code>Main-Class</code> no apareció por arte de magia: la pediste tú en el <code>pom.xml</code> del capítulo 5, en la configuración del <code>maven-jar-plugin</code>:</p>
+<pre class="texto">&lt;plugin&gt;
+    &lt;!-- Deja el .jar ejecutable con doble clic o con java -jar. --&gt;
+    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+    &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.4.2&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;archive&gt;
+            &lt;manifest&gt;
+                &lt;mainClass&gt;TotitoApp&lt;/mainClass&gt;
+            &lt;/manifest&gt;
+        &lt;/archive&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</pre>
+<p>Ese bloque dice: «cuando fabriques el <code>.jar</code>, escribe en su manifiesto que la clase principal es <code>TotitoApp</code>». Como las clases del Totito no tienen paquete (están en <i>&lt;default package&gt;</i>), el nombre es solo <code>TotitoApp</code>. En un proyecto con paquetes sería el nombre completo, por ejemplo <code>gt.totito.TotitoApp</code>.</p>
+<div class="caja cuidado"><b>Si escribes un manifiesto a mano.</b> El formato es quisquilloso: cada línea termina con un salto de línea, <b>incluida la última</b>. Si la última línea no lo tiene, Java la ignora en silencio y tu <code>Main-Class</code> desaparece. Tampoco puede haber espacios antes de los dos puntos. Es una de las razones por las que es mejor dejar que Maven o la herramienta <code>jar</code> lo escriban.</div>
+
+<h3>¿Y si no hubiera Main-Class?</h3>
+<p>Probé a crear un <code>.jar</code> con las mismas clases pero sin esa línea. Al ejecutarlo, esto es lo que respondió Java:</p>
+<pre class="salida">no main manifest attribute, in SinMain.jar</pre>
+<p>«No hay atributo principal en el manifiesto». Java abre el <code>.jar</code>, lee la nota de la tapa, no encuentra «empieza por aquí» y se rinde. Si alguna vez ves ese mensaje con un proyecto tuyo, revisa la configuración del <code>maven-jar-plugin</code> en el <code>pom.xml</code>.</p>
+
+<h2>Ejecutar el .jar</h2>
+<h3>Con java -jar</h3>
+<pre class="ps">java -jar target\Totito-1.0-SNAPSHOT.jar</pre>
+<p>La opción <code>-jar</code> le dice a Java: «el argumento siguiente es un <code>.jar</code>; abre su manifiesto, busca <code>Main-Class</code> y ejecuta su <code>main</code>». La ventana del Totito aparece igual que en NetBeans. Compáralo con lo que usabas antes:</p>
+<table class="tabla">
+<tr><th>Comando</th><th>Qué le dices a Java</th></tr>
+<tr><td><code>java -cp out TotitoApp</code></td><td>«Busca clases en la carpeta <code>out</code> y ejecuta <code>TotitoApp</code>». Tú dices la clase</td></tr>
+<tr><td><code>java -cp target\classes herramientas\X.java</code></td><td>«Compila y ejecuta este archivo suelto, usando las clases de <code>target\classes</code>»</td></tr>
+<tr><td><code>java -jar target\Totito-1.0-SNAPSHOT.jar</code></td><td>«Ejecuta este <code>.jar</code>; la clase te la dice su manifiesto»</td></tr>
+</table>
+<p>Un detalle curioso: como el <code>.jar</code> también trae <code>JuegoMain</code>, puedes arrancar la versión vieja usando el <code>.jar</code> como si fuera una carpeta de clases, con <code>-cp</code>:</p>
+<pre class="ps">java -cp target\Totito-1.0-SNAPSHOT.jar JuegoMain</pre>
+<p>Aquí el manifiesto se ignora: <code>-cp</code> (<i>classpath</i>, «ruta de clases») dice dónde buscar y tú nombras la clase.</p>
+
+<h3>Sin ventana negra: javaw</h3>
+<p>Cuando ejecutas con <code>java</code>, la ventana de PowerShell se queda ocupada mientras el juego está abierto: ahí aparecerían los mensajes de <code>System.out</code> y los stack traces. En Windows existe una variante, <code>javaw</code> (la <i>w</i> es de <i>window</i>), que arranca el programa sin consola y te devuelve el control de PowerShell enseguida:</p>
+<pre class="ps">javaw -jar target\Totito-1.0-SNAPSHOT.jar</pre>
+<p>Úsalo para jugar; usa <code>java</code> cuando quieras ver los errores (capítulo 62).</p>
+
+<h3>Con doble clic</h3>
+<p>Si al instalar el JDK quedó asociada la extensión <code>.jar</code> (el instalador de Temurin suele ofrecer esa opción), un doble clic sobre el archivo en el Explorador abre el juego con <code>javaw</code>. Si en cambio Windows te pregunta con qué programa abrirlo, o lo abre un programa de archivos comprimidos como 7-Zip o WinRAR, la asociación no está hecha. No pasa nada: no la necesitas, porque en los capítulos siguientes vas a tener un <code>Totito.exe</code> de verdad.</p>
+
+<h2>Crear el .jar sin Maven</h2>
+<p>Para entender que no hay magia, puedes fabricar un <code>.jar</code> a mano con las dos herramientas del JDK. Primero compilas a la carpeta <code>out</code> (capítulo 11) y después empaquetas esa carpeta:</p>
+<pre class="ps">javac -encoding UTF-8 -d out src\*.java
+jar --create --file dist\Totito-manual.jar --main-class TotitoApp -C out .
+java -jar dist\Totito-manual.jar</pre>
+<table class="tabla">
+<tr><th>Parte</th><th>Significado</th></tr>
+<tr><td><code>jar --create</code></td><td>Crear un <code>.jar</code> nuevo</td></tr>
+<tr><td><code>--file dist\Totito-manual.jar</code></td><td>Cómo se llamará y dónde quedará</td></tr>
+<tr><td><code>--main-class TotitoApp</code></td><td>Escribe <code>Main-Class: TotitoApp</code> en el manifiesto</td></tr>
+<tr><td><code>-C out .</code></td><td>«Cámbiate (<b>C</b>) a la carpeta <code>out</code> y mete todo lo que hay ahí (<code>.</code> = esta carpeta)». Sin el <code>-C</code>, las clases quedarían dentro de una subcarpeta <code>out/</code> en el ZIP y Java no las encontraría</td></tr>
+</table>
+<p>Funciona igual. Su manifiesto dice <code>Created-By:</code> con la versión de tu JDK en vez de <code>Maven JAR Plugin</code>, y no lleva la carpeta <code>META-INF/maven</code>. Para el resto del libro seguimos usando el de Maven, <code>target\Totito-1.0-SNAPSHOT.jar</code>, que es el que fabrica NetBeans.</p>
+
+<h2>Errores típicos al ejecutar un .jar</h2>
+<table class="tabla">
+<tr><th>Mensaje</th><th>Qué pasa</th><th>Solución</th></tr>
+<tr><td><code>Error: Unable to access jarfile target\Totito.jar</code></td><td>La ruta o el nombre del archivo están mal</td><td>Usa Tab para autocompletar el nombre (capítulo 3) y comprueba que estás en la carpeta del proyecto</td></tr>
+<tr><td><code>no main manifest attribute, in ...</code></td><td>El manifiesto no tiene <code>Main-Class</code></td><td>Revisa el <code>maven-jar-plugin</code> del <code>pom.xml</code> y vuelve a hacer Clean and Build</td></tr>
+<tr><td><code>Error: Could not find or load main class ...</code></td><td><code>Main-Class</code> nombra una clase que no está en el <code>.jar</code> (mal escrita, o con paquete equivocado)</td><td>Compara el nombre con <code>jar tf</code></td></tr>
+<tr><td><code>java : El término 'java' no se reconoce como nombre de un cmdlet...</code> (en inglés: <i>The term 'java' is not recognized...</i>)</td><td>Ese equipo no tiene Java, o no está en el PATH</td><td>Instalar Java (capítulo 4)… o leer la siguiente sección</td></tr>
+<tr><td><code>UnsupportedClassVersionError: TotitoApp has been compiled by a more recent version of the Java Runtime (class file version 61.0), this version of the Java Runtime only recognizes class file versions up to 52.0</code></td><td>El equipo tiene un Java demasiado viejo: 52 es Java 8; 61 es Java 17</td><td>Instalar Java 17 o más nuevo</td></tr>
+</table>
+<p>El último merece una explicación. Cada <code>.class</code> lleva grabado un número de versión. El Totito se compila con <code>release 17</code>, así que sus clases llevan la versión 61 (comprobado con <code>javap -v</code>, que muestra <code>major version: 61</code>). Un Java 8, que solo entiende hasta la 52, se niega a ejecutarlas. Y Java 8 sigue instalado en muchísimas computadoras de oficinas y escuelas, porque durante años fue el «Java» que se descargaba de java.com.</p>
+
+<h2>El gran problema: el .jar necesita Java</h2>
+<p>Un <code>.jar</code> no es un programa de Windows. Es bytecode, y el bytecode no lo entiende el procesador: lo entiende la JVM. Por eso, para abrir tu Totito, la otra persona necesita:</p>
+<ol>
+<li>Tener Java instalado,</li>
+<li>que sea Java 17 o más nuevo,</li>
+<li>que esté en el PATH o que el <code>.jar</code> esté asociado a él, y</li>
+<li>saber qué hacer con un archivo de extensión desconocida.</li>
+</ol>
+<p>Ahora piensa en tu tía, en tu compañero de clase o en un desconocido que encontró tu juego en GitHub. La mayoría no cumple el punto 1, y los que sí, quizás no cumplen el 2. Pedirles que instalen un JDK de 300 MB para jugar al totito es pedir demasiado: lo van a cerrar.</p>
+<table class="tabla">
+<tr><th></th><th><code>.jar</code></th><th>Carpeta portable con <code>Totito.exe</code> (cap. 65)</th><th>Instalador <code>.exe</code> (cap. 66)</th></tr>
+<tr><td>Tamaño</td><td>~77 KB</td><td>~54 MB (comprimida, bastante menos)</td><td>Un solo <code>.exe</code> comprimido</td></tr>
+<tr><td>¿Necesita Java instalado?</td><td><b>Sí</b>, 17 o más nuevo</td><td><b>No</b>, lleva su propio Java</td><td><b>No</b></td></tr>
+<tr><td>Cómo se abre</td><td><code>java -jar</code> o doble clic si hay asociación</td><td>Doble clic en <code>Totito.exe</code></td><td>Menú Inicio y escritorio</td></tr>
+<tr><td>Icono propio</td><td>No (el de Java o uno genérico)</td><td>Sí (cap. 64)</td><td>Sí</td></tr>
+<tr><td>Funciona en Linux y Mac</td><td><b>Sí</b>, si tienen Java</td><td>No, solo Windows</td><td>No, solo Windows</td></tr>
+<tr><td>Ideal para</td><td>Programadores, servidores, entrada de jpackage</td><td>Compartir sin instalar (memoria USB)</td><td>Público general</td></tr>
+</table>
+<p>Fíjate en la penúltima fila: el <code>.jar</code> tiene una virtud que el <code>.exe</code> no tiene. El mismo archivo funciona en Windows, Linux y macOS, porque cada sistema pone su propia JVM. Es la famosa promesa de Java: «escríbelo una vez, ejecútalo en cualquier parte». El precio es que la JVM tiene que estar.</p>
+<div class="caja concepto"><b>La solución: llevar la JVM dentro.</b> Si el problema es que la otra persona no tiene Java, la solución es <b>regalarle</b> un Java junto con el juego: uno pequeñito, recortado a la medida, que solo use el Totito y que no se instale en su sistema. Eso hace <b>jpackage</b>, una herramienta que viene en tu JDK 21. Toma tu <code>.jar</code>, le añade un Java recortado y un lanzador <code>Totito.exe</code> con tu icono. Lo verás en el capítulo 65, después de fabricar ese icono en el 64. Por eso el <code>.jar</code> no es el final del camino, sino la <b>materia prima</b> de lo que sigue.</div>
+
+<div class="caja git"><b>Git</b> Este capítulo no tiene commit: el <code>.jar</code> se fabrica a partir del código, que ya está en GitHub. Compruébalo:
+<pre class="ps">git status</pre>
+No aparece ni <code>target\</code> ni <code>dist\</code>, porque están en el <code>.gitignore</code>. Es a propósito: <b>los archivos que se generan no se suben al repositorio</b>. Se pueden volver a fabricar en segundos, cambian con cada compilación (llenarían el historial de versiones binarias imposibles de comparar) y pesan. El lugar correcto para compartir un archivo generado es una <b>Release</b> de GitHub (capítulo 67), no el código fuente.</div>
+
+<div class="caja hito"><b>Hito</b> Tienes el Totito en un único archivo, sabes exactamente qué lleva dentro y lo arrancas con <code>java -jar</code>. Es la pieza con la que jpackage va a fabricar el <code>.exe</code>.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>Un <code>.jar</code> (<i>Java ARchive</i>) es un ZIP con tus <code>.class</code> y una carpeta <code>META-INF</code> con el manifiesto.</li>
+<li><i>Clean and Build</i> ejecuta las fases de Maven: clean, resources, compile, test y jar. El resultado es <code>target\Totito-1.0-SNAPSHOT.jar</code> (unos 77 KB).</li>
+<li>Las clases internas y anónimas generan archivos con <code>$</code>; por eso 29 fuentes dan 42 <code>.class</code>.</li>
+<li>El manifiesto <code>META-INF/MANIFEST.MF</code> lleva <code>Main-Class: TotitoApp</code>, que sale del <code>maven-jar-plugin</code> del <code>pom.xml</code>. Sin esa línea, Java responde <i>no main manifest attribute</i>.</li>
+<li><code>java -jar</code> ejecuta el <code>.jar</code> leyendo el manifiesto; <code>javaw -jar</code> hace lo mismo sin consola.</li>
+<li><code>jar tf</code> lista el contenido, <code>jar xf</code> extrae y <code>jar --create --main-class</code> fabrica un <code>.jar</code> a mano.</li>
+<li>Un <code>.jar</code> exige tener Java 17 o más nuevo instalado; con un Java viejo aparece <code>UnsupportedClassVersionError</code>. Por eso existe jpackage.</li>
+<li>Los archivos generados (<code>target</code>, <code>dist</code>) no se suben a Git.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b>
+<ul>
+<li><b>Una herramienta para ti o para tu equipo de trabajo</b> (un conversor de archivos, un generador de reportes): si todos tienen Java, un <code>.jar</code> de pocos KB es la forma más ligera de compartirla. Basta un <code>java -jar herramienta.jar</code>.</li>
+<li><b>Un programa para un servidor</b>: las aplicaciones web con Spring Boot (capítulo 69) se entregan como un único <code>.jar</code> que se arranca con <code>java -jar</code>. Lo que aprendiste del manifiesto es exactamente lo que usan, con una <code>Main-Class</code> especial de Spring.</li>
+<li><b>Cualquier .jar que descargues de internet</b>: ahora puedes mirar qué lleva dentro con <code>jar tf</code> y leer su manifiesto antes de ejecutarlo, para saber qué clase arranca y con qué versión de Java se fabricó.</li>
+<li><b>Librerías</b>: cuando un proyecto usa una librería (por ejemplo, el conector de MySQL o JUnit), lo que Maven descarga son <code>.jar</code> sin <code>Main-Class</code>. No se ejecutan solos: son cajas de clases para que tu programa las use mediante <code>-cp</code>.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b>
+<ol>
+<li>Haz <i>Clean and Build</i> y anota el tamaño exacto de tu <code>target\Totito-1.0-SNAPSHOT.jar</code>. Luego cuenta cuántas entradas tiene con <code>(jar tf target\Totito-1.0-SNAPSHOT.jar).Count</code>. ¿Coincide con las 49 de este capítulo?</li>
+<li>Busca en la lista de <code>jar tf</code> todas las clases con <code>$</code> y, para cada una, encuentra en el código la clase interna, el <code>enum</code> o la clase anónima que la generó. Pista: <code>jar tf target\Totito-1.0-SNAPSHOT.jar | Select-String '\$'</code> filtra solo esas líneas.</li>
+<li>Fabrica un <code>.jar</code> a mano cuyo manifiesto arranque <code>JuegoMain</code> en vez de <code>TotitoApp</code>, guárdalo como <code>dist\TotitoClasico.jar</code> y ejecútalo con <code>java -jar</code>. Pista: cambia solo el valor de <code>--main-class</code>.</li>
+<li>Extrae el manifiesto de tu <code>.jar</code> manual y compáralo con el de Maven. ¿Qué líneas cambian y por qué?</li>
+<li>Reto: en <code>dist</code>, crea un <code>.jar</code> sin <code>--main-class</code> y comprueba el error <i>no main manifest attribute</i>. Después ejecútalo de todos modos con <code>java -cp dist\TuArchivo.jar TotitoApp</code>. Explica con tus palabras por qué la segunda forma sí funciona.</li>
+</ol></div>
+</section>

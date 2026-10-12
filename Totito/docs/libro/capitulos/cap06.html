@@ -1,0 +1,298 @@
+<section class="capitulo" id="cap06">
+<h1><span class="num">Capítulo 6</span>Qué es el control de versiones y cómo piensa Git</h1>
+<p class="entrada">Antes de escribir un solo comando de Git, vas a entender qué problema resuelve y cómo «ve» tu proyecto por dentro: tres lugares, fotos encadenadas y etiquetas que se mueven. Con esa imagen en la cabeza, todos los comandos de los capítulos 7 a 10 dejan de ser recetas mágicas y se vuelven obvios.</p>
+
+<h2>El problema: la carpeta «Totito_final_final2»</h2>
+<p>Imagina que todavía no conoces Git y estás haciendo el Totito. Un día el juego funciona. Quieres probar un cambio grande (por ejemplo, cambiar todos los colores), pero te da miedo romperlo, así que haces lo que hace casi todo el mundo: copias la carpeta entera y le cambias el nombre. Una semana después tu carpeta <code>Proyectos</code> se ve así:</p>
+<pre class="salida">Totito
+Totito - copia
+Totito_final
+Totito_final2
+Totito_final_final2
+Totito_final_final2_AHORA_SI
+Totito_que_funcionaba_el_martes
+Totito_colores_nuevos_NO_TOCAR</pre>
+<p>Parece una broma, pero es exactamente lo que pasa en oficinas, colegios y universidades con documentos de Word, hojas de Excel y, por supuesto, con programas. Y trae problemas muy concretos:</p>
+<ul>
+<li><b>No sabes cuál es la buena.</b> ¿«final_final2» es más nueva que «AHORA_SI»? ¿Cuál compilaba? Tienes que abrir cada una para averiguarlo.</li>
+<li><b>No sabes qué cambió entre una y otra.</b> Si el martes funcionaba y hoy no, ¿qué línea tocaste? Tendrías que comparar archivo por archivo, a ojo.</li>
+<li><b>No sabes por qué cambió.</b> Aunque encuentres la diferencia, nadie anotó la razón. Dentro de un mes no recordarás por qué cambiaste el color rosa.</li>
+<li><b>Ocupa espacio y se mezcla.</b> Cada copia duplica todo, incluidos archivos generados que no hacía falta guardar.</li>
+<li><b>Colaborar es un caos.</b> Si un amigo te ayuda, te manda su versión por WhatsApp o en una memoria USB, tú ya cambiaste la tuya, y alguien tiene que juntar las dos a mano… y siempre se pierde algo.</li>
+<li><b>Un error a las dos de la mañana borra horas de trabajo.</b> Si guardaste encima de la única copia buena, no hay «deshacer» que valga.</li>
+</ul>
+<p>El <b>control de versiones</b> existe para resolver todo eso de una vez.</p>
+
+<div class="caja concepto"><b>Control de versiones</b> Es un sistema que guarda el historial completo de los cambios de un proyecto: qué cambió, cuándo, quién lo hizo y por qué. Permite volver a cualquier punto del pasado, comparar versiones, trabajar en varias ideas a la vez sin mezclarlas y juntar el trabajo de varias personas de forma ordenada.</div>
+
+<p>Con control de versiones tienes <b>una sola carpeta</b> <code>Totito</code>. Las «copias» no se ven como carpetas sueltas: viven guardadas dentro del historial, ordenadas, con fecha, autor y una explicación, y puedes sacar cualquiera cuando la necesites.</p>
+
+<h3>Dos analogías para quedarte con la idea</h3>
+<ul>
+<li><b>Los puntos de guardado de un videojuego.</b> Antes de entrar a la pelea difícil, guardas la partida. Si pierdes, vuelves a ese punto en lugar de empezar desde cero. En Git, cada punto de guardado se llama <i>commit</i>, y a diferencia del videojuego puedes tener miles, cada uno con una nota que dice qué habías logrado.</li>
+<li><b>Un álbum de fotos con notas.</b> Cada vez que el proyecto llega a un estado que vale la pena recordar, le tomas una foto, la pegas en el álbum y escribes debajo qué se ve. Puedes hojear el álbum hacia atrás, comparar dos fotos y ver qué cambió.</li>
+</ul>
+
+<h2>Qué es Git</h2>
+<p><b>Git</b> es el programa de control de versiones más usado del mundo. Lo creó Linus Torvalds en 2005 para organizar el desarrollo de Linux, un proyecto con miles de programadores repartidos por todo el planeta. Hoy lo usan desde estudiantes con su primer programa hasta empresas como Microsoft, Google o cualquier banco: si trabajas en software, vas a usar Git.</p>
+<p>Tres características de Git que conviene saber desde ya:</p>
+<ul>
+<li><b>Es local.</b> Git vive en tu computadora. Funciona sin internet: puedes guardar versiones, ver el historial y crear ramas en un avión. Internet solo hace falta para enviar o recibir cambios de otra copia (por ejemplo, de GitHub).</li>
+<li><b>Es distribuido.</b> Cada copia de un proyecto con Git tiene <b>el historial completo</b>, no solo la última versión. Si tu computadora se daña pero el proyecto está en GitHub, no pierdes nada; y si GitHub fallara, tu copia también lo tiene todo.</li>
+<li><b>Es de texto y de línea de comandos.</b> Git se maneja con comandos que empiezan con <code>git</code> (por ejemplo <code>git status</code>). NetBeans y otros programas tienen botones para Git, pero por dentro ejecutan esos mismos comandos. En este libro aprendes los comandos en PowerShell (capítulo 3), porque así entiendes lo que hacen los botones.</li>
+</ul>
+
+<h2>Cómo piensa Git: los tres lugares</h2>
+<p>Esta es la idea más importante de toda la Parte II. Para Git, tu proyecto existe en <b>tres lugares</b> al mismo tiempo, y casi todos los comandos sirven para mover cambios de un lugar a otro.</p>
+
+<svg viewBox="0 0 640 300" width="100%" role="img" aria-label="Los tres lugares de Git y el repositorio remoto">
+<defs>
+<marker id="flecha6a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#C8BCF6"/></marker>
+</defs>
+<rect x="0" y="0" width="640" height="300" rx="14" fill="#1C1740"/>
+<rect x="20" y="40" width="170" height="120" rx="10" fill="none" stroke="#FF3BD4" stroke-width="3"/>
+<text x="105" y="70" fill="#FFFFFF" font-size="15" text-anchor="middle" font-family="sans-serif">Directorio</text>
+<text x="105" y="90" fill="#FFFFFF" font-size="15" text-anchor="middle" font-family="sans-serif">de trabajo</text>
+<text x="105" y="120" fill="#C8BCF6" font-size="12" text-anchor="middle" font-family="sans-serif">tu carpeta Totito</text>
+<text x="105" y="140" fill="#C8BCF6" font-size="12" text-anchor="middle" font-family="sans-serif">(la mesa de trabajo)</text>
+<rect x="235" y="40" width="170" height="120" rx="10" fill="none" stroke="#A05CFF" stroke-width="3"/>
+<text x="320" y="70" fill="#FFFFFF" font-size="15" text-anchor="middle" font-family="sans-serif">Área de</text>
+<text x="320" y="90" fill="#FFFFFF" font-size="15" text-anchor="middle" font-family="sans-serif">preparación</text>
+<text x="320" y="120" fill="#C8BCF6" font-size="12" text-anchor="middle" font-family="sans-serif">staging / index</text>
+<text x="320" y="140" fill="#C8BCF6" font-size="12" text-anchor="middle" font-family="sans-serif">(la bandeja de la foto)</text>
+<rect x="450" y="40" width="170" height="120" rx="10" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<text x="535" y="70" fill="#FFFFFF" font-size="15" text-anchor="middle" font-family="sans-serif">Repositorio</text>
+<text x="535" y="90" fill="#FFFFFF" font-size="15" text-anchor="middle" font-family="sans-serif">local</text>
+<text x="535" y="120" fill="#C8BCF6" font-size="12" text-anchor="middle" font-family="sans-serif">carpeta oculta .git</text>
+<text x="535" y="140" fill="#C8BCF6" font-size="12" text-anchor="middle" font-family="sans-serif">(el álbum)</text>
+<line x1="192" y1="85" x2="231" y2="85" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha6a)"/>
+<text x="212" y="30" fill="#FF3BD4" font-size="13" text-anchor="middle" font-family="monospace">git add</text>
+<line x1="407" y1="85" x2="446" y2="85" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha6a)"/>
+<text x="427" y="30" fill="#2F84FF" font-size="13" text-anchor="middle" font-family="monospace">git commit</text>
+<line x1="535" y1="162" x2="535" y2="208" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha6a)"/>
+<text x="560" y="190" fill="#C8BCF6" font-size="13" font-family="monospace">git push</text>
+<rect x="450" y="212" width="170" height="70" rx="10" fill="none" stroke="#C8BCF6" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="535" y="240" fill="#FFFFFF" font-size="15" text-anchor="middle" font-family="sans-serif">Repositorio remoto</text>
+<text x="535" y="262" fill="#C8BCF6" font-size="12" text-anchor="middle" font-family="sans-serif">GitHub (en internet)</text>
+<line x1="448" y1="250" x2="110" y2="250" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha6a)"/>
+<line x1="105" y1="250" x2="105" y2="165" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha6a)"/>
+<text x="270" y="242" fill="#C8BCF6" font-size="13" text-anchor="middle" font-family="monospace">git pull</text>
+</svg>
+
+<h3>1. El directorio de trabajo: tu mesa</h3>
+<p>Es la carpeta que ves en el Explorador de Windows: <code>C:\Users\&lt;tu-usuario&gt;\Proyectos\Totito</code>, con su <code>pom.xml</code>, su <code>README.md</code> y, más adelante, la carpeta <code>src</code> con los archivos <code>.java</code>. Ahí editas con NetBeans. Para Git es la <b>mesa de trabajo</b>: lo que hay sobre la mesa puede estar a medias, desordenado o recién roto. Git lo observa, pero no lo guarda por sí solo.</p>
+
+<h3>2. El área de preparación: la bandeja de lo que saldrá en la foto</h3>
+<p>También se llama <i>staging area</i> o <i>index</i> (en inglés). Es una zona intermedia donde pones <b>exactamente</b> los cambios que quieres incluir en la próxima foto. El comando <code>git add</code> mueve un cambio de la mesa a la bandeja.</p>
+<p>¿Para qué sirve este paso extra? Para elegir. Supón que en una misma tarde arreglaste un error en <code>Tablero.java</code> y además empezaste a cambiar colores en <code>Tema.java</code>, pero los colores todavía no te convencen. Con el área de preparación puedes poner en la bandeja <b>solo</b> el arreglo del tablero, guardar esa foto con un mensaje claro («Tablero: corregir la detección de empate») y dejar los colores sobre la mesa para seguir probando. Sin la bandeja, cada foto llevaría «todo lo que hay en la mesa», mezclado.</p>
+<p>Una comparación de la vida diaria: el carrito del supermercado. Vas metiendo cosas al carrito (<code>git add</code>), puedes sacar alguna si te arrepientes, y solo cuando pagas en la caja (<code>git commit</code>) la compra queda registrada en tu ticket.</p>
+
+<h3>3. El repositorio: el álbum</h3>
+<p>El <b>repositorio</b> («repo», para los amigos) es la base de datos donde Git guarda todas las fotos del proyecto. Físicamente es una carpeta <b>oculta</b> llamada <code>.git</code> dentro de tu carpeta <code>Totito</code>. La crea el comando <code>git init</code> (capítulo 8). El comando <code>git commit</code> toma lo que hay en la bandeja, le saca la foto y la pega en el álbum.</p>
+
+<div class="caja cuidado"><b>Nunca borres ni edites la carpeta .git</b> Todo el historial vive ahí. Si borras <code>.git</code>, tu código actual sigue en la carpeta, pero pierdes todas las versiones anteriores (salvo que estén en GitHub). Tampoco metas archivos a mano dentro de <code>.git</code>: Git la administra solo.</div>
+
+<h3>4. El repositorio remoto: una copia del álbum en internet</h3>
+<p>Además de esos tres lugares, normalmente hay un cuarto: una copia del repositorio en otra computadora, casi siempre en un servicio como GitHub. Se llama <b>remoto</b>, y por costumbre el principal se llama <code>origin</code> («origen»). <code>git push</code> («empujar») envía tus fotos nuevas al remoto; <code>git pull</code> («jalar») trae las fotos que otros (o tú desde otra computadora) subieron.</p>
+
+<table class="tabla">
+<tr><th>Lugar</th><th>Qué es físicamente</th><th>Analogía</th><th>Comando que lleva cambios ahí</th></tr>
+<tr><td>Directorio de trabajo</td><td>La carpeta <code>Totito</code> con tus archivos</td><td>La mesa de trabajo</td><td>Editar en NetBeans; <code>git restore</code> (traer de vuelta lo guardado)</td></tr>
+<tr><td>Área de preparación</td><td>Un archivo dentro de <code>.git</code> (el <i>index</i>)</td><td>La bandeja / el carrito</td><td><code>git add</code></td></tr>
+<tr><td>Repositorio local</td><td>La carpeta oculta <code>.git</code></td><td>El álbum de fotos</td><td><code>git commit</code></td></tr>
+<tr><td>Repositorio remoto</td><td>Un repo en GitHub</td><td>Copia del álbum en la nube</td><td><code>git push</code> (subir), <code>git pull</code> (bajar)</td></tr>
+</table>
+
+<h2>Los estados de un archivo</h2>
+<p>Como consecuencia de los tres lugares, cada archivo de tu carpeta está siempre en uno de estos estados. <code>git status</code>, el comando que más vas a usar, te dice precisamente eso.</p>
+<table class="tabla">
+<tr><th>Estado</th><th>En inglés (lo que verás en Git)</th><th>Qué significa</th><th>Ejemplo en el Totito</th></tr>
+<tr><td>Sin seguimiento</td><td><i>untracked</i></td><td>El archivo está en la carpeta, pero Git nunca lo ha guardado. Git lo ve, pero no lo vigila.</td><td>Acabas de crear <code>src\Jugador.java</code> y aún no hiciste <code>git add</code>.</td></tr>
+<tr><td>Sin cambios</td><td><i>unmodified</i> (no aparece en <code>git status</code>)</td><td>El archivo es idéntico a como quedó en la última foto.</td><td><code>pom.xml</code> después del primer commit, si no lo tocas.</td></tr>
+<tr><td>Modificado</td><td><i>modified</i></td><td>Lo cambiaste en la mesa, pero no lo has puesto en la bandeja.</td><td>Cambiaste un texto en <code>README.md</code>.</td></tr>
+<tr><td>Preparado</td><td><i>staged</i> («Changes to be committed»)</td><td>Está en la bandeja: entrará en el próximo commit.</td><td>Hiciste <code>git add README.md</code>.</td></tr>
+<tr><td>Ignorado</td><td><i>ignored</i></td><td>Git hace como que no existe porque coincide con una regla del <code>.gitignore</code>.</td><td>La carpeta <code>target\</code> que crea NetBeans al compilar.</td></tr>
+</table>
+<p>El recorrido normal de un archivo es: <i>sin seguimiento</i> → (<code>git add</code>) → <i>preparado</i> → (<code>git commit</code>) → <i>sin cambios</i> → (lo editas) → <i>modificado</i> → (<code>git add</code>) → <i>preparado</i> → (<code>git commit</code>) → <i>sin cambios</i>… y así toda la vida del proyecto.</p>
+
+<div class="caja concepto"><b>El .gitignore</b> En el capítulo 5 creaste un archivo <code>.gitignore</code> con líneas como <code>target/</code> y <code>*.class</code>. Es la lista de cosas que Git debe ignorar: archivos que se generan solos al compilar y que no tiene sentido guardar, porque cualquiera puede volver a generarlos desde el código. Así tu álbum solo tiene lo que tú escribiste.</div>
+
+<h2>El commit: una foto completa del proyecto</h2>
+<p>Un <b>commit</b> (en español a veces se dice «confirmación», pero todo el mundo dice <i>commit</i>) es una foto del proyecto entero en un momento dado. Cada commit guarda:</p>
+<ul>
+<li><b>El contenido de todos los archivos seguidos</b> tal como estaban en la bandeja. No solo los que cambiaron: la foto es del proyecto completo. (Por dentro Git es muy listo y no duplica los archivos que no cambiaron; reutiliza los de la foto anterior. Por eso un historial de cientos de commits ocupa poco).</li>
+<li><b>El autor</b>: nombre y correo (los configuras en el capítulo 7).</li>
+<li><b>La fecha y hora</b>.</li>
+<li><b>El mensaje</b>: la nota que tú escribes explicando qué cambió y por qué, por ejemplo <code>Tablero: estado y reglas del juego</code>.</li>
+<li><b>El padre</b>: una referencia al commit anterior. Así los commits forman una cadena.</li>
+</ul>
+<p>Cada commit tiene un <b>identificador único</b>, un número de 40 caracteres hexadecimales (dígitos del 0 al 9 y letras de la <i>a</i> a la <i>f</i>) llamado <i>hash</i>, por ejemplo:</p>
+<pre class="salida">b49d01a6c3c1c9f4020c112a1e7653865b27f213</pre>
+<p>Git lo calcula a partir del contenido de la foto, del autor, la fecha, el mensaje y el padre. Si cambiara una sola letra de cualquiera de esas cosas, el hash sería completamente distinto. Por eso un commit es <b>inmutable</b>: no se puede modificar sin convertirse en otro commit diferente. En el día a día se usan solo los primeros 7 caracteres (<code>b49d01a</code>), que bastan para distinguirlo.</p>
+<p>Una analogía: el hash es como el número de DPI de un commit (o la huella digital). Dos commits distintos nunca tienen el mismo, y con él puedes señalar uno sin ambigüedad: «el error apareció en el commit <code>ebd646d</code>».</p>
+
+<div class="caja consejo"><b>Una foto, una idea</b> Un buen commit guarda <b>un</b> cambio con sentido completo: «agregar el color lavanda», «crear la clase Jugador». No «lo que hice hoy». En el capítulo 9 verás por qué los commits pequeños te salvan la vida.</div>
+
+<h2>El historial: una cadena de fotos</h2>
+<p>Como cada commit apunta a su padre, el historial es una cadena que va del commit más nuevo al más antiguo. Este es el comienzo del historial del Totito siguiendo el plan del libro (capítulo 8):</p>
+
+<svg viewBox="0 0 640 170" width="100%" role="img" aria-label="Cadena de commits con la rama main y HEAD">
+<defs>
+<marker id="flecha6b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#C8BCF6"/></marker>
+</defs>
+<rect x="0" y="0" width="640" height="170" rx="14" fill="#1C1740"/>
+<circle cx="80" cy="110" r="26" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<text x="80" y="115" fill="#FFFFFF" font-size="12" text-anchor="middle" font-family="monospace">b49d01a</text>
+<text x="80" y="155" fill="#C8BCF6" font-size="11" text-anchor="middle" font-family="sans-serif">Estructura inicial</text>
+<circle cx="240" cy="110" r="26" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<text x="240" y="115" fill="#FFFFFF" font-size="12" text-anchor="middle" font-family="monospace">097adbd</text>
+<text x="240" y="155" fill="#C8BCF6" font-size="11" text-anchor="middle" font-family="sans-serif">Tablero</text>
+<circle cx="400" cy="110" r="26" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<text x="400" y="115" fill="#FFFFFF" font-size="12" text-anchor="middle" font-family="monospace">7c59777</text>
+<text x="400" y="155" fill="#C8BCF6" font-size="11" text-anchor="middle" font-family="sans-serif">Jugador</text>
+<line x1="212" y1="110" x2="110" y2="110" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha6b)"/>
+<line x1="372" y1="110" x2="270" y2="110" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha6b)"/>
+<rect x="470" y="94" width="70" height="32" rx="6" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="505" y="115" fill="#FF3BD4" font-size="14" text-anchor="middle" font-family="monospace">main</text>
+<line x1="468" y1="110" x2="430" y2="110" stroke="#FF3BD4" stroke-width="2" marker-end="url(#flecha6b)"/>
+<rect x="560" y="94" width="70" height="32" rx="6" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="595" y="115" fill="#A05CFF" font-size="14" text-anchor="middle" font-family="monospace">HEAD</text>
+<line x1="558" y1="110" x2="544" y2="110" stroke="#A05CFF" stroke-width="2" marker-end="url(#flecha6b)"/>
+<text x="320" y="35" fill="#FFFFFF" font-size="13" text-anchor="middle" font-family="sans-serif">Cada commit apunta a su padre (la flecha va hacia atrás en el tiempo)</text>
+</svg>
+
+<p>Fíjate en el sentido de las flechas: cada commit «sabe» quién fue su padre, pero no quiénes serán sus hijos (cuando se creó, aún no existían). Por eso Git recorre el historial siempre <b>hacia atrás</b>, del más nuevo al más viejo, y por eso <code>git log</code> te muestra primero lo más reciente.</p>
+
+<h2>Las ramas: etiquetas que se mueven</h2>
+<p>Aquí es donde mucha gente se confunde, porque la palabra «rama» hace pensar en una copia del proyecto. <b>No lo es.</b> En Git, una <b>rama</b> es simplemente una <b>etiqueta con un nombre que apunta a un commit</b>. Nada más. Ocupa unos pocos bytes.</p>
+<p>En el dibujo de arriba, <code>main</code> es una rama: una etiqueta pegada al commit <code>7c59777</code>. <code>main</code> («principal») es el nombre que, por convención, lleva la rama principal de un proyecto (en proyectos viejos verás <code>master</code>, el nombre antiguo; en el capítulo 7 configuras Git para que use <code>main</code>).</p>
+<p>Lo especial de una rama es que <b>avanza sola</b>: cuando haces un commit nuevo estando «en» <code>main</code>, la etiqueta <code>main</code> se despega del commit viejo y se pega al nuevo. Es como el marcador de un libro que se mueve solo a la última página que leíste.</p>
+<p>¿Y para qué quieres más de una rama? Para trabajar en una idea sin estorbar a otra. En la Parte VII del libro construirás toda la interfaz neón en una rama llamada <code>interfaz-neon</code>. Mientras tanto, <code>main</code> se queda tranquila apuntando a la versión 0.1.0, la que ya funciona. Si la interfaz neón saliera mal, <code>main</code> seguiría intacta.</p>
+
+<svg viewBox="0 0 640 230" width="100%" role="img" aria-label="Dos ramas, main e interfaz-neon, que salen del mismo commit">
+<defs>
+<marker id="flecha6c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#C8BCF6"/></marker>
+</defs>
+<rect x="0" y="0" width="640" height="230" rx="14" fill="#1C1740"/>
+<circle cx="70" cy="150" r="22" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<text x="70" y="155" fill="#FFFFFF" font-size="12" text-anchor="middle" font-family="sans-serif">…</text>
+<circle cx="190" cy="150" r="22" fill="none" stroke="#2F84FF" stroke-width="3"/>
+<text x="190" y="155" fill="#FFFFFF" font-size="11" text-anchor="middle" font-family="sans-serif">v0.1.0</text>
+<line x1="166" y1="150" x2="96" y2="150" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha6c)"/>
+<circle cx="320" cy="70" r="22" fill="none" stroke="#FF3BD4" stroke-width="3"/>
+<text x="320" y="75" fill="#FFFFFF" font-size="11" text-anchor="middle" font-family="sans-serif">Partida</text>
+<circle cx="440" cy="70" r="22" fill="none" stroke="#FF3BD4" stroke-width="3"/>
+<text x="440" y="75" fill="#FFFFFF" font-size="11" text-anchor="middle" font-family="sans-serif">Navega.</text>
+<line x1="300" y1="80" x2="212" y2="140" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha6c)"/>
+<line x1="416" y1="70" x2="346" y2="70" stroke="#C8BCF6" stroke-width="2" marker-end="url(#flecha6c)"/>
+<rect x="490" y="54" width="130" height="32" rx="6" fill="none" stroke="#FF3BD4" stroke-width="2"/>
+<text x="555" y="75" fill="#FF3BD4" font-size="13" text-anchor="middle" font-family="monospace">interfaz-neon</text>
+<line x1="488" y1="70" x2="466" y2="70" stroke="#FF3BD4" stroke-width="2" marker-end="url(#flecha6c)"/>
+<rect x="255" y="134" width="70" height="32" rx="6" fill="none" stroke="#2F84FF" stroke-width="2"/>
+<text x="290" y="155" fill="#2F84FF" font-size="13" text-anchor="middle" font-family="monospace">main</text>
+<line x1="253" y1="150" x2="216" y2="150" stroke="#2F84FF" stroke-width="2" marker-end="url(#flecha6c)"/>
+<rect x="490" y="10" width="70" height="30" rx="6" fill="none" stroke="#A05CFF" stroke-width="2"/>
+<text x="525" y="30" fill="#A05CFF" font-size="13" text-anchor="middle" font-family="monospace">HEAD</text>
+<line x1="525" y1="42" x2="525" y2="52" stroke="#A05CFF" stroke-width="2" marker-end="url(#flecha6c)"/>
+<text x="320" y="210" fill="#C8BCF6" font-size="12" text-anchor="middle" font-family="sans-serif">main se queda en la v0.1.0 mientras interfaz-neon avanza con sus propios commits</text>
+</svg>
+
+<p>Crear una rama es instantáneo y no copia ningún archivo: Git solo escribe una etiqueta nueva. Por eso en Git se crean ramas para todo, incluso para cambios de diez minutos.</p>
+
+<h2>HEAD: «usted está aquí»</h2>
+<p>En los mapas de los centros comerciales hay un punto rojo que dice «usted está aquí». En Git ese punto se llama <b>HEAD</b> (en mayúsculas). HEAD indica <b>en qué rama estás trabajando ahora</b> y, a través de ella, qué commit tienes sobre la mesa.</p>
+<ul>
+<li>Normalmente HEAD apunta a una rama: «HEAD → main → 7c59777». Cuando haces un commit, el nuevo commit se cuelga del que señala HEAD, y la rama a la que apunta HEAD avanza.</li>
+<li>Cuando cambias de rama (<code>git switch interfaz-neon</code>, capítulo 9), HEAD se mueve a la otra etiqueta, y Git cambia los archivos de tu carpeta para que coincidan con el commit de esa rama. Sí: <b>los archivos de tu carpeta cambian</b>. Si en <code>main</code> no existe <code>Tema.java</code> y en <code>interfaz-neon</code> sí, al pasar a <code>main</code> el archivo desaparece de la carpeta, y al volver a <code>interfaz-neon</code> reaparece. No se pierde: está guardado en el álbum.</li>
+<li>Verás HEAD en la salida de varios comandos, por ejemplo <code>git log</code> muestra <code>(HEAD -&gt; main)</code> junto al commit en el que estás.</li>
+</ul>
+
+<div class="caja cuidado"><b>«detached HEAD»</b> Si algún día Git te dice <i>You are in 'detached HEAD' state</i>, significa que HEAD apunta directamente a un commit viejo y no a una rama (por ejemplo, porque pediste ver cómo estaba el proyecto en la v0.1.0). Puedes mirar sin problema, pero si haces commits ahí quedan «sueltos», sin etiqueta. Para volver a la normalidad basta con <code>git switch main</code>. No es un error grave; es Git avisándote de que estás de visita en el pasado.</div>
+
+<h2>Juntar ramas: merge</h2>
+<p>Tarde o temprano el trabajo de una rama tiene que volver a la principal. Eso se llama <b>fusionar</b> (en inglés <i>merge</i>). Cuando termines la interfaz neón (capítulo 61), fusionarás <code>interfaz-neon</code> en <code>main</code>, y <code>main</code> pasará a tener el juego completo, versión 1.0.0.</p>
+<p>Git sabe fusionar solo la gran mayoría de las veces, incluso si dos personas cambiaron el mismo archivo, siempre que hayan tocado líneas distintas. Si dos ramas cambiaron <b>la misma línea</b> de forma diferente, Git no adivina: te pregunta cuál quieres. Eso es un <b>conflicto</b>, y en el capítulo 9 provocarás uno a propósito para aprender a resolverlo con calma.</p>
+
+<h2>Git y GitHub no son lo mismo</h2>
+<p>Esta confusión es tan común que merece su propia sección.</p>
+<table class="tabla">
+<tr><th></th><th>Git</th><th>GitHub</th></tr>
+<tr><td>Qué es</td><td>Un <b>programa</b> que instalas en tu computadora (capítulo 4)</td><td>Un <b>servicio web</b> (una página y unos servidores) de la empresa GitHub, que pertenece a Microsoft</td></tr>
+<tr><td>Dónde vive</td><td>En tu PC, en la carpeta <code>.git</code> de cada proyecto</td><td>En internet: <code>https://github.com</code></td></tr>
+<tr><td>Para qué sirve</td><td>Guardar versiones, ver el historial, crear ramas, fusionar</td><td>Guardar una copia de tus repositorios en la nube y colaborar: pull requests, issues, releases, revisión de código, automatizaciones (Actions), tu perfil público como programador</td></tr>
+<tr><td>¿Necesita internet?</td><td>No</td><td>Sí</td></tr>
+<tr><td>¿Necesita cuenta?</td><td>No (solo tu nombre y correo para firmar los commits)</td><td>Sí (la creas en el capítulo 7)</td></tr>
+<tr><td>Alternativas</td><td>Mercurial, Subversion (más antiguos y menos usados)</td><td>GitLab, Bitbucket, Codeberg (todos funcionan con Git)</td></tr>
+</table>
+<p>La analogía: <b>Git es tu cámara y tu álbum</b>; <b>GitHub es un álbum compartido en la nube</b> (como Google Fotos), donde además tus amigos pueden comentar las fotos y proponerte cambios. Puedes usar Git sin GitHub, pero no GitHub sin Git.</p>
+<p>Y hay una tercera pieza: <b>GitHub CLI</b>, el programa <code>gh</code> que instalaste en el capítulo 4. Es una herramienta de línea de comandos para manejar <b>GitHub</b> (crear repos, abrir pull requests, publicar releases) sin salir de PowerShell. Resumiendo: <code>git …</code> trabaja con tu repositorio; <code>gh …</code> habla con la página de GitHub.</p>
+
+<h2>Vocabulario de Git en una tabla</h2>
+<p>Estos términos aparecerán una y otra vez. Vuelve a esta tabla cuando un nombre se te olvide (también están en el Apéndice E, Glosario).</p>
+<table class="tabla">
+<tr><th>Término</th><th>Significado</th></tr>
+<tr><td>Repositorio (repo)</td><td>El proyecto con todo su historial; la carpeta <code>.git</code> o su copia en GitHub.</td></tr>
+<tr><td>Commit</td><td>Una foto del proyecto con autor, fecha, mensaje y padre.</td></tr>
+<tr><td>Hash</td><td>El identificador único de un commit (<code>b49d01a…</code>).</td></tr>
+<tr><td>Staging / index</td><td>El área de preparación: lo que entrará en el próximo commit.</td></tr>
+<tr><td>Rama (branch)</td><td>Una etiqueta móvil que apunta a un commit. La principal se llama <code>main</code>.</td></tr>
+<tr><td>HEAD</td><td>«Usted está aquí»: la rama (y el commit) en que trabajas.</td></tr>
+<tr><td>Merge</td><td>Fusionar el trabajo de una rama en otra.</td></tr>
+<tr><td>Conflicto</td><td>Cuando dos ramas cambiaron lo mismo y Git necesita que decidas.</td></tr>
+<tr><td>Remoto (remote)</td><td>Otra copia del repositorio, normalmente en GitHub. La principal se llama <code>origin</code>.</td></tr>
+<tr><td>Push / pull</td><td>Subir commits al remoto / traer commits del remoto.</td></tr>
+<tr><td>Clone</td><td>Descargar un repositorio completo de GitHub a tu PC por primera vez.</td></tr>
+<tr><td>Tag (etiqueta)</td><td>Un nombre fijo para un commit importante, como <code>v0.1.0</code>. A diferencia de una rama, no se mueve.</td></tr>
+<tr><td>Pull request (PR)</td><td>En GitHub: la petición de fusionar una rama en otra, con revisión y comentarios (capítulo 10).</td></tr>
+<tr><td>Issue</td><td>En GitHub: una tarea, idea o error anotado para resolverlo después (capítulo 10).</td></tr>
+<tr><td>Release</td><td>En GitHub: una versión publicada para descargar, con su instalador (capítulos 10 y 67).</td></tr>
+</table>
+
+<h2>Lo que Git no es</h2>
+<ul>
+<li><b>No es un respaldo automático.</b> Git solo guarda lo que tú le pides con <code>git commit</code>, y solo lo saca de tu PC cuando haces <code>git push</code>. Si trabajas una semana sin hacer commits y se daña el disco, Git no te salva.</li>
+<li><b>No es Dropbox ni OneDrive.</b> No sincroniza solo. Y no pongas tu carpeta <code>Proyectos</code> dentro de una carpeta sincronizada por OneDrive: los dos programas pelean por los mismos archivos y pueden dañar la carpeta <code>.git</code>.</li>
+<li><b>No es para archivos enormes ni generados.</b> Git está pensado para texto (código, configuración, documentación). Los <code>.jar</code>, <code>.exe</code>, videos o instaladores no van en el repositorio; los instaladores del Totito se publicarán como <i>release</i> (capítulo 67).</li>
+<li><b>No es un lugar para contraseñas.</b> Todo lo que entra en un commit queda en el historial para siempre, aunque después lo borres. El capítulo 10 dedica una sección completa a qué no subir nunca.</li>
+</ul>
+
+<h2>El camino del Totito con Git</h2>
+<p>Para que veas a dónde lleva todo esto, así será la historia del Totito de principio a fin (en el capítulo 8 verás el plan de commits detallado):</p>
+<ol>
+<li><b>Capítulo 7:</b> configuras Git con tu nombre y correo, y conectas tu PC con tu cuenta de GitHub.</li>
+<li><b>Capítulo 8:</b> conviertes la carpeta <code>Totito</code> en un repositorio, haces el primer commit con los archivos del capítulo 5 y lo subes a GitHub.</li>
+<li><b>Capítulos 29 a 33:</b> cada archivo de la lógica es un commit en <code>main</code>. Al terminar la primera ventana pones la etiqueta <code>v0.1.0</code>.</li>
+<li><b>Capítulos 38 a 61:</b> creas la rama <code>interfaz-neon</code> y construyes toda la interfaz ahí, un commit por capítulo.</li>
+<li><b>Capítulo 61:</b> abres un <i>pull request</i> de <code>interfaz-neon</code> a <code>main</code>, lo fusionas y etiquetas <code>v1.0.0</code>.</li>
+<li><b>Capítulos 64 y 67:</b> agregas el icono y publicas en GitHub un <i>release</i> con el instalador <code>.exe</code> para que cualquiera lo descargue.</li>
+</ol>
+
+<div class="caja consejo"><b>¿Y si todavía no lo entiendes del todo?</b> Es normal. Git se entiende de verdad usándolo. Lee este capítulo una vez, haz los capítulos 7 y 8, y luego vuelve a mirar los dibujos: verás que ahora todo encaja. Cuando un comando te sorprenda, pregúntate «¿entre qué lugares está moviendo cosas?» y casi siempre tendrás la respuesta.</div>
+
+<h2>Resumen</h2>
+<ul>
+<li>El control de versiones reemplaza las carpetas «final_final2» por un historial ordenado: qué cambió, cuándo, quién y por qué.</li>
+<li>Git trabaja con tres lugares locales: el <b>directorio de trabajo</b> (tu carpeta), el <b>área de preparación</b> (lo que irá en la próxima foto) y el <b>repositorio</b> (la carpeta <code>.git</code>). <code>git add</code> y <code>git commit</code> mueven cambios entre ellos.</li>
+<li>Un <b>commit</b> es una foto completa e inmutable del proyecto, con autor, fecha, mensaje, padre y un hash único.</li>
+<li>El <b>historial</b> es una cadena de commits donde cada uno apunta a su padre.</li>
+<li>Una <b>rama</b> es una etiqueta móvil que apunta a un commit; <code>main</code> es la principal. <b>HEAD</b> indica en qué rama estás.</li>
+<li><b>Merge</b> junta dos ramas; si ambas cambiaron la misma línea, hay un <b>conflicto</b> que resuelves tú.</li>
+<li><b>Git</b> es el programa local; <b>GitHub</b> es el servicio web para guardar copias y colaborar; <b>gh</b> maneja GitHub desde PowerShell.</li>
+</ul>
+
+<div class="caja aplica"><b>Aplícalo fuera del Totito</b> El modelo de «mesa, bandeja, álbum» sirve para cualquier proyecto de texto, no solo de Java:
+<ul>
+<li><b>Una página web personal</b> (HTML y CSS): cada cambio de diseño es un commit; si el nuevo menú queda feo, vuelves al anterior en segundos.</li>
+<li><b>Tu tesis o un libro escrito en Markdown o LaTeX</b>: cada capítulo terminado es un commit, y una rama «revision-asesor» guarda los cambios que te pidió tu asesor sin tocar tu versión.</li>
+<li><b>Los scripts de PowerShell con los que automatizas tareas</b>: si un script que antes funcionaba deja de hacerlo, el historial te dice exactamente qué línea cambió.</li>
+<li><b>Un proyecto en equipo del colegio o la universidad</b>: en lugar de pasarse archivos por WhatsApp, cada quien trabaja en su rama y se fusiona en GitHub.</li>
+</ul></div>
+
+<div class="caja ejercicio"><b>Ejercicios</b><ol>
+<li>Piensa en un proyecto propio (un trabajo de la universidad, una hoja de Excel del trabajo) donde hayas tenido versiones «final», «final2»… Escribe tres problemas concretos que te causó y cuál de las ideas del capítulo (historial, mensajes, ramas) lo habría evitado.</li>
+<li>Para cada situación, di en qué estado está el archivo (sin seguimiento, modificado, preparado, sin cambios o ignorado): a) acabas de crear <code>src\Jugador.java</code>; b) hiciste <code>git add src\Jugador.java</code>; c) hiciste el commit y no lo has vuelto a tocar; d) NetBeans creó <code>target\classes\Tablero.class</code>; e) después del commit cambiaste un comentario en <code>Jugador.java</code>.</li>
+<li>Dibuja en papel una cadena de cuatro commits (A ← B ← C ← D) con la etiqueta <code>main</code> en D. Ahora crea en tu dibujo una rama <code>prueba</code> que apunte a B. Si estando en <code>prueba</code> haces un commit E, ¿de quién es hijo E? ¿Se movió <code>main</code>? Pista: solo avanza la rama a la que apunta HEAD.</li>
+<li>Explica con tus palabras, en dos frases, la diferencia entre Git, GitHub y <code>gh</code>, como se lo explicarías a un amigo que nunca programó.</li>
+<li>Abre PowerShell y escribe <code>git --help</code>. Git muestra, en inglés, la lista de sus comandos más comunes agrupados por situación («start a working area», «work on the current change», «grow, mark and tweak your common history», «collaborate»). Busca en la lista <code>add</code>, <code>commit</code>, <code>branch</code>, <code>merge</code>, <code>push</code> y <code>pull</code>, y traduce su descripción de una línea. Pista: «index» es el área de preparación.</li>
+</ol></div>
+</section>
